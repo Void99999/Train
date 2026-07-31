@@ -7,13 +7,28 @@ nur noch **cool**.
 
 ## Starten
 
-`index.html` im Browser öffnen. Kein Build, keine Abhängigkeiten, keine externen
-Dateien — Bild und Ton entstehen komplett im Browser.
+Zwei Wege — beide brauchen kein Internet und keine Installation:
+
+**Schnell:** `rail-blast-einzeldatei.html` doppelklicken. In dieser Datei steckt
+alles drin, sie funktioniert auch allein in einem beliebigen Ordner.
+
+**Zum Weiterbauen:** `index.html` öffnen. Dabei müssen die Ordner `css` und `js`
+daneben liegen bleiben, sonst erscheint die Seite ohne Gestaltung.
 
 ```
-index.html      Struktur und die SVG-Illustration
-css/style.css   Szene, Beleuchtung, Titel, Menü
-js/main.js      Audio, Partikel, Parallaxe, Menülogik
+rail-blast-einzeldatei.html   alles in einer Datei (erzeugt, siehe unten)
+index.html                    Struktur und die SVG-Illustration
+css/style.css                 Szene, Beleuchtung, Titel, Menü
+js/main.js                    Audio, Partikel, Parallaxe, Menülogik
+build-einzeldatei.py          baut die Einzeldatei neu
+```
+
+Die Einzeldatei wird aus den drei Quelldateien erzeugt. Bearbeite sie nicht
+direkt — ändere `index.html`, `css/style.css` oder `js/main.js` und baue sie
+danach neu:
+
+```
+python3 build-einzeldatei.py
 ```
 
 ## Was drin ist
