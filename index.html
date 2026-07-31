@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Zug auf Schienen</title>
+<style>
+  :root {
+    --rail: #8d949c;
+    --rail-dark: #5d636b;
+    --sleeper: #6b4a32;
+    --ground: #3b3f31;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    height: 100%;
+    margin: 0;
+  }
+
+  body {
+    background: linear-gradient(#07131f 0%, #12293f 40%, #2b4f68 66%, #6d5f4a 70%);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  /* ---- Szene: füllt das ganze Bild ---- */
+  #scene {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+  }
+
+  #shaker {
+    position: absolute;
+    inset: 0;
+    will-change: transform;
+  }
+
+  /* Sterne / Hintergrund */
+  .star {
+    position: absolute;
+    width: 2px;
+    height: 2px;
+    background: #fff;
+    border-radius: 50%;
+    opacity: .55;
+  }
+
+  /* Hügel im Hintergrund */
+  .hill {
+    position: absolute;
+    bottom: 29%;
+    height: 22%;
+    background: #22322c;
+    border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+    opacity: .85;
+  }
+
+  /* Boden / Schotterbett */
+  #ballast {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 30%;
+    background:
+      radial-gradient(circle at 10% 40%, rgba(255,255,255,.045) 0 2px, transparent 3px),
+      radial-gradient(circle at 35% 70%, rgba(255,255,255,.045) 0 2px, transparent 3px),
+      radial-gradient(circle at 68% 30%, rgba(255,255,255,.045) 0 2px, transparent 3px),
+      radial-gradient(circle at 88% 60%, rgba(255,255,255,.045) 0 2px, transparent 3px),
+      linear-gradient(#4b4f3d, var(--ground) 22%, #1b1f16);
+    background-size: 120px 100%, 160px 100%, 140px 100%, 180px 100%, 100% 100%;
+  }
+
+  /* ---- Schienen: gehen über die ganze Bildbreite ---- */
+  #track {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 20%;
+    height: 34px;
+  }
+
+  #sleepers {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 8px;
+    height: 22px;
+    background-image: repeating-linear-gradient(
+      to right,
+      var(--sleeper) 0 18px,
+      #2f2b22 18px 20px,
+      transparent 20px 46px
+    );
+  }
+
+  .rail {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 6px;
+    background: linear-gradient(#cfd4da, var(--rail) 45%, var(--rail-dark));
+  }
+  /* hintere Schiene */
+  .rail.far  { top: 4px; }
+  /* vordere Schiene - liegt vor den Rädern */
+  .rail.near { top: 18px; z-index: 6; box-shadow: 0 2px 4px rgba(0,0,0,.5); }
+
+  /* ---- Zug: Räder stehen auf der vorderen Schiene ----
+     #trainWrap übernimmt das Zentrieren, #train nur das Wackeln -
+     sonst würden die rumble-Keyframes das translateX(-50%) überschreiben. */
+  #trainWrap {
+    position: absolute;
+    bottom: calc(20% + 16px);
+    left: 50%;
+    transform: translateX(-50%) scale(1.15);
+    transform-origin: bottom center;
+    z-index: 4;
+  }
+
+  #train {
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+    filter: drop-shadow(0 10px 12px rgba(0,0,0,.5));
+  }
+
+  .part { position: relative; will-change: transform, opacity; }
+
+  /* Lokomotive */
+  .loco {
+    width: 190px;
+    height: 96px;
+  }
+  .loco .boiler {
+    position: absolute;
+    left: 0;
+    bottom: 18px;
+    width: 130px;
+    height: 52px;
+    background: linear-gradient(#4a5b6b, #26313d);
+    border-radius: 26px 8px 8px 26px;
+    border: 2px solid #16202a;
+  }
+  .loco .cab {
+    position: absolute;
+    right: 0;
+    bottom: 18px;
+    width: 66px;
+    height: 74px;
+    background: linear-gradient(#7a3b34, #4a221d);
+    border-radius: 8px 8px 4px 4px;
+    border: 2px solid #2a120f;
+  }
+  .loco .window {
+    position: absolute;
+    right: 14px;
+    bottom: 56px;
+    width: 30px;
+    height: 22px;
+    background: #ffe9a8;
+    border: 2px solid #2a120f;
+    border-radius: 3px;
+    box-shadow: 0 0 14px rgba(255,220,130,.6);
+  }
+  .loco .chimney {
+    position: absolute;
+    left: 14px;
+    bottom: 66px;
+    width: 26px;
+    height: 30px;
+    background: linear-gradient(#3b4753, #1b232b);
+    border: 2px solid #16202a;
+    border-radius: 4px 4px 2px 2px;
+  }
+  .loco .lamp {
+    position: absolute;
+    left: -6px;
+    bottom: 40px;
+    width: 16px;
+    height: 16px;
+    background: #ffe9a8;
+    border: 2px solid #16202a;
+    border-radius: 50%;
+    box-shadow: 0 0 18px rgba(255,225,140,.8);
+  }
+  .loco .stripe {
+    position: absolute;
+    left: 6px;
+    bottom: 26px;
+    width: 118px;
+    height: 6px;
+    background: #d8a13c;
+    border-radius: 3px;
+  }
+
+  /* Waggons */
+  .wagon {
+    width: 130px;
+    height: 74px;
+  }
+  .wagon .body {
+    position: absolute;
+    left: 0;
+    bottom: 18px;
+    width: 130px;
+    height: 56px;
+    background: linear-gradient(#3f6b52, #1f3a2c);
+    border: 2px solid #142418;
+    border-radius: 6px;
+  }
+  .wagon .body::after {
+    content: "";
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    top: 14px;
+    height: 18px;
+    background: rgba(255,255,255,.08);
+    border-radius: 3px;
+  }
+
+  /* Räder */
+  .wheel {
+    position: absolute;
+    bottom: 0;
+    width: 30px;
+    height: 30px;
+    background: radial-gradient(circle at 50% 50%, #6a7480 0 6px, #2b333c 7px 100%);
+    border: 3px solid #171e25;
+    border-radius: 50%;
+  }
+  .wheel::after {
+    content: "";
+    position: absolute;
+    inset: 9px;
+    border-radius: 50%;
+    background: #59636f;
+  }
+
+  /* Kupplung */
+  .coupler {
+    position: absolute;
+    bottom: 30px;
+    right: -12px;
+    width: 12px;
+    height: 6px;
+    background: #2b333c;
+  }
+
+  /* Dampf */
+  .smoke {
+    position: absolute;
+    bottom: 96px;
+    left: 20px;
+    width: 18px;
+    height: 18px;
+    background: rgba(230,235,240,.5);
+    border-radius: 50%;
+    animation: puff 2.6s linear infinite;
+  }
+  .smoke:nth-of-type(2) { animation-delay: .9s; }
+  .smoke:nth-of-type(3) { animation-delay: 1.8s; }
+
+  @keyframes puff {
+    0%   { transform: translate(0,0) scale(.4); opacity: .6; }
+    100% { transform: translate(-70px,-120px) scale(2.6); opacity: 0; }
+  }
+
+  /* Vibrieren kurz vor der Explosion */
+  @keyframes rumble {
+    0%,100% { transform: translate(0,0) rotate(0deg); }
+    20%  { transform: translate(-2px,1px) rotate(-.4deg); }
+    40%  { transform: translate(2px,-1px) rotate(.4deg); }
+    60%  { transform: translate(-3px,-1px) rotate(-.3deg); }
+    80%  { transform: translate(3px,1px) rotate(.3deg); }
+  }
+  #train.rumbling { animation: rumble .09s linear infinite; }
+
+  /* Explosionslicht */
+  #flash {
+    position: absolute;
+    inset: 0;
+    background: #fff;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 11;
+  }
+
+  #fx {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  /* ---- Steuerung ---- */
+  #controls {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 7%;
+    z-index: 20;
+    text-align: center;
+  }
+
+  #startBtn {
+    font: 700 20px/1 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: #1a1206;
+    background: linear-gradient(#ffd45e, #e8a219);
+    border: none;
+    border-radius: 999px;
+    padding: 16px 46px;
+    cursor: pointer;
+    box-shadow: 0 6px 0 #a56d0c, 0 12px 24px rgba(0,0,0,.4);
+    transition: transform .08s ease, box-shadow .08s ease, background .35s ease, color .35s ease;
+    min-width: 200px;
+  }
+  #startBtn:hover:not(:disabled):not(.done) { transform: translateY(-2px); box-shadow: 0 8px 0 #a56d0c, 0 14px 28px rgba(0,0,0,.45); }
+  #startBtn:active:not(:disabled):not(.done) { transform: translateY(4px); box-shadow: 0 2px 0 #a56d0c, 0 6px 14px rgba(0,0,0,.4); }
+
+  #startBtn.done {
+    background: linear-gradient(#6ee7ff, #2a9dd6);
+    color: #04212e;
+    box-shadow: 0 6px 0 #16637f, 0 12px 24px rgba(0,0,0,.4);
+    text-transform: none;
+    letter-spacing: .02em;
+    cursor: default;
+  }
+
+  #hint {
+    margin-top: 12px;
+    font-size: 13px;
+    color: rgba(255,255,255,.45);
+    height: 16px;
+  }
+
+  /* Auf schmalen Bildschirmen den Zug verkleinern, damit er ins Bild passt.
+     Die Schienen bleiben immer über die volle Breite. */
+  @media (max-width: 760px) {
+    #trainWrap { transform: translateX(-50%) scale(.72); }
+    #startBtn { font-size: 17px; padding: 14px 34px; min-width: 170px; }
+  }
+  @media (max-width: 520px) {
+    #trainWrap { transform: translateX(-50%) scale(.5); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .smoke { animation: none; opacity: .3; }
+  }
+</style>
+</head>
+<body>
+
+<div id="scene">
+  <div id="shaker">
+    <div id="stars"></div>
+    <div class="hill" style="left:-5%;  width:45%;"></div>
+    <div class="hill" style="left:30%;  width:55%; bottom:31%; opacity:.6;"></div>
+    <div class="hill" style="left:72%;  width:40%;"></div>
+
+    <div id="ballast"></div>
+
+    <div id="track">
+      <div class="rail far"></div>
+      <div id="sleepers"></div>
+      <div class="rail near"></div>
+    </div>
+
+    <div id="trainWrap"><div id="train">
+      <div class="part loco">
+        <div class="smoke"></div>
+        <div class="smoke"></div>
+        <div class="smoke"></div>
+        <div class="chimney"></div>
+        <div class="boiler"></div>
+        <div class="stripe"></div>
+        <div class="cab"></div>
+        <div class="window"></div>
+        <div class="lamp"></div>
+        <div class="wheel" style="left:12px"></div>
+        <div class="wheel" style="left:58px"></div>
+        <div class="wheel" style="left:132px"></div>
+        <div class="coupler"></div>
+      </div>
+
+      <div class="part wagon">
+        <div class="body"></div>
+        <div class="wheel" style="left:14px"></div>
+        <div class="wheel" style="left:86px"></div>
+        <div class="coupler"></div>
+      </div>
+
+      <div class="part wagon">
+        <div class="body"></div>
+        <div class="wheel" style="left:14px"></div>
+        <div class="wheel" style="left:86px"></div>
+      </div>
+    </div></div>
+
+    <canvas id="fx"></canvas>
+    <div id="flash"></div>
+  </div>
+</div>
+
+<div id="controls">
+  <button id="startBtn">Start</button>
+  <div id="hint">Drück auf Start.</div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  const scene   = document.getElementById("scene");
+  const shaker  = document.getElementById("shaker");
+  const train   = document.getElementById("train");
+  const canvas  = document.getElementById("fx");
+  const flash   = document.getElementById("flash");
+  const btn     = document.getElementById("startBtn");
+  const hint    = document.getElementById("hint");
+  const ctx     = canvas.getContext("2d");
+
+  /* ---------- Sterne streuen ---------- */
+  const stars = document.getElementById("stars");
+  for (let i = 0; i < 70; i++) {
+    const s = document.createElement("div");
+    s.className = "star";
+    s.style.left = (Math.random() * 100) + "%";
+    s.style.top  = (Math.random() * 55) + "%";
+    s.style.opacity = (0.2 + Math.random() * 0.6).toFixed(2);
+    const size = Math.random() < 0.2 ? 3 : 2;
+    s.style.width = s.style.height = size + "px";
+    stars.appendChild(s);
+  }
+
+  /* ---------- Canvas an Displaygröße anpassen ---------- */
+  let dpr = 1;
+  function resize() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width  = scene.clientWidth  * dpr;
+    canvas.height = scene.clientHeight * dpr;
+    canvas.style.width  = scene.clientWidth + "px";
+    canvas.style.height = scene.clientHeight + "px";
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  resize();
+  window.addEventListener("resize", resize);
+
+  /* ---------- Explosionssound (Web Audio, ohne externe Datei) ---------- */
+  let audioCtx = null;
+
+  function playExplosion() {
+    try {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      if (!audioCtx) audioCtx = new AC();
+      if (audioCtx.state === "suspended") audioCtx.resume();
+
+      const now = audioCtx.currentTime;
+      const master = audioCtx.createGain();
+      master.gain.value = 0.9;
+      master.connect(audioCtx.destination);
+
+      /* 1) Knall: weißes Rauschen mit abfallendem Tiefpass */
+      const dur = 2.2;
+      const buffer = audioCtx.createBuffer(1, Math.floor(audioCtx.sampleRate * dur), audioCtx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < data.length; i++) {
+        const t = i / data.length;
+        data[i] = (Math.random() * 2 - 1) * Math.pow(1 - t, 2.2);
+      }
+      const noise = audioCtx.createBufferSource();
+      noise.buffer = buffer;
+
+      const lp = audioCtx.createBiquadFilter();
+      lp.type = "lowpass";
+      lp.frequency.setValueAtTime(4200, now);
+      lp.frequency.exponentialRampToValueAtTime(160, now + 1.6);
+      lp.Q.value = 0.9;
+
+      const noiseGain = audioCtx.createGain();
+      noiseGain.gain.setValueAtTime(0.0001, now);
+      noiseGain.gain.exponentialRampToValueAtTime(1.0, now + 0.012);
+      noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+
+      noise.connect(lp).connect(noiseGain).connect(master);
+      noise.start(now);
+      noise.stop(now + dur);
+
+      /* 2) Sub-Bass-Wumms: Sinus fällt tief ab */
+      const sub = audioCtx.createOscillator();
+      sub.type = "sine";
+      sub.frequency.setValueAtTime(150, now);
+      sub.frequency.exponentialRampToValueAtTime(24, now + 0.9);
+
+      const subGain = audioCtx.createGain();
+      subGain.gain.setValueAtTime(0.0001, now);
+      subGain.gain.exponentialRampToValueAtTime(0.85, now + 0.02);
+      subGain.gain.exponentialRampToValueAtTime(0.0001, now + 1.3);
+
+      sub.connect(subGain).connect(master);
+      sub.start(now);
+      sub.stop(now + 1.4);
+
+      /* 3) Metallisches Bersten direkt beim Knall */
+      const crack = audioCtx.createOscillator();
+      crack.type = "square";
+      crack.frequency.setValueAtTime(900, now);
+      crack.frequency.exponentialRampToValueAtTime(70, now + 0.22);
+
+      const crackGain = audioCtx.createGain();
+      crackGain.gain.setValueAtTime(0.0001, now);
+      crackGain.gain.exponentialRampToValueAtTime(0.28, now + 0.006);
+      crackGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.3);
+
+      crack.connect(crackGain).connect(master);
+      crack.start(now);
+      crack.stop(now + 0.32);
+    } catch (e) {
+      /* Sound ist optional - die Animation läuft trotzdem */
+    }
+  }
+
+  /* ---------- Partikelsystem ---------- */
+  const particles = [];
+  const shockwaves = [];
+  let running = false;
+
+  const FIRE = ["#fff3b0", "#ffd166", "#ff9f1c", "#f4501e", "#c1200f"];
+  const SMOKE = ["#3c3a37", "#4a4641", "#2e2c2a", "#565049"];
+  const DEBRIS = ["#2b333c", "#7a3b34", "#3f6b52", "#8d949c", "#d8a13c"];
+
+  /* Explosion skaliert mit der Bildbreite, damit sie auf dem Handy
+     nicht das halbe Display ausfuellt. */
+  function sceneScale() {
+    return Math.max(0.45, Math.min(1, scene.clientWidth / 1100));
+  }
+
+  function spawnExplosion(cx, cy) {
+    const S = sceneScale();
+    /* Rauch zuerst einfuegen - wird dadurch hinter dem Feuer gezeichnet */
+    for (let i = 0; i < 110; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const sp = (0.5 + Math.random() * 5) * S;
+      particles.push({
+        x: cx + (Math.random() - .5) * 220 * S,
+        y: cy + (Math.random() - .5) * 70 * S,
+        vx: Math.cos(a) * sp,
+        vy: Math.sin(a) * sp - 1.6,
+        r: (26 + Math.random() * 60) * S,
+        life: 1,
+        decay: 0.005 + Math.random() * 0.007,
+        grav: -0.05,
+        drag: 0.982,
+        color: SMOKE[(Math.random() * SMOKE.length) | 0],
+        type: "smoke"
+      });
+    }
+    /* Feuerball */
+    for (let i = 0; i < 190; i++) {
+      const a = Math.random() * Math.PI * 2;
+      /* Wurzel-Verteilung fuellt die Kugel gleichmaessig statt nur den Rand */
+      const sp = Math.sqrt(Math.random()) * 13 * S;
+      particles.push({
+        x: cx + (Math.random() - .5) * 120 * S,
+        y: cy + (Math.random() - .5) * 50 * S,
+        vx: Math.cos(a) * sp,
+        vy: Math.sin(a) * sp - 2,
+        r: (14 + Math.random() * 46) * S,
+        life: 1,
+        decay: 0.016 + Math.random() * 0.026,
+        grav: -0.02,
+        drag: 0.955,
+        color: FIRE[(Math.random() * FIRE.length) | 0],
+        type: "fire"
+      });
+    }
+    /* Funken */
+    for (let i = 0; i < 130; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const sp = (8 + Math.random() * 24) * S;
+      particles.push({
+        x: cx + (Math.random() - .5) * 40 * S,
+        y: cy,
+        vx: Math.cos(a) * sp,
+        vy: Math.sin(a) * sp - 3,
+        r: 1.5 + Math.random() * 2.5,
+        life: 1,
+        decay: 0.008 + Math.random() * 0.014,
+        grav: 0.3,
+        drag: 0.99,
+        color: Math.random() < 0.3 ? "#fff6d8" : "#ffc857",
+        type: "spark"
+      });
+    }
+    /* Trümmerteile */
+    for (let i = 0; i < 60; i++) {
+      const a = -Math.PI / 2 + (Math.random() - .5) * Math.PI * 1.7;
+      const sp = (6 + Math.random() * 18) * S;
+      particles.push({
+        x: cx + (Math.random() - .5) * 300 * S,
+        y: cy + (Math.random() - .5) * 60 * S,
+        vx: Math.cos(a) * sp,
+        vy: Math.sin(a) * sp,
+        w: (5 + Math.random() * 18) * S,
+        h: (4 + Math.random() * 14) * S,
+        rot: Math.random() * Math.PI,
+        vr: (Math.random() - .5) * 0.5,
+        life: 1,
+        decay: 0.004 + Math.random() * 0.005,
+        grav: 0.38,
+        drag: 0.995,
+        color: DEBRIS[(Math.random() * DEBRIS.length) | 0],
+        type: "debris"
+      });
+    }
+    shockwaves.push({ x: cx, y: cy, r: 10 * S, life: 1, s: S });
+  }
+
+  /* Nachbrenner: kleine Flammen am Unglücksort, die langsam ausgehen */
+  function spawnEmbers(cx, cy) {
+    const S = sceneScale();
+    for (let i = 0; i < 5; i++) {
+      const a = -Math.PI / 2 + (Math.random() - .5) * 1.2;
+      const sp = 1 + Math.random() * 2;
+      particles.push({
+        x: cx + (Math.random() - .5) * 320 * S,
+        y: cy + (25 + Math.random() * 25) * S,
+        vx: Math.cos(a) * sp,
+        vy: Math.sin(a) * sp,
+        r: (8 + Math.random() * 20) * S,
+        life: 1,
+        decay: 0.02 + Math.random() * 0.02,
+        grav: -0.05,
+        drag: 0.97,
+        color: FIRE[1 + ((Math.random() * 4) | 0)],
+        type: "fire"
+      });
+    }
+  }
+
+  /* Zeichenreihenfolge von hinten nach vorn - unabhaengig von der Spawn-Reihenfolge */
+  const LAYERS = ["smoke", "debris", "fire", "spark"];
+
+  function drawParticle(p) {
+    if (p.type === "debris") {
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot);
+      ctx.globalAlpha = Math.min(1, p.life * 1.6);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+      ctx.restore();
+      return;
+    }
+
+    if (p.type === "spark") {
+      ctx.globalCompositeOperation = "lighter";
+      ctx.globalAlpha = Math.min(1, p.life * 1.4);
+      ctx.strokeStyle = p.color;
+      ctx.lineCap = "round";
+      ctx.lineWidth = p.r;
+      ctx.beginPath();
+      ctx.moveTo(p.x, p.y);
+      ctx.lineTo(p.x - p.vx * 1.8, p.y - p.vy * 1.8);
+      ctx.stroke();
+      ctx.globalCompositeOperation = "source-over";
+      ctx.globalAlpha = 1;
+      return;
+    }
+
+    /* Feuer und Rauch als weiche Kugeln mit Verlauf nach aussen */
+    const rr = p.type === "smoke"
+      ? Math.max(1, p.r * (2.2 - p.life))
+      : Math.max(1, p.r * (0.45 + p.life * 0.55));
+
+    const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, rr);
+    if (p.type === "fire") {
+      ctx.globalCompositeOperation = "lighter";
+      g.addColorStop(0, hexToRgba(p.color, 0.85 * p.life));
+      g.addColorStop(0.45, hexToRgba(p.color, 0.35 * p.life));
+      g.addColorStop(1, hexToRgba(p.color, 0));
+    } else {
+      const a = Math.min(0.26, p.life * 0.34);
+      g.addColorStop(0, hexToRgba(p.color, a));
+      g.addColorStop(0.6, hexToRgba(p.color, a * 0.6));
+      g.addColorStop(1, hexToRgba(p.color, 0));
+    }
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, rr, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalCompositeOperation = "source-over";
+  }
+
+  function hexToRgba(hex, alpha) {
+    const n = parseInt(hex.slice(1), 16);
+    return "rgba(" + ((n >> 16) & 255) + "," + ((n >> 8) & 255) + "," + (n & 255) + "," + alpha.toFixed(3) + ")";
+  }
+
+  function tick() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    /* Druckwelle */
+    for (let i = shockwaves.length - 1; i >= 0; i--) {
+      const s = shockwaves[i];
+      s.r += 26 * s.s;
+      s.life -= 0.075;
+      if (s.life <= 0) { shockwaves.splice(i, 1); continue; }
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.strokeStyle = "rgba(255,225,170," + (s.life * s.life * 0.75).toFixed(3) + ")";
+      ctx.lineWidth = 16 * s.life * s.s;
+      ctx.stroke();
+    }
+
+    /* Physik updaten und tote Partikel aussortieren */
+    let w = 0;
+    for (let i = 0; i < particles.length; i++) {
+      const p = particles[i];
+      p.vx *= p.drag;
+      p.vy = p.vy * p.drag + p.grav;
+      p.x += p.vx;
+      p.y += p.vy;
+      p.life -= p.decay;
+      if (p.type === "debris") p.rot += p.vr;
+      if (p.life > 0) particles[w++] = p;
+    }
+    particles.length = w;
+
+    /* Ebene für Ebene zeichnen */
+    for (let l = 0; l < LAYERS.length; l++) {
+      const layer = LAYERS[l];
+      for (let i = 0; i < particles.length; i++) {
+        if (particles[i].type === layer) drawParticle(particles[i]);
+      }
+    }
+    ctx.globalAlpha = 1;
+
+    if (particles.length || shockwaves.length) {
+      requestAnimationFrame(tick);
+    } else {
+      running = false;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+  }
+
+  /* ---------- Screenshake ---------- */
+  function shake(duration, strength) {
+    const start = performance.now();
+    (function frame(now) {
+      const t = (now - start) / duration;
+      if (t >= 1) { shaker.style.transform = ""; return; }
+      const s = strength * (1 - t);
+      shaker.style.transform =
+        "translate(" + ((Math.random() - .5) * s).toFixed(2) + "px," +
+                       ((Math.random() - .5) * s).toFixed(2) + "px)";
+      requestAnimationFrame(frame);
+    })(start);
+  }
+
+  /* ---------- Zugteile wegschleudern ---------- */
+  function blastTrainParts(cx) {
+    document.querySelectorAll("#train .part").forEach(function (part) {
+      const r = part.getBoundingClientRect();
+      const sr = scene.getBoundingClientRect();
+      const pcx = r.left + r.width / 2 - sr.left;
+      const dir = pcx < cx ? -1 : 1;
+      const dist = Math.abs(pcx - cx) / 100 + 0.6;
+
+      const S = sceneScale();
+      const dx = dir * (140 + Math.random() * 220) * dist * S;
+      const dy = -(120 + Math.random() * 200) * S;
+      const rot = dir * (100 + Math.random() * 320);
+
+      part.style.transition = "transform .9s cubic-bezier(.15,.6,.5,1), opacity .9s ease-in";
+      part.style.transform = "translate(" + dx.toFixed(0) + "px," + dy.toFixed(0) + "px) rotate(" + rot.toFixed(0) + "deg) scale(.85)";
+      part.style.opacity = "0";
+    });
+  }
+
+  /* ---------- Los geht's ---------- */
+  let fired = false;
+
+  btn.addEventListener("click", function () {
+    if (fired) return;
+    fired = true;
+    btn.disabled = true;
+    hint.textContent = "";
+
+    train.classList.add("rumbling");
+
+    window.setTimeout(function () {
+      train.classList.remove("rumbling");
+
+      const tr = train.getBoundingClientRect();
+      const sr = scene.getBoundingClientRect();
+      const cx = tr.left + tr.width / 2 - sr.left;
+      const cy = tr.top  + tr.height / 2 - sr.top;
+
+      playExplosion();
+      spawnExplosion(cx, cy);
+      blastTrainParts(cx);
+      shake(900, 34 * sceneScale());
+
+      /* Lichtblitz */
+      flash.style.transition = "none";
+      flash.style.opacity = "0.9";
+      requestAnimationFrame(function () {
+        flash.style.transition = "opacity .45s ease-out";
+        flash.style.opacity = "0";
+      });
+
+      if (!running) { running = true; requestAnimationFrame(tick); }
+
+      /* Es brennt noch eine Weile nach */
+      let embers = 0;
+      const emberTimer = window.setInterval(function () {
+        spawnEmbers(cx, cy);
+        if (++embers > 28) window.clearInterval(emberTimer);
+      }, 110);
+
+      /* Button-Text wechselt auf "cool" */
+      window.setTimeout(function () {
+        btn.textContent = "cool";
+        btn.classList.add("done");
+        btn.disabled = false;
+      }, 700);
+    }, 600);
+  });
+})();
+</script>
+</body>
+</html>
