@@ -278,7 +278,7 @@ body {
   position: absolute;
   bottom: calc(var(--track-y) + 13px);
   left: 50%;
-  transform: translateX(-50%) scale(1);
+  transform: translateX(-50%) scale(.92);
   transform-origin: bottom center;
   z-index: 4;
   will-change: transform;
@@ -710,7 +710,7 @@ kbd {
 }
 
 @media (min-width: 1400px) {
-  #trainWrap { left: 70%; transform: translateX(-50%) scale(1.12); }
+  #trainWrap { left: 70%; transform: translateX(-50%) scale(1); }
 }
 
 /* Schmalere Fenster: alles zentriert. Dafür liegt das Gleis höher,
@@ -725,7 +725,7 @@ kbd {
 /* ========================== Kleine Bildschirme ================== */
 
 @media (max-width: 760px) {
-  #trainWrap { transform: translateX(-50%) scale(.62); }
+  #trainWrap { transform: translateX(-50%) scale(.54); }
   #beam { width: 380px; height: 80px; }
   /* tiefer und kleiner, sonst liegt er auf dem Titel */
   .moon { width: 88px; height: 88px; top: 15%; margin-left: 66%; }
@@ -735,7 +735,7 @@ kbd {
 }
 
 @media (max-width: 520px) {
-  #trainWrap { transform: translateX(-50%) scale(.52); }
+  #trainWrap { transform: translateX(-50%) scale(.38); }
   .tagline { letter-spacing: .16em; }
 }
 

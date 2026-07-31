@@ -14,157 +14,184 @@
      =================================================================== -->
 <svg id="artdefs" width="0" height="0" aria-hidden="true" focusable="false">
   <defs>
-    <!-- Kessel: enge Stops erzeugen die zylindrische Woelbung -->
-    <linearGradient id="gBoiler" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%"   stop-color="#151d25"/>
-      <stop offset="12%"  stop-color="#3f5668"/>
-      <stop offset="28%"  stop-color="#7e94a8"/>
-      <stop offset="40%"  stop-color="#5a6f83"/>
-      <stop offset="62%"  stop-color="#33455a"/>
-      <stop offset="84%"  stop-color="#1c2732"/>
-      <stop offset="100%" stop-color="#0c1218"/>
+    <!-- ===== Materialien =====
+         Schwarzer Kessel, rotes Fahrwerk. Statt eines flachen Verlaufs
+         bekommt jede Flaeche zusaetzlich eine Himmels- und eine
+         Bodenreflexion (mSkyRefl / mWarmRefl) daruebergelegt. -->
+
+    <linearGradient id="mBoiler" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#0d1116"/>
+      <stop offset="14%"  stop-color="#38434f"/>
+      <stop offset="26%"  stop-color="#5a6875"/>
+      <stop offset="38%"  stop-color="#2f3841"/>
+      <stop offset="66%"  stop-color="#171d24"/>
+      <stop offset="88%"  stop-color="#22292f"/>
+      <stop offset="100%" stop-color="#080b0f"/>
     </linearGradient>
-    <linearGradient id="gSmokebox" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%"   stop-color="#141a20"/>
-      <stop offset="26%"  stop-color="#3c4854"/>
-      <stop offset="42%"  stop-color="#4c5a67"/>
-      <stop offset="66%"  stop-color="#232c35"/>
-      <stop offset="100%" stop-color="#0b1015"/>
+    <linearGradient id="mSmoke" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#0b0f13"/>
+      <stop offset="22%"  stop-color="#2c353f"/>
+      <stop offset="40%"  stop-color="#404b57"/>
+      <stop offset="70%"  stop-color="#151b21"/>
+      <stop offset="100%" stop-color="#070a0d"/>
     </linearGradient>
-    <linearGradient id="gCab" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%"   stop-color="#6f3826"/>
-      <stop offset="22%"  stop-color="#a15c45"/>
-      <stop offset="46%"  stop-color="#8a4530"/>
-      <stop offset="74%"  stop-color="#5a2415"/>
-      <stop offset="100%" stop-color="#2f1109"/>
+    <linearGradient id="mDeflector" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#6b7b8b"/>
+      <stop offset="22%"  stop-color="#44515e"/>
+      <stop offset="60%"  stop-color="#232b33"/>
+      <stop offset="100%" stop-color="#0d1217"/>
     </linearGradient>
-    <linearGradient id="gRoof" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%"   stop-color="#57302a"/>
-      <stop offset="55%"  stop-color="#3a1d16"/>
-      <stop offset="100%" stop-color="#1d0d08"/>
+    <linearGradient id="mCab" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#101419"/>
+      <stop offset="20%"  stop-color="#2e3740"/>
+      <stop offset="40%"  stop-color="#1c232a"/>
+      <stop offset="100%" stop-color="#070a0d"/>
     </linearGradient>
-    <linearGradient id="gRoof2" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%"   stop-color="#3c5347"/>
-      <stop offset="55%"  stop-color="#25342b"/>
-      <stop offset="100%" stop-color="#121c16"/>
+    <linearGradient id="mRoof" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#39434e"/>
+      <stop offset="60%"  stop-color="#191f25"/>
+      <stop offset="100%" stop-color="#0a0d11"/>
     </linearGradient>
-    <linearGradient id="gCoach" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%"   stop-color="#22523c"/>
-      <stop offset="22%"  stop-color="#3f8760"/>
-      <stop offset="46%"  stop-color="#2d6647"/>
-      <stop offset="74%"  stop-color="#1a4030"/>
-      <stop offset="100%" stop-color="#0b1d15"/>
+    <linearGradient id="mRoof2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#8d9aa6"/>
+      <stop offset="45%"  stop-color="#5d6874"/>
+      <stop offset="100%" stop-color="#2e353d"/>
     </linearGradient>
-    <linearGradient id="gFrame" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%"   stop-color="#3b4854"/>
-      <stop offset="30%"  stop-color="#252e37"/>
-      <stop offset="100%" stop-color="#10161c"/>
+    <!-- Rotes Fahrwerk: der Farbakzent der Maschine -->
+    <linearGradient id="mRed" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#c23a30"/>
+      <stop offset="26%"  stop-color="#8f2320"/>
+      <stop offset="62%"  stop-color="#5d1414"/>
+      <stop offset="100%" stop-color="#280808"/>
     </linearGradient>
-    <linearGradient id="gCylinder" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%"   stop-color="#46535f"/>
-      <stop offset="34%"  stop-color="#2c3641"/>
-      <stop offset="100%" stop-color="#111820"/>
+    <linearGradient id="mFrame" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#4a5561"/>
+      <stop offset="35%"  stop-color="#252d35"/>
+      <stop offset="100%" stop-color="#0c1015"/>
     </linearGradient>
-    <linearGradient id="gPilot" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%"   stop-color="#a45340"/>
-      <stop offset="50%"  stop-color="#7c3927"/>
-      <stop offset="100%" stop-color="#43180f"/>
+    <linearGradient id="mCyl" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#48535f"/>
+      <stop offset="34%"  stop-color="#2a323b"/>
+      <stop offset="100%" stop-color="#0d1116"/>
     </linearGradient>
-    <linearGradient id="gCoal" x1="0" y1="0" x2="0" y2="1">
+    <linearGradient id="mCoal" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%"   stop-color="#464650"/>
-      <stop offset="100%" stop-color="#0d0d10"/>
+      <stop offset="100%" stop-color="#0c0c0f"/>
     </linearGradient>
-    <linearGradient id="gWin" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%"   stop-color="#fff6d6"/>
-      <stop offset="100%" stop-color="#e9b249"/>
+    <!-- Wagen: weinrot unten, cremefarbenes Fensterband -->
+    <linearGradient id="mCoachLo" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#7e2724"/>
+      <stop offset="26%"  stop-color="#6a1f1d"/>
+      <stop offset="62%"  stop-color="#4a1413"/>
+      <stop offset="100%" stop-color="#1e0808"/>
     </linearGradient>
-    <linearGradient id="gSteel" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%"   stop-color="#c3d0dc"/>
+    <linearGradient id="mCream" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#efe0c0"/>
+      <stop offset="40%"  stop-color="#d6c19a"/>
+      <stop offset="100%" stop-color="#9c8763"/>
+    </linearGradient>
+    <linearGradient id="mSteel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#ccd9e5"/>
       <stop offset="45%"  stop-color="#7c8a98"/>
-      <stop offset="100%" stop-color="#39434d"/>
+      <stop offset="100%" stop-color="#333c45"/>
     </linearGradient>
-    <!-- Messing fuer Glocke, Pfeife, Ventile und Schilder -->
-    <linearGradient id="gBrass" x1="0" y1="0" x2="0" y2="1">
+    <linearGradient id="mBrass" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%"   stop-color="#ffe9ab"/>
       <stop offset="30%"  stop-color="#e2b64e"/>
       <stop offset="55%"  stop-color="#b98c1e"/>
       <stop offset="100%" stop-color="#6a4c0a"/>
     </linearGradient>
-    <linearGradient id="gDoor" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%"   stop-color="#2b6349"/>
-      <stop offset="35%"  stop-color="#376f52"/>
-      <stop offset="100%" stop-color="#14301f"/>
+    <linearGradient id="mWin" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#fff6d6"/>
+      <stop offset="100%" stop-color="#e9b249"/>
     </linearGradient>
-    <!-- Radreifen: oben Mondlicht, unten im Schatten -->
-    <linearGradient id="gTyre" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%"   stop-color="#cfdbe6"/>
-      <stop offset="40%"  stop-color="#7b8998"/>
-      <stop offset="100%" stop-color="#2f3841"/>
-    </linearGradient>
-    <!-- Legt sich ueber das Rad und gibt ihm Woelbung -->
-    <radialGradient id="gWheelShade" cx="36%" cy="28%" r="78%">
-      <stop offset="0%"   stop-color="#ffffff" stop-opacity=".16"/>
-      <stop offset="52%"  stop-color="#000000" stop-opacity="0"/>
-      <stop offset="100%" stop-color="#000000" stop-opacity=".48"/>
+    <radialGradient id="mDoor" cx="36%" cy="30%" r="76%">
+      <stop offset="0%"   stop-color="#5a6673" stop-opacity=".5"/>
+      <stop offset="55%"  stop-color="#000000" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity=".55"/>
     </radialGradient>
-    <radialGradient id="gLamp" cx="40%" cy="34%" r="66%">
+    <radialGradient id="mLamp" cx="40%" cy="34%" r="66%">
       <stop offset="0%"   stop-color="#fffdf0"/>
       <stop offset="45%"  stop-color="#ffe08a"/>
       <stop offset="100%" stop-color="#cf8c12"/>
     </radialGradient>
 
-    <!-- Weiches Glühen für Lampe und Fenster -->
+    <!-- Umgebungsreflexionen: kuehler Himmel oben, warmes Bodenlicht unten -->
+    <linearGradient id="mSkyRefl" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#9fc4e8" stop-opacity=".38"/>
+      <stop offset="100%" stop-color="#9fc4e8" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="mWarmRefl" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#ffa347" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#ffa347" stop-opacity=".26"/>
+    </linearGradient>
+
+    <linearGradient id="mTyre" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#d5e1ec"/>
+      <stop offset="40%"  stop-color="#7b8998"/>
+      <stop offset="100%" stop-color="#2b333c"/>
+    </linearGradient>
+    <radialGradient id="mWheelShade" cx="36%" cy="28%" r="78%">
+      <stop offset="0%"   stop-color="#ffffff" stop-opacity=".18"/>
+      <stop offset="52%"  stop-color="#000000" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity=".5"/>
+    </radialGradient>
+
+    <!-- Weiche Verschattung; ersetzt harte Schattenkanten -->
+    <filter id="fSoft" x="-40%" y="-300%" width="180%" height="700%">
+      <feGaussianBlur stdDeviation="2.6"/>
+    </filter>
     <filter id="fGlow" x="-150%" y="-150%" width="400%" height="400%">
       <feGaussianBlur stdDeviation="5" result="b"/>
       <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
 
-    <!-- Treibrad: Speichen, Nabe, Gegengewicht -->
-    <g id="wheelBig">
-      <circle r="30" fill="#04080c"/>
-      <circle r="28" fill="#161e26"/>
-      <circle r="28" fill="none" stroke="url(#gTyre)" stroke-width="4.5"/>
-      <circle r="22.5" fill="#232d38"/>
-      <g stroke="#5b6977" stroke-width="4.4" stroke-linecap="round">
-        <line y1="-20.5" y2="20.5"/>
-        <line y1="-20.5" y2="20.5" transform="rotate(30)"/>
-        <line y1="-20.5" y2="20.5" transform="rotate(60)"/>
-        <line y1="-20.5" y2="20.5" transform="rotate(90)"/>
-        <line y1="-20.5" y2="20.5" transform="rotate(120)"/>
-        <line y1="-20.5" y2="20.5" transform="rotate(150)"/>
+    <!-- Treibrad: roter Radstern, blanker Radreifen -->
+    <g id="wheelDrive">
+      <circle r="34" fill="#03060a"/>
+      <circle r="32" fill="#1a1f26"/>
+      <circle r="32" fill="none" stroke="url(#mTyre)" stroke-width="5"/>
+      <circle r="26" fill="#7d1f1c"/>
+      <g stroke="#a83029" stroke-width="5" stroke-linecap="round">
+        <line y1="-24" y2="24"/>
+        <line y1="-24" y2="24" transform="rotate(30)"/>
+        <line y1="-24" y2="24" transform="rotate(60)"/>
+        <line y1="-24" y2="24" transform="rotate(90)"/>
+        <line y1="-24" y2="24" transform="rotate(120)"/>
+        <line y1="-24" y2="24" transform="rotate(150)"/>
       </g>
-      <g stroke="#93a5b6" stroke-width="1.3" stroke-linecap="round" opacity=".5"
-         transform="translate(-1.1,-1.1)">
-        <line y1="-19" y2="19"/>
-        <line y1="-19" y2="19" transform="rotate(30)"/>
-        <line y1="-19" y2="19" transform="rotate(60)"/>
-        <line y1="-19" y2="19" transform="rotate(90)"/>
-        <line y1="-19" y2="19" transform="rotate(120)"/>
-        <line y1="-19" y2="19" transform="rotate(150)"/>
+      <g stroke="#d4685c" stroke-width="1.4" stroke-linecap="round" opacity=".45"
+         transform="translate(-1.2,-1.2)">
+        <line y1="-22" y2="22"/>
+        <line y1="-22" y2="22" transform="rotate(30)"/>
+        <line y1="-22" y2="22" transform="rotate(60)"/>
+        <line y1="-22" y2="22" transform="rotate(90)"/>
+        <line y1="-22" y2="22" transform="rotate(120)"/>
+        <line y1="-22" y2="22" transform="rotate(150)"/>
       </g>
-      <path d="M17.6 12.3 A21.5 21.5 0 0 1 -17.6 12.3 L-8.2 5.7 A10 10 0 0 0 8.2 5.7 Z" fill="#3b4653"/>
-      <circle r="8.5" fill="#3b4653" stroke="#04080c" stroke-width="2"/>
-      <circle cx="-2" cy="-2" r="3.2" fill="#aebcc9" opacity=".8"/>
-      <circle r="28" fill="url(#gWheelShade)"/>
+      <path d="M20 14 A24.5 24.5 0 0 1 -20 14 L-9 6.5 A11.5 11.5 0 0 0 9 6.5 Z" fill="#5e1613"/>
+      <circle r="9.5" fill="#39434e" stroke="#03060a" stroke-width="2"/>
+      <circle cx="-2.4" cy="-2.4" r="3.4" fill="#b6c4d1" opacity=".75"/>
+      <circle r="32" fill="url(#mWheelShade)"/>
     </g>
 
     <!-- Laufrad -->
     <g id="wheelSmall">
-      <circle r="16.5" fill="#04080c"/>
-      <circle r="15" fill="#161e26"/>
-      <circle r="15" fill="none" stroke="url(#gTyre)" stroke-width="3.4"/>
-      <circle r="10.5" fill="#232d38"/>
-      <g stroke="#5b6977" stroke-width="3.2" stroke-linecap="round">
-        <line y1="-9" y2="9"/>
-        <line y1="-9" y2="9" transform="rotate(45)"/>
-        <line y1="-9" y2="9" transform="rotate(90)"/>
-        <line y1="-9" y2="9" transform="rotate(135)"/>
+      <circle r="15" fill="#03060a"/>
+      <circle r="13.5" fill="#1a1f26"/>
+      <circle r="13.5" fill="none" stroke="url(#mTyre)" stroke-width="3.4"/>
+      <circle r="9.5" fill="#7d1f1c"/>
+      <g stroke="#a83029" stroke-width="3" stroke-linecap="round">
+        <line y1="-8" y2="8"/>
+        <line y1="-8" y2="8" transform="rotate(45)"/>
+        <line y1="-8" y2="8" transform="rotate(90)"/>
+        <line y1="-8" y2="8" transform="rotate(135)"/>
       </g>
-      <circle r="4.4" fill="#3b4653" stroke="#04080c" stroke-width="1.6"/>
-      <circle cx="-1.2" cy="-1.2" r="1.6" fill="#aebcc9" opacity=".75"/>
-      <circle r="15" fill="url(#gWheelShade)"/>
+      <circle r="4" fill="#39434e" stroke="#03060a" stroke-width="1.5"/>
+      <circle cx="-1.2" cy="-1.2" r="1.5" fill="#b6c4d1" opacity=".7"/>
+      <circle r="13.5" fill="url(#mWheelShade)"/>
     </g>
-  </defs>
+    </defs>
 </svg>
 
 
@@ -219,381 +246,315 @@
         <div id="beam"></div>
         <div id="train">
 
-        <!-- ===================== Dampflokomotive ===================== -->
+        <!-- ================== Schnellzuglokomotive ================== -->
         <div class="part loco">
           <span class="steam"></span><span class="steam"></span><span class="steam"></span>
-          <svg viewBox="0 0 280 150" width="280" height="150" aria-hidden="true">
-            <ellipse cx="142" cy="147" rx="132" ry="6" fill="#000" opacity=".38"/>
-            <rect x="258" y="86" width="20" height="10" rx="2" fill="#1b232b" stroke="#04080c" stroke-width="3"/>
+          <svg viewBox="0 0 340 150" width="340" height="150" aria-hidden="true">
+            <ellipse cx="176" cy="147" rx="160" ry="6" fill="#000" opacity=".42"/>
+            <rect x="330" y="80" width="10" height="10" rx="2" fill="#161b21" stroke="#03060a" stroke-width="3"/>
 
-            <use href="#wheelSmall" x="42" y="133.5"/>
-            <use href="#wheelBig" x="112" y="120"/>
-            <use href="#wheelBig" x="186" y="120"/>
+            <!-- Laufdrehgestell vorn -->
+            <use href="#wheelSmall" x="44" y="135"/>
+            <use href="#wheelSmall" x="74" y="135"/>
+            <!-- Drei gekuppelte Treibraeder -->
+            <use href="#wheelDrive" x="152" y="116"/>
+            <use href="#wheelDrive" x="220" y="116"/>
+            <use href="#wheelDrive" x="288" y="116"/>
 
-            <!-- Gleitbahn und Kreuzkopf ueber der Treibstange -->
-            <rect x="92" y="116" width="30" height="7" rx="3.5" fill="#04080c"/>
-            <rect x="94" y="117.5" width="26" height="4" rx="2" fill="#4d5b69"/>
-            <rect x="104" y="114" width="12" height="11" rx="2.5" fill="#04080c"/>
-            <rect x="105.5" y="115.5" width="9" height="8" rx="2" fill="url(#gSteel)"/>
+            <!-- Gleitbahn, Kreuzkopf, Kolbenstange -->
+            <rect x="128" y="106" width="34" height="8" rx="4" fill="#03060a"/>
+            <rect x="130" y="107.5" width="30" height="5" rx="2.5" fill="#55636f"/>
+            <rect x="140" y="103" width="14" height="13" rx="3" fill="#03060a"/>
+            <rect x="141.6" y="104.6" width="10.8" height="9.8" rx="2.5" fill="url(#mSteel)"/>
+            <rect x="128" y="108" width="16" height="4" rx="2" fill="#c2d0dd" opacity=".8"/>
 
-            <!-- Treibstange -->
-            <rect x="92" y="127" width="96" height="9" rx="4.5" fill="#04080c"/>
-            <rect x="94" y="128.5" width="92" height="6" rx="3" fill="url(#gSteel)"/>
-            <circle cx="112" cy="132" r="5" fill="#39454f" stroke="#04080c" stroke-width="2"/>
-            <circle cx="186" cy="132" r="5" fill="#39454f" stroke="#04080c" stroke-width="2"/>
-            <circle cx="110.5" cy="130.5" r="1.6" fill="#a8b6c3" opacity=".7"/>
-            <circle cx="184.5" cy="130.5" r="1.6" fill="#a8b6c3" opacity=".7"/>
-            <!-- Kolbenstange vom Zylinder zum Kreuzkopf -->
-            <rect x="94" y="118" width="14" height="3" rx="1.5" fill="#b3c1cf" opacity=".75"/>
-
-            <!-- Durchgang 1: gemeinsame Silhouette (traegt die Aussenkontur) -->
-            <g fill="#04080c" stroke="#04080c" stroke-width="6" stroke-linejoin="round">
-              <rect x="18" y="84" width="252" height="13" rx="3"/>
-              <rect x="178" y="26" width="82" height="70" rx="5"/>
-              <path d="M170 27 Q219 8 268 27 L268 38 Q219 19 170 38 Z"/>
-              <rect x="58" y="32" width="124" height="54" rx="10"/>
-              <path d="M100 36 L100 25 A17 12 0 0 1 134 25 L134 36 Z"/>
-              <path d="M142 36 L142 29 A11 8 0 0 1 164 29 L164 36 Z"/>
-              <rect x="22" y="26" width="42" height="64" rx="15"/>
-              <path d="M32 32 L35 13 L28 13 L28 2 L66 2 L66 13 L59 13 L62 32 Z"/>
-              <rect x="54" y="96" width="42" height="28" rx="6"/>
-              <path d="M28 92 L4 140 L30 140 Z"/>
+            <!-- Kuppelstange ueber alle drei Treibraeder -->
+            <rect x="128" y="130" width="176" height="10" rx="5" fill="#03060a"/>
+            <rect x="130" y="131.5" width="172" height="7" rx="3.5" fill="url(#mSteel)"/>
+            <g>
+              <circle cx="152" cy="135" r="5.5" fill="#3a444f" stroke="#03060a" stroke-width="2"/>
+              <circle cx="220" cy="135" r="5.5" fill="#3a444f" stroke="#03060a" stroke-width="2"/>
+              <circle cx="288" cy="135" r="5.5" fill="#3a444f" stroke="#03060a" stroke-width="2"/>
             </g>
-            <!-- Durchgang 2: Flaechen, ohne eigene Kontur -->
-            <rect x="18" y="84" width="252" height="13" rx="3" fill="url(#gFrame)"/>
-            <rect x="178" y="26" width="82" height="70" rx="5" fill="url(#gCab)"/>
-            <path d="M170 27 Q219 8 268 27 L268 38 Q219 19 170 38 Z" fill="url(#gRoof)"/>
-            <rect x="58" y="32" width="124" height="54" rx="10" fill="url(#gBoiler)"/>
-            <path d="M100 36 L100 25 A17 12 0 0 1 134 25 L134 36 Z" fill="url(#gBoiler)"/>
-            <path d="M142 36 L142 29 A11 8 0 0 1 164 29 L164 36 Z" fill="url(#gBoiler)"/>
-            <rect x="22" y="26" width="42" height="64" rx="15" fill="url(#gSmokebox)"/>
-            <path d="M32 32 L35 13 L28 13 L28 2 L66 2 L66 13 L59 13 L62 32 Z" fill="url(#gSmokebox)"/>
-            <rect x="54" y="96" width="42" height="28" rx="6" fill="url(#gCylinder)"/>
-            <path d="M28 92 L4 140 L30 140 Z" fill="url(#gPilot)"/>
-
-            <!-- ============ Schattierung, Licht von oben links ============ -->
-            <rect x="64" y="35.5" width="112" height="6" rx="3" fill="#c3d5e4" opacity=".38"/>
-            <rect x="62" y="72" width="118" height="14" rx="7" fill="#000" opacity=".30"/>
-            <rect x="22" y="70" width="42" height="20" rx="10" fill="#000" opacity=".26"/>
-            <rect x="24" y="84" width="240" height="5" fill="#000" opacity=".38"/>
-            <path d="M172 30 Q219 12 266 30 L266 34 Q219 16 172 34 Z" fill="#000" opacity=".22"/>
-            <path d="M68 32.6 L172 32.6" stroke="#b9cddd" stroke-width="1.5" opacity=".45" stroke-linecap="round"/>
-
-            <!-- Kesselringe mit Nietenreihen beidseitig -->
-            <g stroke="#c79a2a" stroke-width="3.4" opacity=".62">
-              <line x1="90" y1="33" x2="90" y2="85"/>
-              <line x1="138" y1="33" x2="138" y2="85"/>
-              <line x1="170" y1="33" x2="170" y2="85"/>
+            <g fill="#b6c4d1" opacity=".7">
+              <circle cx="150.4" cy="133.4" r="1.7"/><circle cx="218.4" cy="133.4" r="1.7"/>
+              <circle cx="286.4" cy="133.4" r="1.7"/>
             </g>
-            <g stroke="#ffe6a0" stroke-width="1" opacity=".5">
-              <line x1="88.6" y1="36" x2="88.6" y2="70"/>
-              <line x1="136.6" y1="36" x2="136.6" y2="70"/>
-              <line x1="168.6" y1="36" x2="168.6" y2="70"/>
+
+            <!-- Durchgang 1: gemeinsame Silhouette -->
+            <g fill="#03060a" stroke="#03060a" stroke-width="6.5" stroke-linejoin="round">
+              <rect x="20" y="78" width="318" height="10" rx="2"/>
+              <rect x="26" y="88" width="306" height="14" rx="2"/>
+              <rect x="252" y="14" width="84" height="74" rx="4"/>
+              <path d="M246 16 L342 16 L342 26 L246 26 Z"/>
+              <rect x="66" y="28" width="192" height="50" rx="14"/>
+              <path d="M126 30 L126 18 A20 12 0 0 1 166 18 L166 30 Z"/>
+              <path d="M186 30 L186 20 A15 10 0 0 1 216 20 L216 30 Z"/>
+              <rect x="24" y="22" width="56" height="62" rx="24"/>
+              <path d="M34 26 L36 10 L30 10 L30 3 L66 3 L66 10 L60 10 L62 26 Z"/>
+              <path d="M58 62 L58 18 Q58 10 68 10 L104 10 L104 62 Z"/>
+              <rect x="86" y="86" width="46" height="30" rx="7"/>
             </g>
-            <g fill="#9db0c1" opacity=".3"><circle cx="85" cy="40.0" r="0.95"/><circle cx="85" cy="48.0" r="0.95"/><circle cx="85" cy="56.0" r="0.95"/><circle cx="85" cy="64.0" r="0.95"/><circle cx="85" cy="72.0" r="0.95"/><circle cx="85" cy="80.0" r="0.95"/></g>
-            <g fill="#9db0c1" opacity=".3"><circle cx="95" cy="40.0" r="0.95"/><circle cx="95" cy="48.0" r="0.95"/><circle cx="95" cy="56.0" r="0.95"/><circle cx="95" cy="64.0" r="0.95"/><circle cx="95" cy="72.0" r="0.95"/><circle cx="95" cy="80.0" r="0.95"/></g>
-            <g fill="#9db0c1" opacity=".3"><circle cx="133" cy="40.0" r="0.95"/><circle cx="133" cy="48.0" r="0.95"/><circle cx="133" cy="56.0" r="0.95"/><circle cx="133" cy="64.0" r="0.95"/><circle cx="133" cy="72.0" r="0.95"/><circle cx="133" cy="80.0" r="0.95"/></g>
-            <g fill="#9db0c1" opacity=".3"><circle cx="143" cy="40.0" r="0.95"/><circle cx="143" cy="48.0" r="0.95"/><circle cx="143" cy="56.0" r="0.95"/><circle cx="143" cy="64.0" r="0.95"/><circle cx="143" cy="72.0" r="0.95"/><circle cx="143" cy="80.0" r="0.95"/></g>
-            <g fill="#9db0c1" opacity=".3"><circle cx="165" cy="40.0" r="0.95"/><circle cx="165" cy="48.0" r="0.95"/><circle cx="165" cy="56.0" r="0.95"/><circle cx="165" cy="64.0" r="0.95"/><circle cx="165" cy="72.0" r="0.95"/><circle cx="165" cy="80.0" r="0.95"/></g>
-            <g fill="#9db0c1" opacity=".3"><circle cx="175" cy="40.0" r="0.95"/><circle cx="175" cy="48.0" r="0.95"/><circle cx="175" cy="56.0" r="0.95"/><circle cx="175" cy="64.0" r="0.95"/><circle cx="175" cy="72.0" r="0.95"/><circle cx="175" cy="80.0" r="0.95"/></g>
+            <!-- Durchgang 2: Flaechen -->
+            <rect x="20" y="78" width="318" height="10" rx="2" fill="url(#mFrame)"/>
+            <rect x="26" y="88" width="306" height="14" rx="2" fill="url(#mRed)"/>
+            <rect x="252" y="14" width="84" height="74" rx="4" fill="url(#mCab)"/>
+            <path d="M246 16 L342 16 L342 26 L246 26 Z" fill="url(#mRoof)"/>
+            <rect x="66" y="28" width="192" height="50" rx="14" fill="url(#mBoiler)"/>
+            <path d="M126 30 L126 18 A20 12 0 0 1 166 18 L166 30 Z" fill="url(#mBoiler)"/>
+            <path d="M186 30 L186 20 A15 10 0 0 1 216 20 L216 30 Z" fill="url(#mBoiler)"/>
+            <rect x="24" y="22" width="56" height="62" rx="24" fill="url(#mSmoke)"/>
+            <path d="M34 26 L36 10 L30 10 L30 3 L66 3 L66 10 L60 10 L62 26 Z" fill="url(#mSmoke)"/>
+            <path d="M46 58 L46 20 Q46 13 54 13 L92 13 L92 58 Z" fill="url(#mDeflector)"/>
+            <rect x="86" y="86" width="46" height="30" rx="7" fill="url(#mCyl)"/>
+
+            <!-- ========== Oberflaeche: Reflexion statt flachem Verlauf ========== -->
+            <!-- Kessel spiegelt oben den Nachthimmel, unten das warme Bodenlicht -->
+            <rect x="70" y="30" width="184" height="14" rx="7" fill="url(#mSkyRefl)"/>
+            <rect x="70" y="66" width="184" height="12" rx="6" fill="url(#mWarmRefl)"/>
+            <rect x="74" y="33" width="176" height="4" rx="2" fill="#dceaf7" opacity=".5"/>
+            <rect x="28" y="26" width="48" height="12" rx="6" fill="url(#mSkyRefl)"/>
+            <rect x="28" y="68" width="48" height="12" rx="6" fill="url(#mWarmRefl)"/>
+
+            <!-- Weiche Verschattung unter den Aufbauten -->
+            <rect x="30" y="74" width="292" height="6" fill="#000" opacity=".45" filter="url(#fSoft)"/>
+            <rect x="30" y="86" width="300" height="4" fill="#000" opacity=".5" filter="url(#fSoft)"/>
+            <rect x="248" y="24" width="90" height="5" fill="#000" opacity=".4" filter="url(#fSoft)"/>
+
+            <!-- Kesselringe -->
+            <g stroke="#0a0e13" stroke-width="4" opacity=".8">
+              <line x1="108" y1="29" x2="108" y2="77"/>
+              <line x1="176" y1="29" x2="176" y2="77"/>
+              <line x1="238" y1="29" x2="238" y2="77"/>
+            </g>
+            <g stroke="#7b8b9b" stroke-width="1.2" opacity=".45">
+              <line x1="110.4" y1="32" x2="110.4" y2="62"/>
+              <line x1="178.4" y1="32" x2="178.4" y2="62"/>
+              <line x1="240.4" y1="32" x2="240.4" y2="62"/>
+            </g>
 
             <!-- Handlauf -->
-            <g opacity=".34">
-              <line x1="68" y1="47" x2="176" y2="47" stroke="#bccadb" stroke-width="1.4" stroke-linecap="round"/>
-              <line x1="76" y1="47" x2="76" y2="52" stroke="#7d8b99" stroke-width="1.4"/>
-              <line x1="118" y1="47" x2="118" y2="52" stroke="#7d8b99" stroke-width="1.4"/>
-              <line x1="160" y1="47" x2="160" y2="52" stroke="#7d8b99" stroke-width="1.4"/>
+            <g opacity=".4">
+              <line x1="76" y1="40" x2="250" y2="40" stroke="#c7d5e3" stroke-width="1.5" stroke-linecap="round"/>
+              <line x1="100" y1="40" x2="100" y2="45" stroke="#7d8b99" stroke-width="1.4"/>
+              <line x1="164" y1="40" x2="164" y2="45" stroke="#7d8b99" stroke-width="1.4"/>
+              <line x1="228" y1="40" x2="228" y2="45" stroke="#7d8b99" stroke-width="1.4"/>
+            </g>
+            <!-- Speiseleitung -->
+            <path d="M78 71 L248 71" stroke="#03060a" stroke-width="5" stroke-linecap="round"/>
+            <path d="M78 71 L248 71" stroke="#46535f" stroke-width="2.6" stroke-linecap="round"/>
+
+            <g fill="#aebccb" opacity=".34"><circle cx="74.0" cy="30" r="1.1"/><circle cx="84.4" cy="30" r="1.1"/><circle cx="94.7" cy="30" r="1.1"/><circle cx="105.1" cy="30" r="1.1"/><circle cx="115.4" cy="30" r="1.1"/><circle cx="125.8" cy="30" r="1.1"/><circle cx="136.1" cy="30" r="1.1"/><circle cx="146.5" cy="30" r="1.1"/><circle cx="156.8" cy="30" r="1.1"/><circle cx="167.2" cy="30" r="1.1"/><circle cx="177.5" cy="30" r="1.1"/><circle cx="187.9" cy="30" r="1.1"/><circle cx="198.2" cy="30" r="1.1"/><circle cx="208.6" cy="30" r="1.1"/><circle cx="218.9" cy="30" r="1.1"/><circle cx="229.3" cy="30" r="1.1"/><circle cx="239.6" cy="30" r="1.1"/><circle cx="250.0" cy="30" r="1.1"/></g>
+            <g fill="#aebccb" opacity=".34"><circle cx="74.0" cy="76" r="1.1"/><circle cx="84.4" cy="76" r="1.1"/><circle cx="94.7" cy="76" r="1.1"/><circle cx="105.1" cy="76" r="1.1"/><circle cx="115.4" cy="76" r="1.1"/><circle cx="125.8" cy="76" r="1.1"/><circle cx="136.1" cy="76" r="1.1"/><circle cx="146.5" cy="76" r="1.1"/><circle cx="156.8" cy="76" r="1.1"/><circle cx="167.2" cy="76" r="1.1"/><circle cx="177.5" cy="76" r="1.1"/><circle cx="187.9" cy="76" r="1.1"/><circle cx="198.2" cy="76" r="1.1"/><circle cx="208.6" cy="76" r="1.1"/><circle cx="218.9" cy="76" r="1.1"/><circle cx="229.3" cy="76" r="1.1"/><circle cx="239.6" cy="76" r="1.1"/><circle cx="250.0" cy="76" r="1.1"/></g>
+            <g fill="#aebccb" opacity=".34"><circle cx="330" cy="20.0" r="1.1"/><circle cx="330" cy="29.1" r="1.1"/><circle cx="330" cy="38.3" r="1.1"/><circle cx="330" cy="47.4" r="1.1"/><circle cx="330" cy="56.6" r="1.1"/><circle cx="330" cy="65.7" r="1.1"/><circle cx="330" cy="74.9" r="1.1"/><circle cx="330" cy="84.0" r="1.1"/></g>
+            <g fill="#aebccb" opacity=".34"><circle cx="258.0" cy="19" r="1.1"/><circle cx="268.0" cy="19" r="1.1"/><circle cx="278.0" cy="19" r="1.1"/><circle cx="288.0" cy="19" r="1.1"/><circle cx="298.0" cy="19" r="1.1"/><circle cx="308.0" cy="19" r="1.1"/><circle cx="318.0" cy="19" r="1.1"/><circle cx="328.0" cy="19" r="1.1"/></g>
+
+            <!-- ================= Windleitblech ================= -->
+            <!-- Fuge zum Kessel, damit das Blech als eigenes Bauteil liest -->
+            <path d="M104 12 L104 60" stroke="#000" stroke-width="5" opacity=".5"/>
+            <path d="M60 60 L102 60" stroke="#000" stroke-width="5" opacity=".45"/>
+            <path d="M60 60 L60 20 Q60 12 69 12 L102 12 L102 60 Z" fill="url(#mSkyRefl)" opacity=".85"/>
+            <path d="M61 20 Q61 13.5 69 13.5 L102 13.5" fill="none" stroke="#d8e6f4" stroke-width="1.8" opacity=".6"/>
+            <path d="M63 24 L63 56" stroke="#8fa2b4" stroke-width="1.2" opacity=".3"/>
+            <!-- ================= Rauchkammer ================= -->
+            <circle cx="40" cy="53" r="21" fill="#141a20"/>
+            <circle cx="40" cy="53" r="21" fill="none" stroke="#05090d" stroke-width="2"/>
+            <circle cx="40" cy="53" r="21" fill="url(#mDoor)"/>
+            <g stroke="#67757f" stroke-width="1.1" opacity=".38">
+              <line x1="40" y1="33" x2="40" y2="73"/><line x1="26" y1="39" x2="54" y2="67"/>
+              <line x1="54" y1="39" x2="26" y2="67"/><line x1="20" y1="53" x2="60" y2="53"/>
+            </g>
+            <circle cx="40" cy="53" r="5.5" fill="#2b343d" stroke="#05090d" stroke-width="1.6"/>
+            <circle cx="40" cy="53" r="2" fill="#98a7b5"/>
+            <g fill="#2f3941" stroke="#05090d" stroke-width="1">
+              <rect x="19" y="44" width="5" height="5" rx="1.5"/>
+              <rect x="19" y="57" width="5" height="5" rx="1.5"/>
             </g>
 
-            <!-- Speiseleitung am unteren Kesselrand -->
-            <path d="M68 79 L172 79" stroke="#04080c" stroke-width="5" stroke-linecap="round"/>
-            <path d="M68 79 L172 79" stroke="#4a5866" stroke-width="2.6" stroke-linecap="round"/>
-            <g stroke="#39434e" stroke-width="2" opacity=".8">
-              <line x1="86" y1="76" x2="86" y2="82"/>
-              <line x1="128" y1="76" x2="128" y2="82"/>
-              <line x1="160" y1="76" x2="160" y2="82"/>
-            </g>
-
-            <g fill="#9db0c1" opacity=".42"><circle cx="66.0" cy="33.5" r="1.15"/><circle cx="75.3" cy="33.5" r="1.15"/><circle cx="84.7" cy="33.5" r="1.15"/><circle cx="94.0" cy="33.5" r="1.15"/><circle cx="103.3" cy="33.5" r="1.15"/><circle cx="112.7" cy="33.5" r="1.15"/><circle cx="122.0" cy="33.5" r="1.15"/><circle cx="131.3" cy="33.5" r="1.15"/><circle cx="140.7" cy="33.5" r="1.15"/><circle cx="150.0" cy="33.5" r="1.15"/><circle cx="159.3" cy="33.5" r="1.15"/><circle cx="168.7" cy="33.5" r="1.15"/><circle cx="178.0" cy="33.5" r="1.15"/></g>
-            <g fill="#9db0c1" opacity=".42"><circle cx="66.0" cy="84.5" r="1.15"/><circle cx="75.3" cy="84.5" r="1.15"/><circle cx="84.7" cy="84.5" r="1.15"/><circle cx="94.0" cy="84.5" r="1.15"/><circle cx="103.3" cy="84.5" r="1.15"/><circle cx="112.7" cy="84.5" r="1.15"/><circle cx="122.0" cy="84.5" r="1.15"/><circle cx="131.3" cy="84.5" r="1.15"/><circle cx="140.7" cy="84.5" r="1.15"/><circle cx="150.0" cy="84.5" r="1.15"/><circle cx="159.3" cy="84.5" r="1.15"/><circle cx="168.7" cy="84.5" r="1.15"/><circle cx="178.0" cy="84.5" r="1.15"/></g>
-            <g fill="#9db0c1" opacity=".42"><circle cx="26.5" cy="32.0" r="1.15"/><circle cx="26.5" cy="41.3" r="1.15"/><circle cx="26.5" cy="50.7" r="1.15"/><circle cx="26.5" cy="60.0" r="1.15"/><circle cx="26.5" cy="69.3" r="1.15"/><circle cx="26.5" cy="78.7" r="1.15"/><circle cx="26.5" cy="88.0" r="1.15"/></g>
-            <g fill="#9db0c1" opacity=".42"><circle cx="256.5" cy="30.0" r="1.15"/><circle cx="256.5" cy="38.9" r="1.15"/><circle cx="256.5" cy="47.7" r="1.15"/><circle cx="256.5" cy="56.6" r="1.15"/><circle cx="256.5" cy="65.4" r="1.15"/><circle cx="256.5" cy="74.3" r="1.15"/><circle cx="256.5" cy="83.1" r="1.15"/><circle cx="256.5" cy="92.0" r="1.15"/></g>
-            <g fill="#9db0c1" opacity=".42"><circle cx="184.0" cy="29.5" r="1.15"/><circle cx="194.0" cy="29.5" r="1.15"/><circle cx="204.0" cy="29.5" r="1.15"/><circle cx="214.0" cy="29.5" r="1.15"/><circle cx="224.0" cy="29.5" r="1.15"/><circle cx="234.0" cy="29.5" r="1.15"/><circle cx="244.0" cy="29.5" r="1.15"/><circle cx="254.0" cy="29.5" r="1.15"/></g>
-            <g fill="#9db0c1" opacity=".3"><circle cx="30" cy="88.0" r="1"/><circle cx="30" cy="94.0" r="1"/></g>
-
-            <!-- ==================== Anbauteile ==================== -->
-            <!-- Sicherheitsventile auf dem Dampfdom -->
-            <g stroke="#04080c" stroke-width="4.5" stroke-linecap="round">
-              <line x1="110" y1="26" x2="110" y2="20"/><line x1="122" y1="26" x2="122" y2="19"/>
-            </g>
-            <g stroke="#c79a2a" stroke-width="2.4" stroke-linecap="round">
-              <line x1="110" y1="26" x2="110" y2="20"/><line x1="122" y1="26" x2="122" y2="19"/>
-            </g>
-            <circle cx="110" cy="19.5" r="2.4" fill="#04080c"/><circle cx="110" cy="19.5" r="1.4" fill="#d9ab35"/>
-            <circle cx="122" cy="18.5" r="2.4" fill="#04080c"/><circle cx="122" cy="18.5" r="1.4" fill="#d9ab35"/>
-
-            <!-- Glocke auf Sockel -->
-            <rect x="79" y="30" width="11" height="4" rx="1.5" fill="#04080c"/>
-            <rect x="80" y="30.8" width="9" height="2.4" rx="1.2" fill="#4a5561"/>
-            <path d="M78.4 30.5 Q79.8 22.5 84.5 21.8 Q89.2 22.5 90.6 30.5 Z"
-                  fill="#04080c" stroke="#04080c" stroke-width="3.6" stroke-linejoin="round"/>
-            <path d="M78.4 30.5 Q79.8 22.5 84.5 21.8 Q89.2 22.5 90.6 30.5 Z" fill="url(#gBrass)"/>
-            <path d="M80.6 29.6 Q81.6 23.8 84 23" fill="none" stroke="#ffeec0" stroke-width="1.1" opacity=".65"/>
-            <circle cx="84.5" cy="20.6" r="2" fill="#04080c"/><circle cx="84.5" cy="20.4" r="1.2" fill="#d9ab35"/>
-            <circle cx="84.5" cy="32.4" r="1.5" fill="#04080c"/><circle cx="84.5" cy="32.2" r="1" fill="#c79a2a"/>
-
-            <!-- Dampfpfeife -->
-            <rect x="167" y="17" width="7" height="16" rx="2.5" fill="#04080c"/>
-            <rect x="168.2" y="18.2" width="4.6" height="13.6" rx="2" fill="url(#gBrass)"/>
-            <rect x="165" y="15" width="11" height="4" rx="2" fill="#04080c"/>
-            <rect x="166" y="15.8" width="9" height="2.4" rx="1.2" fill="#d9ab35"/>
-
-            <!-- ============ Rauchkammertuer ============ -->
-            <ellipse cx="31" cy="58" rx="7" ry="26" fill="#232c35"/>
-            <ellipse cx="31" cy="58" rx="7" ry="26" fill="none" stroke="#0a1015" stroke-width="1.6"/>
-            <g stroke="#6a7987" stroke-width=".9" opacity=".3">
-              <line x1="31" y1="34" x2="31" y2="82"/>
-              <path d="M26.4 41 L35.6 75 M35.6 41 L26.4 75"/>
-            </g>
-            <g fill="#3d4a56" stroke="#0a1015" stroke-width="1">
-              <rect x="23.4" y="43" width="5" height="4.5" rx="1.5"/>
-              <rect x="23.4" y="68" width="5" height="4.5" rx="1.5"/>
-            </g>
-            <circle cx="31" cy="72" r="3.6" fill="#3d4a56" stroke="#0a1015" stroke-width="1.4"/>
-            <line x1="31" y1="67.5" x2="31" y2="76.5" stroke="#96a5b3" stroke-width="1.4" stroke-linecap="round"/>
-            <path d="M28 36 A7 26 0 0 0 28 80" fill="none" stroke="#5b6b7a" stroke-width="1.2" opacity=".5"/>
-
-            <!-- Spitzenlicht -->
-            <path d="M14 46 L0 34 L0 76 L14 64 Z" fill="#ffe3a0" opacity=".13"/>
-            <circle class="lamp" cx="31" cy="50" r="8" fill="url(#gLamp)" stroke="#04080c" stroke-width="2" filter="url(#fGlow)"/>
-            <circle cx="29" cy="47.5" r="2.4" fill="#fffdf2" opacity=".85"/>
+            <!-- Spitzenlichter -->
+            <path d="M12 44 L0 32 L0 74 L12 62 Z" fill="#ffe3a0" opacity=".12"/>
+            <circle class="lamp" cx="26" cy="30" r="6" fill="url(#mLamp)" stroke="#03060a" stroke-width="2" filter="url(#fGlow)"/>
+            <circle cx="22" cy="76" r="5" fill="url(#mLamp)" stroke="#03060a" stroke-width="2"/>
 
             <!-- Schornstein -->
-            <ellipse cx="47" cy="4" rx="17" ry="3.6" fill="#05090d"/>
-            <ellipse cx="47" cy="3.4" rx="17" ry="3.4" fill="#0e161d"/>
-            <path d="M30 3 L64 3" stroke="#8fa3b5" stroke-width="1.4" opacity=".55"/>
-            <path d="M32.6 32 L35.4 14" stroke="#8fa3b5" stroke-width="1.3" opacity=".4"/>
+            <ellipse cx="48" cy="4.5" rx="18" ry="3.4" fill="#05090d"/>
+            <ellipse cx="48" cy="4" rx="18" ry="3" fill="#0d141a"/>
+            <path d="M31 4 L65 4" stroke="#93a4b5" stroke-width="1.4" opacity=".5"/>
 
-            <!-- ============ Fuehrerhaus ============ -->
-            <!-- Blechstoesse -->
-            <g stroke="#2a1108" stroke-width="1.6" opacity=".45">
-              <line x1="192" y1="32" x2="192" y2="94"/>
-              <line x1="246" y1="32" x2="246" y2="94"/>
+            <!-- Dome: Aufsaetze -->
+            <g stroke="#03060a" stroke-width="4.5" stroke-linecap="round">
+              <line x1="138" y1="19" x2="138" y2="12"/><line x1="152" y1="19" x2="152" y2="11"/>
             </g>
-            <g stroke="#d59277" stroke-width="1" opacity=".22">
-              <line x1="193.4" y1="34" x2="193.4" y2="92"/>
-              <line x1="247.4" y1="34" x2="247.4" y2="92"/>
+            <g stroke="#c79a2a" stroke-width="2.4" stroke-linecap="round">
+              <line x1="138" y1="19" x2="138" y2="12"/><line x1="152" y1="19" x2="152" y2="11"/>
             </g>
 
-            <rect x="194" y="42" width="48" height="32" rx="4" fill="#04080c"/>
-            <rect class="win" x="196" y="44" width="44" height="28" rx="3" fill="url(#gWin)" filter="url(#fGlow)"/>
-            <line x1="218" y1="44" x2="218" y2="72" stroke="#2a1108" stroke-width="2.6"/>
-            <rect x="196" y="44" width="44" height="9" fill="#fff8dd" opacity=".28"/>
-
-            <!-- Zierschild unter dem Fenster -->
-            <rect x="203" y="79" width="28" height="10" rx="5" fill="#04080c"/>
-            <rect x="204.2" y="80.2" width="25.6" height="7.6" rx="3.8" fill="url(#gBrass)"/>
-            <line x1="208" y1="84" x2="226" y2="84" stroke="#5e4408" stroke-width="1.4" opacity=".45"/>
-
-            <!-- Tuer und Griffstange -->
-            <line x1="250" y1="34" x2="250" y2="92" stroke="#2a1108" stroke-width="2" opacity=".55"/>
-            <line x1="255" y1="46" x2="255" y2="74" stroke="#d9c48a" stroke-width="1.6" opacity=".5" stroke-linecap="round"/>
-            <path d="M171 27.5 Q219 9 267 27.5" fill="none" stroke="#c99a80" stroke-width="1.6" opacity=".5"/>
-            <path d="M172 37 Q219 18.5 266 37" fill="none" stroke="#1b0b06" stroke-width="1.6" opacity=".5"/>
-
-            <!-- Trittstufen zum Fuehrerhaus -->
-            <g fill="#04080c">
-              <rect x="250" y="92" width="8" height="24" rx="2.5"/>
-              <rect x="234" y="99" width="24" height="6" rx="2"/>
-              <rect x="238" y="110" width="20" height="6" rx="2"/>
+            <!-- ================= Fuehrerhaus ================= -->
+            <rect x="264" y="30" width="56" height="30" rx="3" fill="#03060a"/>
+            <rect class="win" x="266" y="32" width="52" height="26" rx="2" fill="url(#mWin)" filter="url(#fGlow)"/>
+            <line x1="292" y1="32" x2="292" y2="58" stroke="#1a0d09" stroke-width="2.6"/>
+            <rect x="266" y="32" width="52" height="8" fill="#fff8dd" opacity=".26"/>
+            <g stroke="#1a0d09" stroke-width="1.8" opacity=".5">
+              <line x1="258" y1="20" x2="258" y2="86"/><line x1="326" y1="20" x2="326" y2="86"/>
             </g>
-            <g fill="#38434e">
-              <rect x="251.4" y="93.4" width="5.2" height="21.2" rx="2"/>
-              <rect x="235.4" y="100.2" width="21.2" height="3.6" rx="1.5"/>
-              <rect x="239.4" y="111.2" width="17.2" height="3.6" rx="1.5"/>
+            <rect x="274" y="66" width="36" height="10" rx="5" fill="#03060a"/>
+            <rect x="275.4" y="67.4" width="33.2" height="7.2" rx="3.6" fill="url(#mBrass)"/>
+            <line x1="280" y1="71" x2="304" y2="71" stroke="#5e4408" stroke-width="1.4" opacity=".45"/>
+            <path d="M247 17 L341 17" stroke="#b98878" stroke-width="1.6" opacity=".45"/>
+
+            <!-- Trittstufen -->
+            <g fill="#03060a">
+              <rect x="322" y="88" width="8" height="26" rx="2.5"/>
+              <rect x="306" y="96" width="24" height="6" rx="2"/>
+              <rect x="310" y="108" width="20" height="6" rx="2"/>
+            </g>
+            <g fill="#8f2020">
+              <rect x="323.4" y="89.4" width="5.2" height="23.2" rx="2"/>
+              <rect x="307.4" y="97.2" width="21.2" height="3.6" rx="1.5"/>
+              <rect x="311.4" y="109.2" width="17.2" height="3.6" rx="1.5"/>
             </g>
 
+            <!-- Zylinder -->
+            <rect x="89" y="89" width="40" height="5" rx="2.5" fill="#8b9aa8" opacity=".45"/>
+            <rect x="89" y="106" width="40" height="7" rx="3.5" fill="#000" opacity=".32"/>
+            <rect x="84" y="87" width="10" height="28" rx="4" fill="#03060a"/>
+            <rect x="85.4" y="88.4" width="7.2" height="25.2" rx="3" fill="#39434e"/>
+            <g fill="#aebccb" opacity=".4"><circle cx="89" cy="92.0" r="0.9"/><circle cx="89" cy="98.0" r="0.9"/><circle cx="89" cy="104.0" r="0.9"/><circle cx="89" cy="110.0" r="0.9"/></g>
 
-            <!-- ============ Zylinder ============ -->
-            <rect x="57" y="99" width="36" height="5" rx="2.5" fill="#8b9aa8" opacity=".5"/>
-            <rect x="57" y="115" width="36" height="6" rx="3" fill="#000" opacity=".3"/>
-            <rect x="53" y="97" width="9" height="26" rx="4" fill="#04080c"/>
-            <rect x="54.4" y="98.4" width="6.2" height="23.2" rx="3" fill="#3a4552"/>
-            <g fill="#aebccb" opacity=".4"><circle cx="57.5" cy="101.0" r="0.9"/><circle cx="57.5" cy="107.0" r="0.9"/><circle cx="57.5" cy="113.0" r="0.9"/><circle cx="57.5" cy="119.0" r="0.9"/></g>
-
-            <!-- ============ Schienenraeumer ============ -->
-            <g stroke="#2b0f08" stroke-width="2.4" opacity=".6" stroke-linecap="round">
-              <path d="M24 101 L12 135"/><path d="M27 109 L20 135"/><path d="M21 93 L6 137"/>
+            <!-- Rahmenwange: Aussparungen und Zierlinie -->
+            <g fill="#000" opacity=".3">
+              <rect x="118" y="91" width="22" height="8" rx="3"/>
+              <rect x="186" y="91" width="22" height="8" rx="3"/>
+              <rect x="254" y="91" width="22" height="8" rx="3"/>
             </g>
-            <path d="M28 92 L4 140" stroke="#d99a78" stroke-width="1.5" opacity=".4"/>
-            <path d="M6 137 L30 137" stroke="#2b0f08" stroke-width="2.4" opacity=".55"/>
+            <rect x="28" y="89" width="302" height="2" fill="#e08a8a" opacity=".25"/>
           </svg>
         </div>
 
-        <!-- ========================= Tender ========================= -->
+        <!-- ====================== Kastentender ====================== -->
         <div class="part tender">
-          <svg viewBox="0 0 130 150" width="130" height="150" aria-hidden="true">
-            <ellipse cx="65" cy="147" rx="60" ry="5" fill="#000" opacity=".38"/>
-            <rect x="0" y="102" width="16" height="10" rx="2" fill="#1b232b" stroke="#04080c" stroke-width="3"/>
-            <rect x="114" y="102" width="16" height="10" rx="2" fill="#1b232b" stroke="#04080c" stroke-width="3"/>
-            <use href="#wheelSmall" x="34" y="133.5"/>
-            <use href="#wheelSmall" x="96" y="133.5"/>
+          <svg viewBox="0 0 150 150" width="150" height="150" aria-hidden="true">
+            <ellipse cx="75" cy="147" rx="70" ry="5" fill="#000" opacity=".42"/>
+            <rect x="0" y="90" width="12" height="10" rx="2" fill="#161b21" stroke="#03060a" stroke-width="3"/>
+            <rect x="138" y="90" width="12" height="10" rx="2" fill="#161b21" stroke="#03060a" stroke-width="3"/>
+            <use href="#wheelSmall" x="34" y="135"/>
+            <use href="#wheelSmall" x="75" y="135"/>
+            <use href="#wheelSmall" x="116" y="135"/>
 
-            <!-- Durchgang 1: gemeinsame Silhouette (traegt die Aussenkontur) -->
-            <g fill="#04080c" stroke="#04080c" stroke-width="6" stroke-linejoin="round">
-              <rect x="6" y="100" width="118" height="17" rx="3"/>
-              <rect x="10" y="56" width="110" height="46" rx="4"/>
-              <path d="M14 56 L23 44 L35 49 L47 37 L61 44 L75 35 L89 46 L101 42 L116 56 Z"/>
+            <!-- Durchgang 1: gemeinsame Silhouette -->
+            <g fill="#03060a" stroke="#03060a" stroke-width="6.5" stroke-linejoin="round">
+              <rect x="6" y="88" width="138" height="14" rx="2"/>
+              <rect x="4" y="78" width="142" height="10" rx="2"/>
+              <rect x="10" y="34" width="130" height="46" rx="3"/>
+              <path d="M16 34 L26 24 L40 29 L54 20 L70 27 L86 19 L102 28 L118 24 L134 34 Z"/>
             </g>
-            <!-- Durchgang 2: Flaechen, ohne eigene Kontur -->
-            <rect x="6" y="100" width="118" height="17" rx="3" fill="url(#gFrame)"/>
-            <rect x="10" y="56" width="110" height="46" rx="4" fill="url(#gCab)"/>
-            <path d="M14 56 L23 44 L35 49 L47 37 L61 44 L75 35 L89 46 L101 42 L116 56 Z" fill="url(#gCoal)"/>
+            <!-- Durchgang 2: Flaechen -->
+            <rect x="6" y="88" width="138" height="14" rx="2" fill="url(#mRed)"/>
+            <rect x="4" y="78" width="142" height="10" rx="2" fill="url(#mFrame)"/>
+            <rect x="10" y="34" width="130" height="46" rx="3" fill="url(#mCab)"/>
+            <path d="M16 34 L26 24 L40 29 L54 20 L70 27 L86 19 L102 28 L118 24 L134 34 Z" fill="url(#mCoal)"/>
 
-            <rect x="12" y="58" width="106" height="7" rx="3" fill="#e0a48c" opacity=".22"/>
-            <rect x="12" y="88" width="106" height="14" rx="4" fill="#000" opacity=".28"/>
-            <rect x="10" y="100" width="110" height="5" fill="#000" opacity=".38"/>
-
-            <!-- Blechfelder mit Stossnaehten -->
-            <g stroke="#2a1108" stroke-width="1.8" opacity=".45">
-              <line x1="38" y1="58" x2="38" y2="100"/>
-              <line x1="65" y1="58" x2="65" y2="100"/>
-              <line x1="92" y1="58" x2="92" y2="100"/>
+            <rect x="12" y="36" width="126" height="12" rx="5" fill="url(#mSkyRefl)"/>
+            <rect x="12" y="66" width="126" height="12" rx="4" fill="url(#mWarmRefl)"/>
+            <rect x="10" y="76" width="130" height="5" fill="#000" opacity=".45" filter="url(#fSoft)"/>
+            <g stroke="#1a0d09" stroke-width="1.8" opacity=".45">
+              <line x1="44" y1="36" x2="44" y2="78"/><line x1="75" y1="36" x2="75" y2="78"/>
+              <line x1="106" y1="36" x2="106" y2="78"/>
             </g>
-            <g stroke="#dd9c81" stroke-width="1" opacity=".2">
-              <line x1="39.4" y1="60" x2="39.4" y2="98"/>
-              <line x1="66.4" y1="60" x2="66.4" y2="98"/>
-              <line x1="93.4" y1="60" x2="93.4" y2="98"/>
-            </g>
-            <rect x="12" y="93" width="106" height="3.4" fill="#c79a2a" opacity=".55"/>
-            <rect x="12" y="97.6" width="106" height="1.4" fill="#c79a2a" opacity=".3"/>
+            <rect x="12" y="71" width="126" height="2.6" fill="#e08a8a" opacity=".3"/>
 
-            <!-- Wassereinfuellstutzen -->
-            <rect x="100" y="49" width="14" height="9" rx="3" fill="#04080c"/>
-            <rect x="101.4" y="50.4" width="11.2" height="6.2" rx="2.5" fill="#3d4a56"/>
-            <circle cx="107" cy="53.5" r="1.6" fill="#9db0c1" opacity=".7"/>
-
-            <!-- Leiter am Ende -->
-            <g stroke="#04080c" stroke-width="4" stroke-linecap="round">
-              <line x1="112" y1="62" x2="112" y2="96"/><line x1="120" y1="62" x2="120" y2="96"/>
+            <!-- Wasserkastendeckel und Leiter -->
+            <rect x="118" y="27" width="16" height="9" rx="3" fill="#03060a"/>
+            <rect x="119.4" y="28.4" width="13.2" height="6.2" rx="2.5" fill="#37414b"/>
+            <g stroke="#03060a" stroke-width="4" stroke-linecap="round">
+              <line x1="128" y1="40" x2="128" y2="74"/><line x1="136" y1="40" x2="136" y2="74"/>
             </g>
-            <g stroke="#4a4038" stroke-width="2" stroke-linecap="round">
-              <line x1="112" y1="62" x2="112" y2="96"/><line x1="120" y1="62" x2="120" y2="96"/>
-              <line x1="112" y1="70" x2="120" y2="70"/><line x1="112" y1="80" x2="120" y2="80"/>
-              <line x1="112" y1="90" x2="120" y2="90"/>
+            <g stroke="#7b2a2a" stroke-width="2" stroke-linecap="round">
+              <line x1="128" y1="40" x2="128" y2="74"/><line x1="136" y1="40" x2="136" y2="74"/>
+              <line x1="128" y1="48" x2="136" y2="48"/><line x1="128" y1="57" x2="136" y2="57"/>
+              <line x1="128" y1="66" x2="136" y2="66"/>
             </g>
 
-            <!-- Kohle -->
             <g fill="#5f5f6b" opacity=".8">
-              <circle cx="38" cy="49" r="3"/><circle cx="63" cy="47" r="2.5"/>
-              <circle cx="87" cy="50" r="3"/><circle cx="104" cy="50" r="2"/>
+              <circle cx="44" cy="30" r="3"/><circle cx="72" cy="27" r="2.5"/><circle cx="100" cy="30" r="3"/>
             </g>
-            <g fill="#8d8d9c" opacity=".45">
-              <circle cx="36.6" cy="47.6" r="1.1"/><circle cx="61.6" cy="45.6" r="1"/>
-              <circle cx="85.6" cy="48.6" r="1.1"/>
-            </g>
-            <path d="M14 56 L23 44 L35 49 L47 37" fill="none" stroke="#6e6e7d" stroke-width="1.2" opacity=".45"/>
+            <path d="M16 34 L26 24 L40 29 L54 20" fill="none" stroke="#6e6e7d" stroke-width="1.2" opacity=".4"/>
 
-            <g fill="#9db0c1" opacity=".42"><circle cx="16.0" cy="59" r="1.15"/><circle cx="24.9" cy="59" r="1.15"/><circle cx="33.8" cy="59" r="1.15"/><circle cx="42.7" cy="59" r="1.15"/><circle cx="51.6" cy="59" r="1.15"/><circle cx="60.5" cy="59" r="1.15"/><circle cx="69.5" cy="59" r="1.15"/><circle cx="78.4" cy="59" r="1.15"/><circle cx="87.3" cy="59" r="1.15"/><circle cx="96.2" cy="59" r="1.15"/><circle cx="105.1" cy="59" r="1.15"/><circle cx="114.0" cy="59" r="1.15"/></g>
-            <g fill="#9db0c1" opacity=".42"><circle cx="16.0" cy="99" r="1.15"/><circle cx="24.9" cy="99" r="1.15"/><circle cx="33.8" cy="99" r="1.15"/><circle cx="42.7" cy="99" r="1.15"/><circle cx="51.6" cy="99" r="1.15"/><circle cx="60.5" cy="99" r="1.15"/><circle cx="69.5" cy="99" r="1.15"/><circle cx="78.4" cy="99" r="1.15"/><circle cx="87.3" cy="99" r="1.15"/><circle cx="96.2" cy="99" r="1.15"/><circle cx="105.1" cy="99" r="1.15"/><circle cx="114.0" cy="99" r="1.15"/></g>
-            <g fill="#9db0c1" opacity=".3"><circle cx="15" cy="62.0" r="1"/><circle cx="15" cy="70.5" r="1"/><circle cx="15" cy="79.0" r="1"/><circle cx="15" cy="87.5" r="1"/><circle cx="15" cy="96.0" r="1"/></g>
+            <g fill="#aebccb" opacity=".34"><circle cx="16.0" cy="37" r="1.1"/><circle cx="25.1" cy="37" r="1.1"/><circle cx="34.2" cy="37" r="1.1"/><circle cx="43.2" cy="37" r="1.1"/><circle cx="52.3" cy="37" r="1.1"/><circle cx="61.4" cy="37" r="1.1"/><circle cx="70.5" cy="37" r="1.1"/><circle cx="79.5" cy="37" r="1.1"/><circle cx="88.6" cy="37" r="1.1"/><circle cx="97.7" cy="37" r="1.1"/><circle cx="106.8" cy="37" r="1.1"/><circle cx="115.8" cy="37" r="1.1"/><circle cx="124.9" cy="37" r="1.1"/><circle cx="134.0" cy="37" r="1.1"/></g>
+            <g fill="#aebccb" opacity=".34"><circle cx="16.0" cy="77" r="1.1"/><circle cx="25.1" cy="77" r="1.1"/><circle cx="34.2" cy="77" r="1.1"/><circle cx="43.2" cy="77" r="1.1"/><circle cx="52.3" cy="77" r="1.1"/><circle cx="61.4" cy="77" r="1.1"/><circle cx="70.5" cy="77" r="1.1"/><circle cx="79.5" cy="77" r="1.1"/><circle cx="88.6" cy="77" r="1.1"/><circle cx="97.7" cy="77" r="1.1"/><circle cx="106.8" cy="77" r="1.1"/><circle cx="115.8" cy="77" r="1.1"/><circle cx="124.9" cy="77" r="1.1"/><circle cx="134.0" cy="77" r="1.1"/></g>
           </svg>
         </div>
 
-        <!-- ===================== Personenwagen ====================== -->
+        <!-- ==================== Schnellzugwagen ===================== -->
         <div class="part coach">
-          <svg viewBox="0 0 175 150" width="175" height="150" aria-hidden="true">
-            <ellipse cx="87" cy="147" rx="82" ry="5" fill="#000" opacity=".38"/>
-            <rect x="0" y="102" width="16" height="10" rx="2" fill="#1b232b" stroke="#04080c" stroke-width="3"/>
-            <rect x="159" y="102" width="16" height="10" rx="2" fill="#1b232b" stroke="#04080c" stroke-width="3"/>
+          <svg viewBox="0 0 190 150" width="190" height="150" aria-hidden="true">
+            <ellipse cx="95" cy="147" rx="90" ry="5" fill="#000" opacity=".42"/>
+            <rect x="0" y="90" width="12" height="10" rx="2" fill="#161b21" stroke="#03060a" stroke-width="3"/>
+            <rect x="178" y="90" width="12" height="10" rx="2" fill="#161b21" stroke="#03060a" stroke-width="3"/>
 
-            <use href="#wheelSmall" x="28" y="133.5"/>
-            <use href="#wheelSmall" x="66" y="133.5"/>
-            <use href="#wheelSmall" x="109" y="133.5"/>
-            <use href="#wheelSmall" x="147" y="133.5"/>
+            <use href="#wheelSmall" x="34" y="135"/>
+            <use href="#wheelSmall" x="62" y="135"/>
+            <use href="#wheelSmall" x="128" y="135"/>
+            <use href="#wheelSmall" x="156" y="135"/>
+            <rect x="24" y="118" width="48" height="10" rx="4" fill="#03060a"/>
+            <rect x="26" y="119.5" width="44" height="7" rx="3" fill="#1c232a"/>
+            <rect x="118" y="118" width="48" height="10" rx="4" fill="#03060a"/>
+            <rect x="120" y="119.5" width="44" height="7" rx="3" fill="#1c232a"/>
+            <line x1="72" y1="123" x2="118" y2="123" stroke="#141a20" stroke-width="2.6"/>
 
-            <!-- Drehgestelle mit Bremsgestaenge -->
-            <rect x="18" y="115" width="58" height="11" rx="4" fill="#04080c"/>
-            <rect x="20" y="116.5" width="54" height="8" rx="3" fill="#1e262e"/>
-            <rect x="99" y="115" width="58" height="11" rx="4" fill="#04080c"/>
-            <rect x="101" y="116.5" width="54" height="8" rx="3" fill="#1e262e"/>
-            <g stroke="#151c22" stroke-width="2.4" stroke-linecap="round">
-              <line x1="76" y1="120" x2="99" y2="120"/>
+            <!-- Durchgang 1: gemeinsame Silhouette -->
+            <g fill="#03060a" stroke="#03060a" stroke-width="6.5" stroke-linejoin="round">
+              <rect x="8" y="88" width="174" height="14" rx="2"/>
+              <rect x="6" y="78" width="178" height="10" rx="2"/>
+              <rect x="10" y="34" width="170" height="46" rx="4"/>
+              <path d="M8 38 Q95 22 182 38 L182 46 L8 46 Z"/>
             </g>
+            <!-- Durchgang 2: Flaechen -->
+            <rect x="8" y="88" width="174" height="14" rx="2" fill="url(#mRed)"/>
+            <rect x="6" y="78" width="178" height="10" rx="2" fill="url(#mFrame)"/>
+            <rect x="10" y="34" width="170" height="46" rx="4" fill="url(#mCoachLo)"/>
+            <path d="M8 38 Q95 22 182 38 L182 46 L8 46 Z" fill="url(#mRoof2)"/>
 
-            <!-- Durchgang 1: gemeinsame Silhouette (traegt die Aussenkontur) -->
-            <g fill="#04080c" stroke="#04080c" stroke-width="6" stroke-linejoin="round">
-              <rect x="6" y="100" width="163" height="17" rx="3"/>
-              <rect x="8" y="50" width="159" height="52" rx="5"/>
-              <path d="M4 54 Q87.5 26 171 54 L171 61 L4 61 Z"/>
-            </g>
-            <!-- Durchgang 2: Flaechen, ohne eigene Kontur -->
-            <rect x="6" y="100" width="163" height="17" rx="3" fill="url(#gFrame)"/>
-            <rect x="8" y="50" width="159" height="52" rx="5" fill="url(#gCoach)"/>
-            <path d="M4 54 Q87.5 26 171 54 L171 61 L4 61 Z" fill="url(#gRoof2)"/>
+            <!-- Durchgehendes Fensterband in Creme -->
+            <rect x="12" y="48" width="166" height="24" rx="3" fill="#03060a"/>
+            <rect x="13.5" y="49.5" width="163" height="21" rx="2" fill="url(#mCream)"/>
 
-            <rect x="10" y="56" width="155" height="7" rx="3" fill="#9fdcbb" opacity=".18"/>
-            <rect x="10" y="88" width="155" height="14" rx="4" fill="#000" opacity=".28"/>
-            <rect x="8" y="100" width="159" height="5" fill="#000" opacity=".38"/>
-            <path d="M5 54.5 Q87.5 27 170 54.5" fill="none" stroke="#9fb8a8" stroke-width="1.6" opacity=".4"/>
-            <!-- Regenrinne -->
-            <path d="M6 60 L169 60" stroke="#0b1a12" stroke-width="2" opacity=".6"/>
-            <path d="M6 62 L169 62" stroke="#7fae94" stroke-width="1" opacity=".22"/>
-
-            <!-- Dachlueftung -->
-            <g fill="#1b271f">
-              <rect x="47" y="43" width="14" height="5" rx="2.5"/>
-              <rect x="81" y="40.5" width="14" height="5" rx="2.5"/>
-              <rect x="114" y="43" width="14" height="5" rx="2.5"/>
+            <g fill="#03060a">
+              <rect x="20" y="52" width="20" height="15" rx="2"/><rect x="46" y="52" width="20" height="15" rx="2"/>
+              <rect x="72" y="52" width="20" height="15" rx="2"/><rect x="98" y="52" width="20" height="15" rx="2"/>
+              <rect x="124" y="52" width="20" height="15" rx="2"/><rect x="150" y="52" width="20" height="15" rx="2"/>
             </g>
-            <g fill="#5d7a68" opacity=".5">
-              <rect x="48" y="43.6" width="12" height="1.4" rx=".7"/>
-              <rect x="82" y="41.1" width="12" height="1.4" rx=".7"/>
-              <rect x="115" y="43.6" width="12" height="1.4" rx=".7"/>
-            </g>
-
-            <!-- Tueren an beiden Enden -->
-            <g fill="#04080c">
-              <rect x="13" y="64" width="20" height="36" rx="3"/>
-              <rect x="142" y="64" width="20" height="36" rx="3"/>
-            </g>
-            <g fill="url(#gDoor)">
-              <rect x="14.4" y="65.4" width="17.2" height="33.2" rx="2"/>
-              <rect x="143.4" y="65.4" width="17.2" height="33.2" rx="2"/>
-            </g>
-            <g fill="#04080c">
-              <rect x="17" y="68" width="12" height="12" rx="2"/>
-              <rect x="146" y="68" width="12" height="12" rx="2"/>
-            </g>
-            <g class="win" fill="url(#gWin)">
-              <rect x="18.2" y="69.2" width="9.6" height="9.6" rx="1.5"/>
-              <rect x="147.2" y="69.2" width="9.6" height="9.6" rx="1.5"/>
-            </g>
-            <g fill="#d9c48a" opacity=".6">
-              <rect x="29" y="86" width="3" height="1.8" rx=".9"/>
-              <rect x="143" y="86" width="3" height="1.8" rx=".9"/>
-            </g>
-
-            <!-- Fensterreihe -->
-            <g fill="#04080c">
-              <rect x="40" y="64" width="25" height="25" rx="4"/><rect x="67" y="64" width="25" height="25" rx="4"/>
-              <rect x="94" y="64" width="25" height="25" rx="4"/><rect x="121" y="64" width="25" height="25" rx="4"/>
-            </g>
-            <g class="win" fill="url(#gWin)">
-              <rect x="42" y="66" width="21" height="21" rx="3"/><rect x="69" y="66" width="21" height="21" rx="3"/>
-              <rect x="96" y="66" width="21" height="21" rx="3"/><rect x="123" y="66" width="21" height="21" rx="3"/>
+            <g class="win" fill="url(#mWin)">
+              <rect x="21.2" y="53.2" width="17.6" height="12.6" rx="1.5"/><rect x="47.2" y="53.2" width="17.6" height="12.6" rx="1.5"/>
+              <rect x="73.2" y="53.2" width="17.6" height="12.6" rx="1.5"/><rect x="99.2" y="53.2" width="17.6" height="12.6" rx="1.5"/>
+              <rect x="125.2" y="53.2" width="17.6" height="12.6" rx="1.5"/><rect x="151.2" y="53.2" width="17.6" height="12.6" rx="1.5"/>
             </g>
             <g fill="#fff8dd" opacity=".3">
-              <rect x="42" y="66" width="21" height="7"/><rect x="69" y="66" width="21" height="7"/>
-              <rect x="96" y="66" width="21" height="7"/><rect x="123" y="66" width="21" height="7"/>
+              <rect x="21.2" y="53.2" width="17.6" height="4"/><rect x="47.2" y="53.2" width="17.6" height="4"/>
+              <rect x="73.2" y="53.2" width="17.6" height="4"/><rect x="99.2" y="53.2" width="17.6" height="4"/>
+              <rect x="125.2" y="53.2" width="17.6" height="4"/><rect x="151.2" y="53.2" width="17.6" height="4"/>
             </g>
 
-            <!-- Zierlinien -->
-            <rect x="10" y="93" width="155" height="3.4" fill="#c79a2a" opacity=".55"/>
-            <rect x="10" y="97.6" width="155" height="1.4" fill="#c79a2a" opacity=".3"/>
+            <rect x="12" y="40" width="166" height="8" rx="4" fill="url(#mSkyRefl)"/>
+            <rect x="12" y="72" width="166" height="8" rx="4" fill="url(#mWarmRefl)"/>
+            <rect x="10" y="76" width="170" height="5" fill="#000" opacity=".45" filter="url(#fSoft)"/>
+            <path d="M9 39 Q95 23 181 39" fill="none" stroke="#9aa9b6" stroke-width="1.6" opacity=".4"/>
 
-            <g fill="#9db0c1" opacity=".42"><circle cx="14.0" cy="57.5" r="1.15"/><circle cx="23.7" cy="57.5" r="1.15"/><circle cx="33.5" cy="57.5" r="1.15"/><circle cx="43.2" cy="57.5" r="1.15"/><circle cx="52.9" cy="57.5" r="1.15"/><circle cx="62.7" cy="57.5" r="1.15"/><circle cx="72.4" cy="57.5" r="1.15"/><circle cx="82.1" cy="57.5" r="1.15"/><circle cx="91.9" cy="57.5" r="1.15"/><circle cx="101.6" cy="57.5" r="1.15"/><circle cx="111.3" cy="57.5" r="1.15"/><circle cx="121.1" cy="57.5" r="1.15"/><circle cx="130.8" cy="57.5" r="1.15"/><circle cx="140.5" cy="57.5" r="1.15"/><circle cx="150.3" cy="57.5" r="1.15"/><circle cx="160.0" cy="57.5" r="1.15"/></g>
-            <g fill="#9db0c1" opacity=".42"><circle cx="14.0" cy="99" r="1.15"/><circle cx="23.7" cy="99" r="1.15"/><circle cx="33.5" cy="99" r="1.15"/><circle cx="43.2" cy="99" r="1.15"/><circle cx="52.9" cy="99" r="1.15"/><circle cx="62.7" cy="99" r="1.15"/><circle cx="72.4" cy="99" r="1.15"/><circle cx="82.1" cy="99" r="1.15"/><circle cx="91.9" cy="99" r="1.15"/><circle cx="101.6" cy="99" r="1.15"/><circle cx="111.3" cy="99" r="1.15"/><circle cx="121.1" cy="99" r="1.15"/><circle cx="130.8" cy="99" r="1.15"/><circle cx="140.5" cy="99" r="1.15"/><circle cx="150.3" cy="99" r="1.15"/><circle cx="160.0" cy="99" r="1.15"/></g>
+            <!-- Dachlueftung -->
+            <g fill="#161d23">
+              <rect x="52" y="30" width="16" height="5" rx="2.5"/>
+              <rect x="87" y="28" width="16" height="5" rx="2.5"/>
+              <rect x="122" y="30" width="16" height="5" rx="2.5"/>
+            </g>
+
+            <!-- Tueren -->
+            <g stroke="#2a1010" stroke-width="2" opacity=".55">
+              <line x1="16" y1="48" x2="16" y2="80"/><line x1="174" y1="48" x2="174" y2="80"/>
+            </g>
+            <rect x="12" y="74" width="166" height="2.6" fill="#e0b070" opacity=".4"/>
+
+            <g fill="#aebccb" opacity=".34"><circle cx="16.0" cy="45" r="1.1"/><circle cx="25.3" cy="45" r="1.1"/><circle cx="34.6" cy="45" r="1.1"/><circle cx="43.9" cy="45" r="1.1"/><circle cx="53.2" cy="45" r="1.1"/><circle cx="62.5" cy="45" r="1.1"/><circle cx="71.8" cy="45" r="1.1"/><circle cx="81.1" cy="45" r="1.1"/><circle cx="90.4" cy="45" r="1.1"/><circle cx="99.6" cy="45" r="1.1"/><circle cx="108.9" cy="45" r="1.1"/><circle cx="118.2" cy="45" r="1.1"/><circle cx="127.5" cy="45" r="1.1"/><circle cx="136.8" cy="45" r="1.1"/><circle cx="146.1" cy="45" r="1.1"/><circle cx="155.4" cy="45" r="1.1"/><circle cx="164.7" cy="45" r="1.1"/><circle cx="174.0" cy="45" r="1.1"/></g>
+            <g fill="#aebccb" opacity=".34"><circle cx="16.0" cy="77" r="1.1"/><circle cx="25.3" cy="77" r="1.1"/><circle cx="34.6" cy="77" r="1.1"/><circle cx="43.9" cy="77" r="1.1"/><circle cx="53.2" cy="77" r="1.1"/><circle cx="62.5" cy="77" r="1.1"/><circle cx="71.8" cy="77" r="1.1"/><circle cx="81.1" cy="77" r="1.1"/><circle cx="90.4" cy="77" r="1.1"/><circle cx="99.6" cy="77" r="1.1"/><circle cx="108.9" cy="77" r="1.1"/><circle cx="118.2" cy="77" r="1.1"/><circle cx="127.5" cy="77" r="1.1"/><circle cx="136.8" cy="77" r="1.1"/><circle cx="146.1" cy="77" r="1.1"/><circle cx="155.4" cy="77" r="1.1"/><circle cx="164.7" cy="77" r="1.1"/><circle cx="174.0" cy="77" r="1.1"/></g>
           </svg>
         </div>
 

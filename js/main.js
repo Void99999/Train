@@ -517,7 +517,7 @@
   const FIRE   = ["#fff6cc", "#ffd166", "#ff9f1c", "#f4501e", "#c1200f"];
   const SMOKE  = ["#3c3a37", "#4a4641", "#2e2c2a", "#565049"];
   /* Bewusst gedeckt und dunkel: helle Farben lesen sich sonst als Konfetti */
-  const DEBRIS = ["#1c252d", "#5a2e21", "#20402e", "#454f59", "#6b5520", "#241209"];
+  const DEBRIS = ["#151a20", "#7d1f1c", "#4a1413", "#454f59", "#6b5520", "#9c8763"];
 
   const parts = [];
   const waves = [];
