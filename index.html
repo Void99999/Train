@@ -2,292 +2,74 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Zug auf Schienen</title>
-<style>
-  :root {
-    --rail: #8d949c;
-    --rail-dark: #5d636b;
-    --sleeper: #6b4a32;
-    --ground: #3b3f31;
-  }
-
-  * { box-sizing: border-box; }
-
-  html, body {
-    height: 100%;
-    margin: 0;
-  }
-
-  body {
-    background: linear-gradient(#07131f 0%, #12293f 40%, #2b4f68 66%, #6d5f4a 70%);
-    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-    overflow: hidden;
-    user-select: none;
-    -webkit-user-select: none;
-  }
-
-  /* ---- Szene: füllt das ganze Bild ---- */
-  #scene {
-    position: absolute;
-    inset: 0;
-    overflow: hidden;
-  }
-
-  #shaker {
-    position: absolute;
-    inset: 0;
-    will-change: transform;
-  }
-
-  /* Sterne / Hintergrund */
-  .star {
-    position: absolute;
-    width: 2px;
-    height: 2px;
-    background: #fff;
-    border-radius: 50%;
-    opacity: .55;
-  }
-
-  /* Hügel im Hintergrund */
-  .hill {
-    position: absolute;
-    bottom: 29%;
-    height: 22%;
-    background: #22322c;
-    border-radius: 50% 50% 0 0 / 100% 100% 0 0;
-    opacity: .85;
-  }
-
-  /* Boden / Schotterbett */
-  #ballast {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    height: 30%;
-    background:
-      radial-gradient(circle at 10% 40%, rgba(255,255,255,.045) 0 2px, transparent 3px),
-      radial-gradient(circle at 35% 70%, rgba(255,255,255,.045) 0 2px, transparent 3px),
-      radial-gradient(circle at 68% 30%, rgba(255,255,255,.045) 0 2px, transparent 3px),
-      radial-gradient(circle at 88% 60%, rgba(255,255,255,.045) 0 2px, transparent 3px),
-      linear-gradient(#4b4f3d, var(--ground) 22%, #1b1f16);
-    background-size: 120px 100%, 160px 100%, 140px 100%, 180px 100%, 100% 100%;
-  }
-
-  /* ---- Schienen: gehen über die ganze Bildbreite ---- */
-  #track {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 20%;
-    height: 34px;
-  }
-
-  #sleepers {
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: 8px;
-    height: 22px;
-    background-image: repeating-linear-gradient(
-      to right,
-      var(--sleeper) 0 18px,
-      #2f2b22 18px 20px,
-      transparent 20px 46px
-    );
-  }
-
-  .rail {
-    position: absolute;
-    left: 0;
-    right: 0;
-    height: 6px;
-    background: linear-gradient(#cfd4da, var(--rail) 45%, var(--rail-dark));
-  }
-  /* hintere Schiene */
-  .rail.far  { top: 4px; }
-  /* vordere Schiene - liegt vor den Rädern */
-  .rail.near { top: 18px; z-index: 6; box-shadow: 0 2px 4px rgba(0,0,0,.5); }
-
-  /* ---- Zug: Räder stehen auf der vorderen Schiene ----
-     #trainWrap übernimmt das Zentrieren, #train nur das Wackeln -
-     sonst würden die rumble-Keyframes das translateX(-50%) überschreiben. */
-  #trainWrap {
-    position: absolute;
-    bottom: calc(20% + 13px);
-    left: 50%;
-    transform: translateX(-50%) scale(1);
-    transform-origin: bottom center;
-    z-index: 4;
-  }
-
-  #train {
-    display: flex;
-    align-items: flex-end;
-    gap: 4px;
-    filter: drop-shadow(0 10px 12px rgba(0,0,0,.5));
-  }
-
-  .part { position: relative; will-change: transform, opacity; }
-  .part svg { display: block; }
-
-  /* Dampfwölkchen über dem Schornstein der Lok */
-  .steam {
-    position: absolute;
-    left: 38px;
-    top: -8px;
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    background: radial-gradient(circle at 38% 32%,
-      rgba(255,255,255,.8), rgba(214,226,238,.35) 55%, rgba(214,226,238,0) 72%);
-    animation: puff 2.8s linear infinite;
-  }
-  .steam:nth-of-type(2) { animation-delay: .95s; }
-  .steam:nth-of-type(3) { animation-delay: 1.9s; }
-
-  @keyframes puff {
-    0%   { transform: translate(0,0) scale(.35); opacity: .75; }
-    100% { transform: translate(-58px,-105px) scale(2.9); opacity: 0; }
-  }
-
-  /* Vibrieren kurz vor der Explosion */
-  @keyframes rumble {
-    0%,100% { transform: translate(0,0) rotate(0deg); }
-    20%  { transform: translate(-2px,1px) rotate(-.4deg); }
-    40%  { transform: translate(2px,-1px) rotate(.4deg); }
-    60%  { transform: translate(-3px,-1px) rotate(-.3deg); }
-    80%  { transform: translate(3px,1px) rotate(.3deg); }
-  }
-  #train.rumbling { animation: rumble .09s linear infinite; }
-
-  /* Explosionslicht */
-  #flash {
-    position: absolute;
-    inset: 0;
-    background: #fff;
-    opacity: 0;
-    pointer-events: none;
-    z-index: 11;
-  }
-
-  #fx {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    z-index: 10;
-  }
-
-  /* ---- Steuerung ---- */
-  #controls {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 7%;
-    z-index: 20;
-    text-align: center;
-  }
-
-  #startBtn {
-    font: 700 20px/1 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-    letter-spacing: .14em;
-    text-transform: uppercase;
-    color: #1a1206;
-    background: linear-gradient(#ffd45e, #e8a219);
-    border: none;
-    border-radius: 999px;
-    padding: 16px 46px;
-    cursor: pointer;
-    box-shadow: 0 6px 0 #a56d0c, 0 12px 24px rgba(0,0,0,.4);
-    transition: transform .08s ease, box-shadow .08s ease, background .35s ease, color .35s ease;
-    min-width: 200px;
-  }
-  #startBtn:hover:not(:disabled):not(.done) { transform: translateY(-2px); box-shadow: 0 8px 0 #a56d0c, 0 14px 28px rgba(0,0,0,.45); }
-  #startBtn:active:not(:disabled):not(.done) { transform: translateY(4px); box-shadow: 0 2px 0 #a56d0c, 0 6px 14px rgba(0,0,0,.4); }
-
-  #startBtn.done {
-    background: linear-gradient(#6ee7ff, #2a9dd6);
-    color: #04212e;
-    box-shadow: 0 6px 0 #16637f, 0 12px 24px rgba(0,0,0,.4);
-    text-transform: none;
-    letter-spacing: .02em;
-    cursor: default;
-  }
-
-  #hint {
-    margin-top: 12px;
-    font-size: 13px;
-    color: rgba(255,255,255,.45);
-    height: 16px;
-  }
-
-  /* Auf schmalen Bildschirmen den Zug verkleinern, damit er ins Bild passt.
-     Die Schienen bleiben immer über die volle Breite. */
-  @media (max-width: 760px) {
-    #trainWrap { transform: translateX(-50%) scale(.62); }
-    #startBtn { font-size: 17px; padding: 14px 34px; min-width: 170px; }
-  }
-  @media (max-width: 520px) {
-    #trainWrap { transform: translateX(-50%) scale(.44); }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .smoke { animation: none; opacity: .3; }
-  }
-</style>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>RAIL BLAST</title>
+<link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
-<!-- Wiederverwendbare Bauteile und Farbverläufe für die Zug-Illustration -->
-<svg id="artdefs" width="0" height="0" aria-hidden="true" focusable="false" style="position:absolute">
+<!-- ===================================================================
+     Wiederverwendbare Bauteile und Farbverläufe der Zug-Illustration.
+     Liegt einmal im Dokument, alle Fahrzeuge referenzieren es per <use>.
+     =================================================================== -->
+<svg id="artdefs" width="0" height="0" aria-hidden="true" focusable="false">
   <defs>
     <linearGradient id="gBoiler" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%"   stop-color="#1e2833"/>
-      <stop offset="20%"  stop-color="#526b80"/>
-      <stop offset="40%"  stop-color="#74899d"/>
-      <stop offset="62%"  stop-color="#3e5062"/>
-      <stop offset="100%" stop-color="#141c24"/>
+      <stop offset="0%"   stop-color="#1a232d"/>
+      <stop offset="18%"  stop-color="#4e677c"/>
+      <stop offset="38%"  stop-color="#7d94a8"/>
+      <stop offset="60%"  stop-color="#3a4c5e"/>
+      <stop offset="100%" stop-color="#111820"/>
     </linearGradient>
     <linearGradient id="gSmokebox" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%"   stop-color="#1d242b"/>
-      <stop offset="32%"  stop-color="#3f4a56"/>
-      <stop offset="58%"  stop-color="#28313a"/>
-      <stop offset="100%" stop-color="#10151a"/>
+      <stop offset="0%"   stop-color="#191f26"/>
+      <stop offset="30%"  stop-color="#404b58"/>
+      <stop offset="56%"  stop-color="#242d36"/>
+      <stop offset="100%" stop-color="#0d1217"/>
     </linearGradient>
     <linearGradient id="gCab" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%"   stop-color="#8f4838"/>
-      <stop offset="32%"  stop-color="#b4614a"/>
-      <stop offset="68%"  stop-color="#78341f"/>
-      <stop offset="100%" stop-color="#431a11"/>
+      <stop offset="0%"   stop-color="#9c4e3a"/>
+      <stop offset="30%"  stop-color="#c26b50"/>
+      <stop offset="66%"  stop-color="#7c3620"/>
+      <stop offset="100%" stop-color="#3f180f"/>
     </linearGradient>
     <linearGradient id="gCoach" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%"   stop-color="#2c6449"/>
-      <stop offset="32%"  stop-color="#448d65"/>
-      <stop offset="68%"  stop-color="#24523c"/>
-      <stop offset="100%" stop-color="#122a1f"/>
+      <stop offset="0%"   stop-color="#2b6a4b"/>
+      <stop offset="30%"  stop-color="#489669"/>
+      <stop offset="66%"  stop-color="#22523a"/>
+      <stop offset="100%" stop-color="#0f281c"/>
     </linearGradient>
     <linearGradient id="gCoal" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%"   stop-color="#3a3a40"/>
-      <stop offset="100%" stop-color="#111114"/>
+      <stop offset="0%"   stop-color="#3d3d44"/>
+      <stop offset="100%" stop-color="#0f0f12"/>
     </linearGradient>
     <linearGradient id="gWin" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%"   stop-color="#fff1c4"/>
-      <stop offset="100%" stop-color="#eebf62"/>
+      <stop offset="0%"   stop-color="#fff4cd"/>
+      <stop offset="100%" stop-color="#f0bd55"/>
     </linearGradient>
-    <radialGradient id="gLamp" cx="42%" cy="38%" r="62%">
-      <stop offset="0%"   stop-color="#fffae2"/>
-      <stop offset="55%"  stop-color="#ffd978"/>
-      <stop offset="100%" stop-color="#d9991f"/>
+    <linearGradient id="gSteel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#aebbc8"/>
+      <stop offset="45%"  stop-color="#67757f"/>
+      <stop offset="100%" stop-color="#2b343c"/>
+    </linearGradient>
+    <radialGradient id="gLamp" cx="42%" cy="36%" r="64%">
+      <stop offset="0%"   stop-color="#fffdf0"/>
+      <stop offset="45%"  stop-color="#ffe08a"/>
+      <stop offset="100%" stop-color="#d18f16"/>
     </radialGradient>
 
-    <!-- Treibrad mit Speichen und Gegengewicht -->
+    <!-- Weiches Glühen für Lampe und Fenster -->
+    <filter id="fGlow" x="-150%" y="-150%" width="400%" height="400%">
+      <feGaussianBlur stdDeviation="5" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+
+    <!-- Treibrad: Speichen, Nabe, Gegengewicht -->
     <g id="wheelBig">
-      <circle r="28" fill="#161d24"/>
-      <circle r="28" fill="none" stroke="#828e9c" stroke-width="4"/>
-      <circle r="22.5" fill="#28323d"/>
-      <g stroke="#5f6d7c" stroke-width="4" stroke-linecap="round">
+      <circle r="28" fill="#12181e"/>
+      <circle r="28" fill="none" stroke="#93a2b1" stroke-width="4"/>
+      <circle r="22.5" fill="#27313c"/>
+      <g stroke="#63717f" stroke-width="4" stroke-linecap="round">
         <line y1="-20.5" y2="20.5"/>
         <line y1="-20.5" y2="20.5" transform="rotate(30)"/>
         <line y1="-20.5" y2="20.5" transform="rotate(60)"/>
@@ -295,607 +77,263 @@
         <line y1="-20.5" y2="20.5" transform="rotate(120)"/>
         <line y1="-20.5" y2="20.5" transform="rotate(150)"/>
       </g>
-      <path d="M17.6 12.3 A21.5 21.5 0 0 1 -17.6 12.3 L-8.2 5.7 A10 10 0 0 0 8.2 5.7 Z" fill="#3b4653"/>
-      <circle r="8" fill="#3b4653" stroke="#161d24" stroke-width="2"/>
-      <circle r="3" fill="#93a0ae"/>
+      <path d="M17.6 12.3 A21.5 21.5 0 0 1 -17.6 12.3 L-8.2 5.7 A10 10 0 0 0 8.2 5.7 Z" fill="#3d4a58"/>
+      <circle r="8" fill="#3d4a58" stroke="#12181e" stroke-width="2"/>
+      <circle r="3" fill="#9dabb9"/>
     </g>
 
     <!-- Laufrad -->
     <g id="wheelSmall">
-      <circle r="15" fill="#161d24"/>
-      <circle r="15" fill="none" stroke="#828e9c" stroke-width="3"/>
-      <circle r="10.5" fill="#28323d"/>
-      <g stroke="#5f6d7c" stroke-width="3" stroke-linecap="round">
+      <circle r="15" fill="#12181e"/>
+      <circle r="15" fill="none" stroke="#93a2b1" stroke-width="3"/>
+      <circle r="10.5" fill="#27313c"/>
+      <g stroke="#63717f" stroke-width="3" stroke-linecap="round">
         <line y1="-9" y2="9"/>
         <line y1="-9" y2="9" transform="rotate(45)"/>
         <line y1="-9" y2="9" transform="rotate(90)"/>
         <line y1="-9" y2="9" transform="rotate(135)"/>
       </g>
-      <circle r="4" fill="#3b4653" stroke="#161d24" stroke-width="1.5"/>
+      <circle r="4" fill="#3d4a58" stroke="#12181e" stroke-width="1.5"/>
     </g>
   </defs>
 </svg>
 
-<div id="scene">
-  <div id="shaker">
-    <div id="stars"></div>
-    <div class="hill" style="left:-5%;  width:45%;"></div>
-    <div class="hill" style="left:30%;  width:55%; bottom:31%; opacity:.6;"></div>
-    <div class="hill" style="left:72%;  width:40%;"></div>
 
-    <div id="ballast"></div>
+<div id="app">
 
-    <div id="track">
-      <div class="rail far"></div>
-      <div id="sleepers"></div>
-      <div class="rail near"></div>
-    </div>
+  <!-- #camera bekommt den Screenshake, #world die Parallaxe -->
+  <div id="camera">
+    <div id="world">
 
-    <div id="trainWrap"><div id="train">
+      <div class="layer sky"       data-depth="0"></div>
+      <canvas class="layer" id="skyfx" data-depth="2"></canvas>
+      <div class="layer moon"      data-depth="3"></div>
+      <div class="layer glowband"  data-depth="2"></div>
 
-      <!-- ================= Dampflokomotive =================
-           Grundlinie: Radunterkante liegt auf y=150, also auf der Schiene.
-           Laufblech bei y=84..96, Raeder darunter frei sichtbar. -->
-      <div class="part loco">
-        <div class="steam"></div>
-        <div class="steam"></div>
-        <div class="steam"></div>
-        <svg viewBox="0 0 280 150" width="280" height="150" aria-hidden="true">
-          <!-- hintere Kupplung -->
-          <rect x="258" y="86" width="18" height="9" rx="2" fill="#28323d" stroke="#10171d" stroke-width="2"/>
+      <!-- Ferne Bergkette -->
+      <svg class="layer ridge ridge-far" data-depth="6" viewBox="0 0 1200 300" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M0 300 V190 L74 118 L128 163 L206 84 L272 148 L338 104 L418 172 L498 116
+                 L556 168 L640 96 L716 158 L788 126 L860 176 L938 110 L1016 164 L1098 130
+                 L1200 172 V300 Z"/>
+      </svg>
+      <div class="layer haze haze-far" data-depth="7"></div>
 
-          <!-- Raeder -->
-          <use href="#wheelSmall" x="42" y="133.5"/>
-          <use href="#wheelBig" x="112" y="120"/>
-          <use href="#wheelBig" x="186" y="120"/>
+      <!-- Mittlere Hügelkette -->
+      <svg class="layer ridge ridge-mid" data-depth="11" viewBox="0 0 1200 300" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M0 300 V228 Q96 186 196 220 Q296 254 398 208 Q516 158 618 212
+                 Q722 262 822 214 Q922 170 1024 218 Q1124 258 1200 222 V300 Z"/>
+      </svg>
+      <div class="layer haze haze-mid" data-depth="13"></div>
 
-          <!-- Treibstange mit Kurbelzapfen -->
-          <rect x="94" y="128" width="92" height="8" rx="4" fill="#7b8794" stroke="#161d24" stroke-width="2"/>
-          <circle cx="112" cy="132" r="4.5" fill="#39434e" stroke="#161d24" stroke-width="1.5"/>
-          <circle cx="186" cy="132" r="4.5" fill="#39434e" stroke="#161d24" stroke-width="1.5"/>
+      <!-- Baumsilhouetten, Pfad wird per JS erzeugt -->
+      <svg class="layer treeline" data-depth="18" viewBox="0 0 1200 200" preserveAspectRatio="none" aria-hidden="true">
+        <path id="treePath"/>
+      </svg>
 
-          <!-- Rahmen / Laufblech -->
-          <rect x="18" y="84" width="252" height="13" rx="3" fill="#232b34" stroke="#10171d" stroke-width="2.5"/>
-          <rect x="22" y="87" width="244" height="3" fill="#404c59" opacity=".7"/>
+      <!-- Telegrafenmasten, per JS erzeugt -->
+      <div class="layer poles" data-depth="22" id="poles"></div>
 
-          <!-- Dampfzylinder -->
-          <rect x="56" y="97" width="40" height="26" rx="5" fill="#2c3641" stroke="#10171d" stroke-width="2.5"/>
-          <rect x="60" y="101" width="32" height="4" rx="2" fill="#5a6875" opacity=".65"/>
+      <div class="layer ground" data-depth="26"></div>
 
-          <!-- Schienenraeumer -->
-          <path d="M30 92 L4 139 L30 139 Z" fill="#8a4030" stroke="#33130c" stroke-width="2.5" stroke-linejoin="round"/>
-          <path d="M26 102 L15 134 M30 108 L23 134" stroke="#33130c" stroke-width="2" opacity=".5" stroke-linecap="round"/>
-
-          <!-- Kessel mit Messingringen -->
-          <rect x="58" y="32" width="124" height="54" rx="9" fill="url(#gBoiler)" stroke="#0e151b" stroke-width="2.5"/>
-          <g stroke="#c9a227" stroke-width="3" opacity=".5">
-            <line x1="90" y1="34" x2="90" y2="84"/>
-            <line x1="138" y1="34" x2="138" y2="84"/>
-            <line x1="170" y1="34" x2="170" y2="84"/>
-          </g>
-
-          <!-- Rauchkammer mit Tuer und Lampe -->
-          <rect x="24" y="28" width="40" height="60" rx="14" fill="url(#gSmokebox)" stroke="#0b1015" stroke-width="2.5"/>
-          <ellipse cx="30" cy="58" rx="6" ry="25" fill="#2b353f" stroke="#0b1015" stroke-width="2"/>
-          <path d="M12 44 L0 32 L0 74 L12 62 Z" fill="#ffe3a0" opacity=".16"/>
-          <circle cx="30" cy="50" r="7.5" fill="url(#gLamp)" stroke="#0b1015" stroke-width="1.5"/>
-          <circle cx="30" cy="70" r="3" fill="#93a0ae"/>
-
-          <!-- Schornstein -->
-          <path d="M34 34 L37 14 L30 14 L30 3 L64 3 L64 14 L57 14 L60 34 Z"
-                fill="url(#gSmokebox)" stroke="#0b1015" stroke-width="2.5" stroke-linejoin="round"/>
-
-          <!-- Dampfdom und Sanddom -->
-          <path d="M100 36 L100 26 A17 12 0 0 1 134 26 L134 36 Z" fill="url(#gBoiler)" stroke="#0e151b" stroke-width="2.5"/>
-          <path d="M144 36 L144 30 A11 8 0 0 1 166 30 L166 36 Z" fill="url(#gBoiler)" stroke="#0e151b" stroke-width="2.5"/>
-
-          <!-- Fuehrerhaus -->
-          <rect x="180" y="26" width="78" height="70" rx="5" fill="url(#gCab)" stroke="#33130c" stroke-width="2.5"/>
-          <path d="M172 28 Q219 10 266 28 L266 37 Q219 19 172 37 Z"
-                fill="#3d2018" stroke="#1c0c07" stroke-width="2.5" stroke-linejoin="round"/>
-          <ellipse cx="218" cy="57" rx="40" ry="26" fill="#ffd978" opacity=".15"/>
-          <rect x="196" y="43" width="44" height="29" rx="4" fill="url(#gWin)" stroke="#33130c" stroke-width="2.5"/>
-          <line x1="218" y1="43" x2="218" y2="72" stroke="#33130c" stroke-width="2.5"/>
-        </svg>
+      <!-- Gleis über die ganze Bildbreite -->
+      <div class="layer track" data-depth="30">
+        <div class="rail far"></div>
+        <div class="sleepers"></div>
+        <div class="rail near"><i class="shine"></i></div>
       </div>
 
-      <!-- ================= Tender ================= -->
-      <div class="part tender">
-        <svg viewBox="0 0 130 150" width="130" height="150" aria-hidden="true">
-          <rect x="0" y="102" width="14" height="9" rx="2" fill="#28323d" stroke="#10171d" stroke-width="2"/>
-          <rect x="116" y="102" width="14" height="9" rx="2" fill="#28323d" stroke="#10171d" stroke-width="2"/>
+      <div id="trainWrap">
+        <!-- Lichtkegel des Spitzenlichts, sitzt vor der Lok -->
+        <div id="beam"></div>
+        <div id="train">
 
-          <use href="#wheelSmall" x="34" y="133.5"/>
-          <use href="#wheelSmall" x="96" y="133.5"/>
+        <!-- ===================== Dampflokomotive ===================== -->
+        <div class="part loco">
+          <span class="steam"></span><span class="steam"></span><span class="steam"></span>
+          <svg viewBox="0 0 280 150" width="280" height="150" aria-hidden="true">
+            <rect x="258" y="86" width="18" height="9" rx="2" fill="#27313c" stroke="#0e151b" stroke-width="2"/>
 
-          <rect x="6" y="100" width="118" height="17" rx="3" fill="#232b34" stroke="#10171d" stroke-width="2.5"/>
+            <use href="#wheelSmall" x="42" y="133.5"/>
+            <use href="#wheelBig" x="112" y="120"/>
+            <use href="#wheelBig" x="186" y="120"/>
 
-          <!-- Kohlekasten -->
-          <rect x="10" y="56" width="110" height="46" rx="4" fill="url(#gCab)" stroke="#33130c" stroke-width="2.5"/>
-          <rect x="18" y="66" width="94" height="18" rx="3" fill="#000" opacity=".12"/>
-          <line x1="65" y1="58" x2="65" y2="100" stroke="#33130c" stroke-width="2" opacity=".45"/>
-          <rect x="12" y="94" width="106" height="3" fill="#c9a227" opacity=".5"/>
+            <rect x="94" y="128" width="92" height="8" rx="4" fill="url(#gSteel)" stroke="#12181e" stroke-width="2"/>
+            <circle cx="112" cy="132" r="4.5" fill="#3a4550" stroke="#12181e" stroke-width="1.5"/>
+            <circle cx="186" cy="132" r="4.5" fill="#3a4550" stroke="#12181e" stroke-width="1.5"/>
 
-          <!-- Kohlehaufen -->
-          <path d="M14 56 L23 44 L35 49 L47 37 L61 44 L75 35 L89 46 L101 42 L116 56 Z"
-                fill="url(#gCoal)" stroke="#0b0b0e" stroke-width="2" stroke-linejoin="round"/>
-          <g fill="#565660" opacity=".85">
-            <circle cx="38" cy="49" r="3"/>
-            <circle cx="63" cy="47" r="2.5"/>
-            <circle cx="87" cy="50" r="3"/>
-            <circle cx="104" cy="50" r="2"/>
-          </g>
-        </svg>
+            <rect x="18" y="84" width="252" height="13" rx="3" fill="#212932" stroke="#0e151b" stroke-width="2.5"/>
+            <rect x="22" y="87" width="244" height="3" fill="#44515f" opacity=".7"/>
+
+            <rect x="56" y="97" width="40" height="26" rx="5" fill="#2b3540" stroke="#0e151b" stroke-width="2.5"/>
+            <rect x="60" y="101" width="32" height="4" rx="2" fill="#5f6d7a" opacity=".65"/>
+
+            <path d="M30 92 L4 139 L30 139 Z" fill="#8e4331" stroke="#2e110b" stroke-width="2.5" stroke-linejoin="round"/>
+            <path d="M26 102 L15 134 M30 108 L23 134" stroke="#2e110b" stroke-width="2" opacity=".5" stroke-linecap="round"/>
+
+            <rect x="58" y="32" width="124" height="54" rx="9" fill="url(#gBoiler)" stroke="#0b1218" stroke-width="2.5"/>
+            <g stroke="#d3a92c" stroke-width="3" opacity=".55">
+              <line x1="90" y1="34" x2="90" y2="84"/>
+              <line x1="138" y1="34" x2="138" y2="84"/>
+              <line x1="170" y1="34" x2="170" y2="84"/>
+            </g>
+
+            <rect x="24" y="28" width="40" height="60" rx="14" fill="url(#gSmokebox)" stroke="#080d11" stroke-width="2.5"/>
+            <ellipse cx="30" cy="58" rx="6" ry="25" fill="#2a343e" stroke="#080d11" stroke-width="2"/>
+            <circle class="lamp" cx="30" cy="50" r="7.5" fill="url(#gLamp)" stroke="#080d11" stroke-width="1.5" filter="url(#fGlow)"/>
+            <circle cx="30" cy="70" r="3" fill="#9dabb9"/>
+
+            <path d="M34 34 L37 14 L30 14 L30 3 L64 3 L64 14 L57 14 L60 34 Z"
+                  fill="url(#gSmokebox)" stroke="#080d11" stroke-width="2.5" stroke-linejoin="round"/>
+
+            <path d="M100 36 L100 26 A17 12 0 0 1 134 26 L134 36 Z" fill="url(#gBoiler)" stroke="#0b1218" stroke-width="2.5"/>
+            <path d="M144 36 L144 30 A11 8 0 0 1 166 30 L166 36 Z" fill="url(#gBoiler)" stroke="#0b1218" stroke-width="2.5"/>
+
+            <rect x="180" y="26" width="78" height="70" rx="5" fill="url(#gCab)" stroke="#2e110b" stroke-width="2.5"/>
+            <path d="M172 28 Q219 10 266 28 L266 37 Q219 19 172 37 Z"
+                  fill="#3a1d14" stroke="#190a05" stroke-width="2.5" stroke-linejoin="round"/>
+            <ellipse class="firelight" cx="218" cy="57" rx="40" ry="26" fill="#ffb23f" opacity=".2"/>
+            <rect class="win" x="196" y="43" width="44" height="29" rx="4" fill="url(#gWin)" stroke="#2e110b" stroke-width="2.5"/>
+            <line x1="218" y1="43" x2="218" y2="72" stroke="#2e110b" stroke-width="2.5"/>
+          </svg>
+        </div>
+
+        <!-- ========================= Tender ========================= -->
+        <div class="part tender">
+          <svg viewBox="0 0 130 150" width="130" height="150" aria-hidden="true">
+            <rect x="0" y="102" width="14" height="9" rx="2" fill="#27313c" stroke="#0e151b" stroke-width="2"/>
+            <rect x="116" y="102" width="14" height="9" rx="2" fill="#27313c" stroke="#0e151b" stroke-width="2"/>
+
+            <use href="#wheelSmall" x="34" y="133.5"/>
+            <use href="#wheelSmall" x="96" y="133.5"/>
+
+            <rect x="6" y="100" width="118" height="17" rx="3" fill="#212932" stroke="#0e151b" stroke-width="2.5"/>
+
+            <rect x="10" y="56" width="110" height="46" rx="4" fill="url(#gCab)" stroke="#2e110b" stroke-width="2.5"/>
+            <rect x="18" y="66" width="94" height="18" rx="3" fill="#000" opacity=".12"/>
+            <line x1="65" y1="58" x2="65" y2="100" stroke="#2e110b" stroke-width="2" opacity=".45"/>
+            <rect x="12" y="94" width="106" height="3" fill="#d3a92c" opacity=".5"/>
+
+            <path d="M14 56 L23 44 L35 49 L47 37 L61 44 L75 35 L89 46 L101 42 L116 56 Z"
+                  fill="url(#gCoal)" stroke="#08080a" stroke-width="2" stroke-linejoin="round"/>
+            <g fill="#5b5b66" opacity=".85">
+              <circle cx="38" cy="49" r="3"/><circle cx="63" cy="47" r="2.5"/>
+              <circle cx="87" cy="50" r="3"/><circle cx="104" cy="50" r="2"/>
+            </g>
+          </svg>
+        </div>
+
+        <!-- ===================== Personenwagen ====================== -->
+        <div class="part coach">
+          <svg viewBox="0 0 175 150" width="175" height="150" aria-hidden="true">
+            <rect x="0" y="102" width="14" height="9" rx="2" fill="#27313c" stroke="#0e151b" stroke-width="2"/>
+            <rect x="161" y="102" width="14" height="9" rx="2" fill="#27313c" stroke="#0e151b" stroke-width="2"/>
+
+            <use href="#wheelSmall" x="28" y="133.5"/>
+            <use href="#wheelSmall" x="66" y="133.5"/>
+            <use href="#wheelSmall" x="109" y="133.5"/>
+            <use href="#wheelSmall" x="147" y="133.5"/>
+
+            <rect x="20" y="117" width="54" height="9" rx="3" fill="#1a222a"/>
+            <rect x="101" y="117" width="54" height="9" rx="3" fill="#1a222a"/>
+            <rect x="6" y="100" width="163" height="17" rx="3" fill="#212932" stroke="#0e151b" stroke-width="2.5"/>
+
+            <rect x="8" y="50" width="159" height="52" rx="5" fill="url(#gCoach)" stroke="#0c1f14" stroke-width="2.5"/>
+            <path d="M4 54 Q87.5 26 171 54 L171 60 L4 60 Z"
+                  fill="#28372e" stroke="#0c1f14" stroke-width="2.5" stroke-linejoin="round"/>
+
+            <g class="win" fill="url(#gWin)" stroke="#0c1f14" stroke-width="2">
+              <rect x="17"  y="66" width="21" height="21" rx="3"/>
+              <rect x="47"  y="66" width="21" height="21" rx="3"/>
+              <rect x="77"  y="66" width="21" height="21" rx="3"/>
+              <rect x="107" y="66" width="21" height="21" rx="3"/>
+              <rect x="137" y="66" width="21" height="21" rx="3"/>
+            </g>
+            <rect x="10" y="94" width="155" height="4" fill="#d3a92c" opacity=".55"/>
+          </svg>
+        </div>
+
+        </div>
       </div>
 
-      <!-- ================= Personenwagen ================= -->
-      <div class="part coach">
-        <svg viewBox="0 0 175 150" width="175" height="150" aria-hidden="true">
-          <rect x="0" y="102" width="14" height="9" rx="2" fill="#28323d" stroke="#10171d" stroke-width="2"/>
-          <rect x="161" y="102" width="14" height="9" rx="2" fill="#28323d" stroke="#10171d" stroke-width="2"/>
+      <!-- Grasbüschel im Vordergrund, Pfad wird per JS erzeugt -->
+      <svg class="layer grass" data-depth="42" viewBox="0 0 1200 120" preserveAspectRatio="none" aria-hidden="true">
+        <path id="grassPath"/>
+      </svg>
 
-          <use href="#wheelSmall" x="28" y="133.5"/>
-          <use href="#wheelSmall" x="66" y="133.5"/>
-          <use href="#wheelSmall" x="109" y="133.5"/>
-          <use href="#wheelSmall" x="147" y="133.5"/>
+    </div><!-- /#world -->
 
-          <!-- Drehgestellrahmen -->
-          <rect x="20" y="117" width="54" height="9" rx="3" fill="#1c242c"/>
-          <rect x="101" y="117" width="54" height="9" rx="3" fill="#1c242c"/>
+    <!-- Feuerschein: liegt auf der Landschaft, aber unter den Partikeln -->
+    <div id="firelight"></div>
 
-          <rect x="6" y="100" width="163" height="17" rx="3" fill="#232b34" stroke="#10171d" stroke-width="2.5"/>
-
-          <!-- Wagenkasten -->
-          <rect x="8" y="50" width="159" height="52" rx="5" fill="url(#gCoach)" stroke="#0f2318" stroke-width="2.5"/>
-          <path d="M4 54 Q87.5 26 171 54 L171 60 L4 60 Z"
-                fill="#2a3a31" stroke="#0f2318" stroke-width="2.5" stroke-linejoin="round"/>
-
-          <!-- Fenster -->
-          <g fill="url(#gWin)" stroke="#0f2318" stroke-width="2">
-            <rect x="17"  y="66" width="21" height="21" rx="3"/>
-            <rect x="47"  y="66" width="21" height="21" rx="3"/>
-            <rect x="77"  y="66" width="21" height="21" rx="3"/>
-            <rect x="107" y="66" width="21" height="21" rx="3"/>
-            <rect x="137" y="66" width="21" height="21" rx="3"/>
-          </g>
-          <rect x="10" y="94" width="155" height="4" fill="#c9a227" opacity=".55"/>
-        </svg>
-      </div>
-
-    </div></div>
-
+    <!-- Explosion, Funken, Glühwürmchen -->
     <canvas id="fx"></canvas>
-    <div id="flash"></div>
+  </div><!-- /#camera -->
+
+  <!-- Bildlook: Randabdunklung und Blitz -->
+  <div id="vignette"></div>
+  <div id="flash"></div>
+
+  <!-- =========================== Menü =========================== -->
+  <div id="ui">
+    <header class="brand">
+      <!-- Spieltitel: hier ändern, wenn dein Spiel anders heißt -->
+      <h1 class="title"><span class="t1">RAIL</span><span class="t2">BLAST</span></h1>
+      <p class="tagline">Ein Zug. Ein Knopf. Keine Rückfahrkarte.</p>
+    </header>
+
+    <nav class="menu" id="menu" aria-label="Hauptmenü">
+      <button class="btn primary" id="startBtn" data-action="start"><span class="lbl">Start</span></button>
+      <button class="btn" data-action="panel" data-panel="options"><span class="lbl">Optionen</span></button>
+      <button class="btn" data-action="panel" data-panel="keys"><span class="lbl">Steuerung</span></button>
+    </nav>
+
+    <p class="hint" id="hint">Pfeiltasten zum Wählen, Enter zum Bestätigen.</p>
+    <p class="version">v1.0</p>
+  </div>
+
+  <!-- ========================== Panels ========================== -->
+  <div class="scrim" id="scrim" hidden>
+
+    <section class="panel" id="panel-options" role="dialog" aria-modal="true" aria-labelledby="h-options" hidden>
+      <h2 id="h-options">Optionen</h2>
+
+      <div class="row">
+        <label for="optVolume">Lautstärke</label>
+        <input type="range" id="optVolume" min="0" max="100" step="5" value="80">
+        <output id="outVolume">80</output>
+      </div>
+
+      <div class="row">
+        <label for="optShake">Bildschirmwackeln</label>
+        <input type="checkbox" id="optShake" checked>
+      </div>
+
+      <div class="row">
+        <label for="optQuality">Effektstärke</label>
+        <select id="optQuality">
+          <option value="0.5">Niedrig</option>
+          <option value="1" selected>Mittel</option>
+          <option value="1.7">Hoch</option>
+        </select>
+      </div>
+
+      <button class="btn small" data-close><span class="lbl">Zurück</span></button>
+    </section>
+
+    <section class="panel" id="panel-keys" role="dialog" aria-modal="true" aria-labelledby="h-keys" hidden>
+      <h2 id="h-keys">Steuerung</h2>
+      <dl class="keys">
+        <dt><kbd>&uarr;</kbd><kbd>&darr;</kbd></dt><dd>Menüpunkt wählen</dd>
+        <dt><kbd>Enter</kbd></dt><dd>Bestätigen</dd>
+        <dt><kbd>Esc</kbd></dt><dd>Zurück / Schließen</dd>
+        <dt><kbd>R</kbd></dt><dd>Szene zurücksetzen</dd>
+      </dl>
+      <button class="btn small" data-close><span class="lbl">Zurück</span></button>
+    </section>
+
   </div>
 </div>
 
-<div id="controls">
-  <button id="startBtn">Start</button>
-  <div id="hint">Drück auf Start.</div>
-</div>
-
-<script>
-(function () {
-  "use strict";
-
-  const scene   = document.getElementById("scene");
-  const shaker  = document.getElementById("shaker");
-  const train   = document.getElementById("train");
-  const canvas  = document.getElementById("fx");
-  const flash   = document.getElementById("flash");
-  const btn     = document.getElementById("startBtn");
-  const hint    = document.getElementById("hint");
-  const ctx     = canvas.getContext("2d");
-
-  /* ---------- Sterne streuen ---------- */
-  const stars = document.getElementById("stars");
-  for (let i = 0; i < 70; i++) {
-    const s = document.createElement("div");
-    s.className = "star";
-    s.style.left = (Math.random() * 100) + "%";
-    s.style.top  = (Math.random() * 55) + "%";
-    s.style.opacity = (0.2 + Math.random() * 0.6).toFixed(2);
-    const size = Math.random() < 0.2 ? 3 : 2;
-    s.style.width = s.style.height = size + "px";
-    stars.appendChild(s);
-  }
-
-  /* ---------- Canvas an Displaygröße anpassen ---------- */
-  let dpr = 1;
-  function resize() {
-    dpr = Math.min(window.devicePixelRatio || 1, 2);
-    canvas.width  = scene.clientWidth  * dpr;
-    canvas.height = scene.clientHeight * dpr;
-    canvas.style.width  = scene.clientWidth + "px";
-    canvas.style.height = scene.clientHeight + "px";
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  }
-  resize();
-  window.addEventListener("resize", resize);
-
-  /* ---------- Explosionssound (Web Audio, ohne externe Datei) ---------- */
-  let audioCtx = null;
-
-  function playExplosion() {
-    try {
-      const AC = window.AudioContext || window.webkitAudioContext;
-      if (!AC) return;
-      if (!audioCtx) audioCtx = new AC();
-      if (audioCtx.state === "suspended") audioCtx.resume();
-
-      const now = audioCtx.currentTime;
-      const master = audioCtx.createGain();
-      master.gain.value = 0.9;
-      master.connect(audioCtx.destination);
-
-      /* 1) Knall: weißes Rauschen mit abfallendem Tiefpass */
-      const dur = 2.2;
-      const buffer = audioCtx.createBuffer(1, Math.floor(audioCtx.sampleRate * dur), audioCtx.sampleRate);
-      const data = buffer.getChannelData(0);
-      for (let i = 0; i < data.length; i++) {
-        const t = i / data.length;
-        data[i] = (Math.random() * 2 - 1) * Math.pow(1 - t, 2.2);
-      }
-      const noise = audioCtx.createBufferSource();
-      noise.buffer = buffer;
-
-      const lp = audioCtx.createBiquadFilter();
-      lp.type = "lowpass";
-      lp.frequency.setValueAtTime(4200, now);
-      lp.frequency.exponentialRampToValueAtTime(160, now + 1.6);
-      lp.Q.value = 0.9;
-
-      const noiseGain = audioCtx.createGain();
-      noiseGain.gain.setValueAtTime(0.0001, now);
-      noiseGain.gain.exponentialRampToValueAtTime(1.0, now + 0.012);
-      noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + dur);
-
-      noise.connect(lp).connect(noiseGain).connect(master);
-      noise.start(now);
-      noise.stop(now + dur);
-
-      /* 2) Sub-Bass-Wumms: Sinus fällt tief ab */
-      const sub = audioCtx.createOscillator();
-      sub.type = "sine";
-      sub.frequency.setValueAtTime(150, now);
-      sub.frequency.exponentialRampToValueAtTime(24, now + 0.9);
-
-      const subGain = audioCtx.createGain();
-      subGain.gain.setValueAtTime(0.0001, now);
-      subGain.gain.exponentialRampToValueAtTime(0.85, now + 0.02);
-      subGain.gain.exponentialRampToValueAtTime(0.0001, now + 1.3);
-
-      sub.connect(subGain).connect(master);
-      sub.start(now);
-      sub.stop(now + 1.4);
-
-      /* 3) Metallisches Bersten direkt beim Knall */
-      const crack = audioCtx.createOscillator();
-      crack.type = "square";
-      crack.frequency.setValueAtTime(900, now);
-      crack.frequency.exponentialRampToValueAtTime(70, now + 0.22);
-
-      const crackGain = audioCtx.createGain();
-      crackGain.gain.setValueAtTime(0.0001, now);
-      crackGain.gain.exponentialRampToValueAtTime(0.28, now + 0.006);
-      crackGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.3);
-
-      crack.connect(crackGain).connect(master);
-      crack.start(now);
-      crack.stop(now + 0.32);
-    } catch (e) {
-      /* Sound ist optional - die Animation läuft trotzdem */
-    }
-  }
-
-  /* ---------- Partikelsystem ---------- */
-  const particles = [];
-  const shockwaves = [];
-  let running = false;
-
-  const FIRE = ["#fff3b0", "#ffd166", "#ff9f1c", "#f4501e", "#c1200f"];
-  const SMOKE = ["#3c3a37", "#4a4641", "#2e2c2a", "#565049"];
-  const DEBRIS = ["#28323d", "#b4614a", "#448d65", "#828e9c", "#c9a227", "#3d2018"];
-
-  /* Explosion skaliert mit der Bildbreite, damit sie auf dem Handy
-     nicht das halbe Display ausfuellt. */
-  function sceneScale() {
-    return Math.max(0.45, Math.min(1, scene.clientWidth / 1100));
-  }
-
-  function spawnExplosion(cx, cy) {
-    const S = sceneScale();
-    /* Rauch zuerst einfuegen - wird dadurch hinter dem Feuer gezeichnet */
-    for (let i = 0; i < 110; i++) {
-      const a = Math.random() * Math.PI * 2;
-      const sp = (0.5 + Math.random() * 5) * S;
-      particles.push({
-        x: cx + (Math.random() - .5) * 220 * S,
-        y: cy + (Math.random() - .5) * 70 * S,
-        vx: Math.cos(a) * sp,
-        vy: Math.sin(a) * sp - 1.6,
-        r: (26 + Math.random() * 60) * S,
-        life: 1,
-        decay: 0.005 + Math.random() * 0.007,
-        grav: -0.05,
-        drag: 0.982,
-        color: SMOKE[(Math.random() * SMOKE.length) | 0],
-        type: "smoke"
-      });
-    }
-    /* Feuerball */
-    for (let i = 0; i < 190; i++) {
-      const a = Math.random() * Math.PI * 2;
-      /* Wurzel-Verteilung fuellt die Kugel gleichmaessig statt nur den Rand */
-      const sp = Math.sqrt(Math.random()) * 13 * S;
-      particles.push({
-        x: cx + (Math.random() - .5) * 120 * S,
-        y: cy + (Math.random() - .5) * 50 * S,
-        vx: Math.cos(a) * sp,
-        vy: Math.sin(a) * sp - 2,
-        r: (14 + Math.random() * 46) * S,
-        life: 1,
-        decay: 0.016 + Math.random() * 0.026,
-        grav: -0.02,
-        drag: 0.955,
-        color: FIRE[(Math.random() * FIRE.length) | 0],
-        type: "fire"
-      });
-    }
-    /* Funken */
-    for (let i = 0; i < 130; i++) {
-      const a = Math.random() * Math.PI * 2;
-      const sp = (8 + Math.random() * 24) * S;
-      particles.push({
-        x: cx + (Math.random() - .5) * 40 * S,
-        y: cy,
-        vx: Math.cos(a) * sp,
-        vy: Math.sin(a) * sp - 3,
-        r: 1.5 + Math.random() * 2.5,
-        life: 1,
-        decay: 0.008 + Math.random() * 0.014,
-        grav: 0.3,
-        drag: 0.99,
-        color: Math.random() < 0.3 ? "#fff6d8" : "#ffc857",
-        type: "spark"
-      });
-    }
-    /* Trümmerteile */
-    for (let i = 0; i < 60; i++) {
-      const a = -Math.PI / 2 + (Math.random() - .5) * Math.PI * 1.7;
-      const sp = (6 + Math.random() * 18) * S;
-      particles.push({
-        x: cx + (Math.random() - .5) * 300 * S,
-        y: cy + (Math.random() - .5) * 60 * S,
-        vx: Math.cos(a) * sp,
-        vy: Math.sin(a) * sp,
-        w: (5 + Math.random() * 18) * S,
-        h: (4 + Math.random() * 14) * S,
-        rot: Math.random() * Math.PI,
-        vr: (Math.random() - .5) * 0.5,
-        life: 1,
-        decay: 0.004 + Math.random() * 0.005,
-        grav: 0.38,
-        drag: 0.995,
-        color: DEBRIS[(Math.random() * DEBRIS.length) | 0],
-        type: "debris"
-      });
-    }
-    shockwaves.push({ x: cx, y: cy, r: 10 * S, life: 1, s: S });
-  }
-
-  /* Nachbrenner: kleine Flammen am Unglücksort, die langsam ausgehen */
-  function spawnEmbers(cx, cy) {
-    const S = sceneScale();
-    for (let i = 0; i < 5; i++) {
-      const a = -Math.PI / 2 + (Math.random() - .5) * 1.2;
-      const sp = 1 + Math.random() * 2;
-      particles.push({
-        x: cx + (Math.random() - .5) * 320 * S,
-        y: cy + (25 + Math.random() * 25) * S,
-        vx: Math.cos(a) * sp,
-        vy: Math.sin(a) * sp,
-        r: (8 + Math.random() * 20) * S,
-        life: 1,
-        decay: 0.02 + Math.random() * 0.02,
-        grav: -0.05,
-        drag: 0.97,
-        color: FIRE[1 + ((Math.random() * 4) | 0)],
-        type: "fire"
-      });
-    }
-  }
-
-  /* Zeichenreihenfolge von hinten nach vorn - unabhaengig von der Spawn-Reihenfolge */
-  const LAYERS = ["smoke", "debris", "fire", "spark"];
-
-  function drawParticle(p) {
-    if (p.type === "debris") {
-      ctx.save();
-      ctx.translate(p.x, p.y);
-      ctx.rotate(p.rot);
-      ctx.globalAlpha = Math.min(1, p.life * 1.6);
-      ctx.fillStyle = p.color;
-      ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
-      ctx.restore();
-      return;
-    }
-
-    if (p.type === "spark") {
-      ctx.globalCompositeOperation = "lighter";
-      ctx.globalAlpha = Math.min(1, p.life * 1.4);
-      ctx.strokeStyle = p.color;
-      ctx.lineCap = "round";
-      ctx.lineWidth = p.r;
-      ctx.beginPath();
-      ctx.moveTo(p.x, p.y);
-      ctx.lineTo(p.x - p.vx * 1.8, p.y - p.vy * 1.8);
-      ctx.stroke();
-      ctx.globalCompositeOperation = "source-over";
-      ctx.globalAlpha = 1;
-      return;
-    }
-
-    /* Feuer und Rauch als weiche Kugeln mit Verlauf nach aussen */
-    const rr = p.type === "smoke"
-      ? Math.max(1, p.r * (2.2 - p.life))
-      : Math.max(1, p.r * (0.45 + p.life * 0.55));
-
-    const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, rr);
-    if (p.type === "fire") {
-      ctx.globalCompositeOperation = "lighter";
-      g.addColorStop(0, hexToRgba(p.color, 0.85 * p.life));
-      g.addColorStop(0.45, hexToRgba(p.color, 0.35 * p.life));
-      g.addColorStop(1, hexToRgba(p.color, 0));
-    } else {
-      const a = Math.min(0.26, p.life * 0.34);
-      g.addColorStop(0, hexToRgba(p.color, a));
-      g.addColorStop(0.6, hexToRgba(p.color, a * 0.6));
-      g.addColorStop(1, hexToRgba(p.color, 0));
-    }
-    ctx.fillStyle = g;
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, rr, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.globalCompositeOperation = "source-over";
-  }
-
-  function hexToRgba(hex, alpha) {
-    const n = parseInt(hex.slice(1), 16);
-    return "rgba(" + ((n >> 16) & 255) + "," + ((n >> 8) & 255) + "," + (n & 255) + "," + alpha.toFixed(3) + ")";
-  }
-
-  function tick() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    /* Druckwelle */
-    for (let i = shockwaves.length - 1; i >= 0; i--) {
-      const s = shockwaves[i];
-      s.r += 26 * s.s;
-      s.life -= 0.075;
-      if (s.life <= 0) { shockwaves.splice(i, 1); continue; }
-      ctx.beginPath();
-      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-      ctx.strokeStyle = "rgba(255,225,170," + (s.life * s.life * 0.75).toFixed(3) + ")";
-      ctx.lineWidth = 16 * s.life * s.s;
-      ctx.stroke();
-    }
-
-    /* Physik updaten und tote Partikel aussortieren */
-    let w = 0;
-    for (let i = 0; i < particles.length; i++) {
-      const p = particles[i];
-      p.vx *= p.drag;
-      p.vy = p.vy * p.drag + p.grav;
-      p.x += p.vx;
-      p.y += p.vy;
-      p.life -= p.decay;
-      if (p.type === "debris") p.rot += p.vr;
-      if (p.life > 0) particles[w++] = p;
-    }
-    particles.length = w;
-
-    /* Ebene für Ebene zeichnen */
-    for (let l = 0; l < LAYERS.length; l++) {
-      const layer = LAYERS[l];
-      for (let i = 0; i < particles.length; i++) {
-        if (particles[i].type === layer) drawParticle(particles[i]);
-      }
-    }
-    ctx.globalAlpha = 1;
-
-    if (particles.length || shockwaves.length) {
-      requestAnimationFrame(tick);
-    } else {
-      running = false;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-    }
-  }
-
-  /* ---------- Screenshake ---------- */
-  function shake(duration, strength) {
-    const start = performance.now();
-    (function frame(now) {
-      const t = (now - start) / duration;
-      if (t >= 1) { shaker.style.transform = ""; return; }
-      const s = strength * (1 - t);
-      shaker.style.transform =
-        "translate(" + ((Math.random() - .5) * s).toFixed(2) + "px," +
-                       ((Math.random() - .5) * s).toFixed(2) + "px)";
-      requestAnimationFrame(frame);
-    })(start);
-  }
-
-  /* ---------- Zugteile wegschleudern ---------- */
-  function blastTrainParts(cx) {
-    document.querySelectorAll("#train .part").forEach(function (part) {
-      const r = part.getBoundingClientRect();
-      const sr = scene.getBoundingClientRect();
-      const pcx = r.left + r.width / 2 - sr.left;
-      const dir = pcx < cx ? -1 : 1;
-      const dist = Math.abs(pcx - cx) / 100 + 0.6;
-
-      const S = sceneScale();
-      const dx = dir * (140 + Math.random() * 220) * dist * S;
-      const dy = -(120 + Math.random() * 200) * S;
-      const rot = dir * (100 + Math.random() * 320);
-
-      part.style.transition = "transform .9s cubic-bezier(.15,.6,.5,1), opacity .9s ease-in";
-      part.style.transform = "translate(" + dx.toFixed(0) + "px," + dy.toFixed(0) + "px) rotate(" + rot.toFixed(0) + "deg) scale(.85)";
-      part.style.opacity = "0";
-    });
-  }
-
-  /* ---------- Los geht's ---------- */
-  let fired = false;
-
-  btn.addEventListener("click", function () {
-    if (fired) return;
-    fired = true;
-    btn.disabled = true;
-    hint.textContent = "";
-
-    train.classList.add("rumbling");
-
-    window.setTimeout(function () {
-      train.classList.remove("rumbling");
-
-      const tr = train.getBoundingClientRect();
-      const sr = scene.getBoundingClientRect();
-      const cx = tr.left + tr.width / 2 - sr.left;
-      const cy = tr.top  + tr.height / 2 - sr.top;
-
-      playExplosion();
-      spawnExplosion(cx, cy);
-      blastTrainParts(cx);
-      shake(900, 34 * sceneScale());
-
-      /* Lichtblitz */
-      flash.style.transition = "none";
-      flash.style.opacity = "0.9";
-      requestAnimationFrame(function () {
-        flash.style.transition = "opacity .45s ease-out";
-        flash.style.opacity = "0";
-      });
-
-      if (!running) { running = true; requestAnimationFrame(tick); }
-
-      /* Es brennt noch eine Weile nach */
-      let embers = 0;
-      const emberTimer = window.setInterval(function () {
-        spawnEmbers(cx, cy);
-        if (++embers > 28) window.clearInterval(emberTimer);
-      }, 110);
-
-      /* Button-Text wechselt auf "cool" */
-      window.setTimeout(function () {
-        btn.textContent = "cool";
-        btn.classList.add("done");
-        btn.disabled = false;
-      }, 700);
-    }, 600);
-  });
-})();
-</script>
+<script src="js/main.js"></script>
 </body>
 </html>

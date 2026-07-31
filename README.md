@@ -1,38 +1,68 @@
-# Zug auf Schienen 🚂💥
+# RAIL BLAST — Startbildschirm 🚂💥
 
-Eine einzelne HTML-Datei: Eine gezeichnete Dampflok mit Tender und Personenwagen steht auf Schienen, die über die ganze Bildbreite laufen.
-Ein Klick auf **Start** lässt ihn mit Explosionssound in die Luft fliegen — danach steht auf dem Button nur noch **cool**.
+Startbildschirm für ein Spiel: eine Dampflok mit Tender und Personenwagen steht
+nachts auf Schienen, die über die ganze Bildbreite laufen. Ein Klick auf **Start**
+lässt den Zug mit Explosionssound in die Luft fliegen — danach steht auf dem Button
+nur noch **cool**.
 
 ## Starten
 
-`index.html` im Browser öffnen. Kein Build, keine Abhängigkeiten, keine externen Dateien.
+`index.html` im Browser öffnen. Kein Build, keine Abhängigkeiten, keine externen
+Dateien — Bild und Ton entstehen komplett im Browser.
 
-## Was passiert beim Klick
+```
+index.html      Struktur und die SVG-Illustration
+css/style.css   Szene, Beleuchtung, Titel, Menü
+js/main.js      Audio, Partikel, Parallaxe, Menülogik
+```
 
-1. Der Zug fängt an zu zittern (600 ms)
-2. Knall: Lichtblitz, Druckwelle, Screenshake
-3. Feuerball, Rauch, Funken und Trümmer über ein Canvas-Partikelsystem
-4. Lok und Waggons werden auseinandergeschleudert
-5. Am Unglücksort brennt es noch ein paar Sekunden nach
-6. Der Button wechselt auf „cool"
+## Was drin ist
 
-## Sound
+**Szene**
+- Neun Ebenen mit Parallaxe: Sternenhimmel, Mond, zwei Bergketten mit Dunst,
+  Baumsilhouetten, Telegrafenmasten, Boden, Gleis, Zug, Gras im Vordergrund
+- Die Ebenen folgen dem Mauszeiger und driften auch ohne Maus langsam weiter
+- Funkelnde Sterne, gelegentliche Sternschnuppen, Glühwürmchen über dem Boden
+- Lichtkegel des Spitzenlichts, wandernder Glanz auf der Schiene, Dampf aus
+  dem Schornstein, flackerndes Führerhausfenster
+- Baumreihe, Gras und Mastenabstände werden beim Laden erzeugt — mit festem
+  Startwert, damit die Silhouette bei jedem Aufruf gleich aussieht
 
-Der Explosionssound wird per Web Audio API zur Laufzeit erzeugt (Rauschen mit
-abfallendem Tiefpass + Sub-Bass-Wumms + metallisches Bersten) — es wird also keine
-Audiodatei benötigt. Browser starten Audio erst nach einer Nutzerinteraktion; da der
-Sound am Klick hängt, passt das. Wenn die Web Audio API nicht verfügbar ist, läuft die
-Animation trotzdem.
+**Menü**
+- Start, Optionen, Steuerung — mit Maus **und** Tastatur bedienbar
+  (↑ ↓ wählen, Enter bestätigen, Esc schließen, R setzt die Szene zurück)
+- Die Optionen wirken wirklich: Lautstärke, Bildschirmwackeln, Effektstärke.
+  Sie werden im Browser gespeichert und beim nächsten Start wieder geladen.
+
+**Explosion**
+1. Dampfpfeife, die Lok fängt an zu beben
+2. Vorknall am Kessel mit kleinem Lichtblitz
+3. Hauptknall: Blitz, Druckwelle, Screenshake, Feuerball in drei Wellen,
+   Rauchpilz, Funken, Bodenstaub und Trümmer mit Feuerschweif
+4. Der Feuerschein beleuchtet die ganze Landschaft
+5. Lok, Tender und Wagen werden auseinandergeschleudert, Trümmer bleiben
+   am Boden liegen
+6. Das Wrack brennt und raucht mehrere Sekunden nach
+7. Der Button wechselt auf „cool"
+
+## Ton
+
+Alles wird zur Laufzeit per Web Audio API erzeugt, es gibt keine Audiodateien:
+Rauschschichten mit wanderndem Filter, Sub-Bass, berstendes Metall, Trümmerregen,
+Dampfpfeife mit Vibrato und ein synthetischer Nachhall. Browser starten Audio erst
+nach einer Nutzerinteraktion — da der Ton am Klick hängt, passt das. Fehlt die
+Web Audio API, läuft die Animation trotzdem.
 
 ## Anpassen
 
-Alles steckt in `index.html`:
+- **Spieltitel**: in `index.html` im `<header class="brand">`
+- **Farben**: oben in `css/style.css` unter `:root`, dazu die Paletten `FIRE`,
+  `SMOKE` und `DEBRIS` in `js/main.js`
+- **Höhe von Horizont und Gleis**: `--horizon` und `--track-y` in `:root` —
+  alle Ebenen richten sich danach aus
+- **Wucht der Explosion**: Partikelzahlen und Geschwindigkeiten in `spawnBlast()`
+- **Ablauf und Timing**: die `later(...)`-Aufrufe in `explode()`
 
-- Lok, Tender und Wagen sind inline gezeichnetes SVG; Farbverläufe und die
-  wiederverwendeten Räder liegen im `<svg id="artdefs">` am Anfang des Body
-- Farben oben in `:root` sowie in den Paletten `FIRE`, `SMOKE` und `DEBRIS`
-- Wucht der Explosion über die Partikelanzahl und die Geschwindigkeiten in `spawnExplosion()`
-- Verzögerung bis zum Knall im Click-Handler (`600`), Umschalten des Buttons (`700`)
-
-Auf schmalen Bildschirmen werden Zug und Explosion automatisch verkleinert, die Schienen
-laufen aber immer über die volle Breite.
+Auf schmalen Bildschirmen rückt das Menü unter den Zug, das Gleis wandert nach
+oben und Zug wie Explosion werden kleiner. Die Schienen laufen immer über die
+volle Breite.
