@@ -467,30 +467,26 @@
   /* ================= 4. Parallaxe und Screenshake ================ */
 
   const layers = $$("[data-depth]");
-  let pointerX = 0, pointerY = 0;   /* Ziel, -1..1 */
-  let camX = 0, camY = 0;           /* geglättet */
+  let pointerX = 0;   /* Ziel, -1..1 */
+  let camX = 0;       /* geglättet */
 
   if (!reduceMotion) {
     window.addEventListener("pointermove", function (e) {
-      pointerX = (e.clientX / window.innerWidth  - 0.5) * 2;
-      pointerY = (e.clientY / window.innerHeight - 0.5) * 2;
+      pointerX = (e.clientX / window.innerWidth - 0.5) * 2;
     }, { passive: true });
   }
 
   function updateParallax(time) {
     /* Sanfte Eigenbewegung, damit das Bild auch ohne Maus lebt */
     const driftX = Math.sin(time * 0.00013) * 0.35;
-    const driftY = Math.cos(time * 0.00009) * 0.2;
-
     camX += ((pointerX + driftX) - camX) * 0.045;
-    camY += ((pointerY + driftY) - camY) * 0.045;
 
+    /* Bewusst nur waagerecht: ein senkrechter Versatz laesst Gleis und
+       Boden unter dem Zug wandern, was aussieht, als wuerde er schweben. */
     for (let i = 0; i < layers.length; i++) {
       const el = layers[i];
       const d = parseFloat(el.dataset.depth) || 0;
-      const tx = -camX * d * 0.9;
-      const ty = -camY * d * 0.35;
-      el.style.transform = `translate3d(${tx.toFixed(2)}px, ${ty.toFixed(2)}px, 0)`;
+      el.style.transform = `translate3d(${(-camX * d * 0.9).toFixed(2)}px, 0, 0)`;
     }
   }
 

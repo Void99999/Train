@@ -267,6 +267,13 @@ body {
 
 /* ======================= Zug und Beleuchtung ==================== */
 
+/* Traegt nur die Parallaxe; Position und Groesse des Zuges macht #trainWrap */
+#trainLayer {
+  top: 0;
+  bottom: 0;
+  z-index: 4;
+}
+
 #trainWrap {
   position: absolute;
   bottom: calc(var(--track-y) + 13px);
