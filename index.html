@@ -116,9 +116,9 @@
      sonst würden die rumble-Keyframes das translateX(-50%) überschreiben. */
   #trainWrap {
     position: absolute;
-    bottom: calc(20% + 16px);
+    bottom: calc(20% + 13px);
     left: 50%;
-    transform: translateX(-50%) scale(1.15);
+    transform: translateX(-50%) scale(1);
     transform-origin: bottom center;
     z-index: 4;
   }
@@ -126,150 +126,31 @@
   #train {
     display: flex;
     align-items: flex-end;
-    gap: 10px;
+    gap: 4px;
     filter: drop-shadow(0 10px 12px rgba(0,0,0,.5));
   }
 
   .part { position: relative; will-change: transform, opacity; }
+  .part svg { display: block; }
 
-  /* Lokomotive */
-  .loco {
-    width: 190px;
-    height: 96px;
-  }
-  .loco .boiler {
+  /* Dampfwölkchen über dem Schornstein der Lok */
+  .steam {
     position: absolute;
-    left: 0;
-    bottom: 18px;
-    width: 130px;
-    height: 52px;
-    background: linear-gradient(#4a5b6b, #26313d);
-    border-radius: 26px 8px 8px 26px;
-    border: 2px solid #16202a;
-  }
-  .loco .cab {
-    position: absolute;
-    right: 0;
-    bottom: 18px;
-    width: 66px;
-    height: 74px;
-    background: linear-gradient(#7a3b34, #4a221d);
-    border-radius: 8px 8px 4px 4px;
-    border: 2px solid #2a120f;
-  }
-  .loco .window {
-    position: absolute;
-    right: 14px;
-    bottom: 56px;
-    width: 30px;
-    height: 22px;
-    background: #ffe9a8;
-    border: 2px solid #2a120f;
-    border-radius: 3px;
-    box-shadow: 0 0 14px rgba(255,220,130,.6);
-  }
-  .loco .chimney {
-    position: absolute;
-    left: 14px;
-    bottom: 66px;
-    width: 26px;
-    height: 30px;
-    background: linear-gradient(#3b4753, #1b232b);
-    border: 2px solid #16202a;
-    border-radius: 4px 4px 2px 2px;
-  }
-  .loco .lamp {
-    position: absolute;
-    left: -6px;
-    bottom: 40px;
-    width: 16px;
-    height: 16px;
-    background: #ffe9a8;
-    border: 2px solid #16202a;
-    border-radius: 50%;
-    box-shadow: 0 0 18px rgba(255,225,140,.8);
-  }
-  .loco .stripe {
-    position: absolute;
-    left: 6px;
-    bottom: 26px;
-    width: 118px;
-    height: 6px;
-    background: #d8a13c;
-    border-radius: 3px;
-  }
-
-  /* Waggons */
-  .wagon {
-    width: 130px;
-    height: 74px;
-  }
-  .wagon .body {
-    position: absolute;
-    left: 0;
-    bottom: 18px;
-    width: 130px;
-    height: 56px;
-    background: linear-gradient(#3f6b52, #1f3a2c);
-    border: 2px solid #142418;
-    border-radius: 6px;
-  }
-  .wagon .body::after {
-    content: "";
-    position: absolute;
-    left: 12px;
-    right: 12px;
-    top: 14px;
-    height: 18px;
-    background: rgba(255,255,255,.08);
-    border-radius: 3px;
-  }
-
-  /* Räder */
-  .wheel {
-    position: absolute;
-    bottom: 0;
-    width: 30px;
-    height: 30px;
-    background: radial-gradient(circle at 50% 50%, #6a7480 0 6px, #2b333c 7px 100%);
-    border: 3px solid #171e25;
-    border-radius: 50%;
-  }
-  .wheel::after {
-    content: "";
-    position: absolute;
-    inset: 9px;
-    border-radius: 50%;
-    background: #59636f;
-  }
-
-  /* Kupplung */
-  .coupler {
-    position: absolute;
-    bottom: 30px;
-    right: -12px;
-    width: 12px;
-    height: 6px;
-    background: #2b333c;
-  }
-
-  /* Dampf */
-  .smoke {
-    position: absolute;
-    bottom: 96px;
-    left: 20px;
+    left: 38px;
+    top: -8px;
     width: 18px;
     height: 18px;
-    background: rgba(230,235,240,.5);
     border-radius: 50%;
-    animation: puff 2.6s linear infinite;
+    background: radial-gradient(circle at 38% 32%,
+      rgba(255,255,255,.8), rgba(214,226,238,.35) 55%, rgba(214,226,238,0) 72%);
+    animation: puff 2.8s linear infinite;
   }
-  .smoke:nth-of-type(2) { animation-delay: .9s; }
-  .smoke:nth-of-type(3) { animation-delay: 1.8s; }
+  .steam:nth-of-type(2) { animation-delay: .95s; }
+  .steam:nth-of-type(3) { animation-delay: 1.9s; }
 
   @keyframes puff {
-    0%   { transform: translate(0,0) scale(.4); opacity: .6; }
-    100% { transform: translate(-70px,-120px) scale(2.6); opacity: 0; }
+    0%   { transform: translate(0,0) scale(.35); opacity: .75; }
+    100% { transform: translate(-58px,-105px) scale(2.9); opacity: 0; }
   }
 
   /* Vibrieren kurz vor der Explosion */
@@ -345,11 +226,11 @@
   /* Auf schmalen Bildschirmen den Zug verkleinern, damit er ins Bild passt.
      Die Schienen bleiben immer über die volle Breite. */
   @media (max-width: 760px) {
-    #trainWrap { transform: translateX(-50%) scale(.72); }
+    #trainWrap { transform: translateX(-50%) scale(.62); }
     #startBtn { font-size: 17px; padding: 14px 34px; min-width: 170px; }
   }
   @media (max-width: 520px) {
-    #trainWrap { transform: translateX(-50%) scale(.5); }
+    #trainWrap { transform: translateX(-50%) scale(.44); }
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -358,6 +239,82 @@
 </style>
 </head>
 <body>
+
+<!-- Wiederverwendbare Bauteile und Farbverläufe für die Zug-Illustration -->
+<svg id="artdefs" width="0" height="0" aria-hidden="true" focusable="false" style="position:absolute">
+  <defs>
+    <linearGradient id="gBoiler" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#1e2833"/>
+      <stop offset="20%"  stop-color="#526b80"/>
+      <stop offset="40%"  stop-color="#74899d"/>
+      <stop offset="62%"  stop-color="#3e5062"/>
+      <stop offset="100%" stop-color="#141c24"/>
+    </linearGradient>
+    <linearGradient id="gSmokebox" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#1d242b"/>
+      <stop offset="32%"  stop-color="#3f4a56"/>
+      <stop offset="58%"  stop-color="#28313a"/>
+      <stop offset="100%" stop-color="#10151a"/>
+    </linearGradient>
+    <linearGradient id="gCab" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#8f4838"/>
+      <stop offset="32%"  stop-color="#b4614a"/>
+      <stop offset="68%"  stop-color="#78341f"/>
+      <stop offset="100%" stop-color="#431a11"/>
+    </linearGradient>
+    <linearGradient id="gCoach" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#2c6449"/>
+      <stop offset="32%"  stop-color="#448d65"/>
+      <stop offset="68%"  stop-color="#24523c"/>
+      <stop offset="100%" stop-color="#122a1f"/>
+    </linearGradient>
+    <linearGradient id="gCoal" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#3a3a40"/>
+      <stop offset="100%" stop-color="#111114"/>
+    </linearGradient>
+    <linearGradient id="gWin" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#fff1c4"/>
+      <stop offset="100%" stop-color="#eebf62"/>
+    </linearGradient>
+    <radialGradient id="gLamp" cx="42%" cy="38%" r="62%">
+      <stop offset="0%"   stop-color="#fffae2"/>
+      <stop offset="55%"  stop-color="#ffd978"/>
+      <stop offset="100%" stop-color="#d9991f"/>
+    </radialGradient>
+
+    <!-- Treibrad mit Speichen und Gegengewicht -->
+    <g id="wheelBig">
+      <circle r="28" fill="#161d24"/>
+      <circle r="28" fill="none" stroke="#828e9c" stroke-width="4"/>
+      <circle r="22.5" fill="#28323d"/>
+      <g stroke="#5f6d7c" stroke-width="4" stroke-linecap="round">
+        <line y1="-20.5" y2="20.5"/>
+        <line y1="-20.5" y2="20.5" transform="rotate(30)"/>
+        <line y1="-20.5" y2="20.5" transform="rotate(60)"/>
+        <line y1="-20.5" y2="20.5" transform="rotate(90)"/>
+        <line y1="-20.5" y2="20.5" transform="rotate(120)"/>
+        <line y1="-20.5" y2="20.5" transform="rotate(150)"/>
+      </g>
+      <path d="M17.6 12.3 A21.5 21.5 0 0 1 -17.6 12.3 L-8.2 5.7 A10 10 0 0 0 8.2 5.7 Z" fill="#3b4653"/>
+      <circle r="8" fill="#3b4653" stroke="#161d24" stroke-width="2"/>
+      <circle r="3" fill="#93a0ae"/>
+    </g>
+
+    <!-- Laufrad -->
+    <g id="wheelSmall">
+      <circle r="15" fill="#161d24"/>
+      <circle r="15" fill="none" stroke="#828e9c" stroke-width="3"/>
+      <circle r="10.5" fill="#28323d"/>
+      <g stroke="#5f6d7c" stroke-width="3" stroke-linecap="round">
+        <line y1="-9" y2="9"/>
+        <line y1="-9" y2="9" transform="rotate(45)"/>
+        <line y1="-9" y2="9" transform="rotate(90)"/>
+        <line y1="-9" y2="9" transform="rotate(135)"/>
+      </g>
+      <circle r="4" fill="#3b4653" stroke="#161d24" stroke-width="1.5"/>
+    </g>
+  </defs>
+</svg>
 
 <div id="scene">
   <div id="shaker">
@@ -375,34 +332,136 @@
     </div>
 
     <div id="trainWrap"><div id="train">
+
+      <!-- ================= Dampflokomotive =================
+           Grundlinie: Radunterkante liegt auf y=150, also auf der Schiene.
+           Laufblech bei y=84..96, Raeder darunter frei sichtbar. -->
       <div class="part loco">
-        <div class="smoke"></div>
-        <div class="smoke"></div>
-        <div class="smoke"></div>
-        <div class="chimney"></div>
-        <div class="boiler"></div>
-        <div class="stripe"></div>
-        <div class="cab"></div>
-        <div class="window"></div>
-        <div class="lamp"></div>
-        <div class="wheel" style="left:12px"></div>
-        <div class="wheel" style="left:58px"></div>
-        <div class="wheel" style="left:132px"></div>
-        <div class="coupler"></div>
+        <div class="steam"></div>
+        <div class="steam"></div>
+        <div class="steam"></div>
+        <svg viewBox="0 0 280 150" width="280" height="150" aria-hidden="true">
+          <!-- hintere Kupplung -->
+          <rect x="258" y="86" width="18" height="9" rx="2" fill="#28323d" stroke="#10171d" stroke-width="2"/>
+
+          <!-- Raeder -->
+          <use href="#wheelSmall" x="42" y="133.5"/>
+          <use href="#wheelBig" x="112" y="120"/>
+          <use href="#wheelBig" x="186" y="120"/>
+
+          <!-- Treibstange mit Kurbelzapfen -->
+          <rect x="94" y="128" width="92" height="8" rx="4" fill="#7b8794" stroke="#161d24" stroke-width="2"/>
+          <circle cx="112" cy="132" r="4.5" fill="#39434e" stroke="#161d24" stroke-width="1.5"/>
+          <circle cx="186" cy="132" r="4.5" fill="#39434e" stroke="#161d24" stroke-width="1.5"/>
+
+          <!-- Rahmen / Laufblech -->
+          <rect x="18" y="84" width="252" height="13" rx="3" fill="#232b34" stroke="#10171d" stroke-width="2.5"/>
+          <rect x="22" y="87" width="244" height="3" fill="#404c59" opacity=".7"/>
+
+          <!-- Dampfzylinder -->
+          <rect x="56" y="97" width="40" height="26" rx="5" fill="#2c3641" stroke="#10171d" stroke-width="2.5"/>
+          <rect x="60" y="101" width="32" height="4" rx="2" fill="#5a6875" opacity=".65"/>
+
+          <!-- Schienenraeumer -->
+          <path d="M30 92 L4 139 L30 139 Z" fill="#8a4030" stroke="#33130c" stroke-width="2.5" stroke-linejoin="round"/>
+          <path d="M26 102 L15 134 M30 108 L23 134" stroke="#33130c" stroke-width="2" opacity=".5" stroke-linecap="round"/>
+
+          <!-- Kessel mit Messingringen -->
+          <rect x="58" y="32" width="124" height="54" rx="9" fill="url(#gBoiler)" stroke="#0e151b" stroke-width="2.5"/>
+          <g stroke="#c9a227" stroke-width="3" opacity=".5">
+            <line x1="90" y1="34" x2="90" y2="84"/>
+            <line x1="138" y1="34" x2="138" y2="84"/>
+            <line x1="170" y1="34" x2="170" y2="84"/>
+          </g>
+
+          <!-- Rauchkammer mit Tuer und Lampe -->
+          <rect x="24" y="28" width="40" height="60" rx="14" fill="url(#gSmokebox)" stroke="#0b1015" stroke-width="2.5"/>
+          <ellipse cx="30" cy="58" rx="6" ry="25" fill="#2b353f" stroke="#0b1015" stroke-width="2"/>
+          <path d="M12 44 L0 32 L0 74 L12 62 Z" fill="#ffe3a0" opacity=".16"/>
+          <circle cx="30" cy="50" r="7.5" fill="url(#gLamp)" stroke="#0b1015" stroke-width="1.5"/>
+          <circle cx="30" cy="70" r="3" fill="#93a0ae"/>
+
+          <!-- Schornstein -->
+          <path d="M34 34 L37 14 L30 14 L30 3 L64 3 L64 14 L57 14 L60 34 Z"
+                fill="url(#gSmokebox)" stroke="#0b1015" stroke-width="2.5" stroke-linejoin="round"/>
+
+          <!-- Dampfdom und Sanddom -->
+          <path d="M100 36 L100 26 A17 12 0 0 1 134 26 L134 36 Z" fill="url(#gBoiler)" stroke="#0e151b" stroke-width="2.5"/>
+          <path d="M144 36 L144 30 A11 8 0 0 1 166 30 L166 36 Z" fill="url(#gBoiler)" stroke="#0e151b" stroke-width="2.5"/>
+
+          <!-- Fuehrerhaus -->
+          <rect x="180" y="26" width="78" height="70" rx="5" fill="url(#gCab)" stroke="#33130c" stroke-width="2.5"/>
+          <path d="M172 28 Q219 10 266 28 L266 37 Q219 19 172 37 Z"
+                fill="#3d2018" stroke="#1c0c07" stroke-width="2.5" stroke-linejoin="round"/>
+          <ellipse cx="218" cy="57" rx="40" ry="26" fill="#ffd978" opacity=".15"/>
+          <rect x="196" y="43" width="44" height="29" rx="4" fill="url(#gWin)" stroke="#33130c" stroke-width="2.5"/>
+          <line x1="218" y1="43" x2="218" y2="72" stroke="#33130c" stroke-width="2.5"/>
+        </svg>
       </div>
 
-      <div class="part wagon">
-        <div class="body"></div>
-        <div class="wheel" style="left:14px"></div>
-        <div class="wheel" style="left:86px"></div>
-        <div class="coupler"></div>
+      <!-- ================= Tender ================= -->
+      <div class="part tender">
+        <svg viewBox="0 0 130 150" width="130" height="150" aria-hidden="true">
+          <rect x="0" y="102" width="14" height="9" rx="2" fill="#28323d" stroke="#10171d" stroke-width="2"/>
+          <rect x="116" y="102" width="14" height="9" rx="2" fill="#28323d" stroke="#10171d" stroke-width="2"/>
+
+          <use href="#wheelSmall" x="34" y="133.5"/>
+          <use href="#wheelSmall" x="96" y="133.5"/>
+
+          <rect x="6" y="100" width="118" height="17" rx="3" fill="#232b34" stroke="#10171d" stroke-width="2.5"/>
+
+          <!-- Kohlekasten -->
+          <rect x="10" y="56" width="110" height="46" rx="4" fill="url(#gCab)" stroke="#33130c" stroke-width="2.5"/>
+          <rect x="18" y="66" width="94" height="18" rx="3" fill="#000" opacity=".12"/>
+          <line x1="65" y1="58" x2="65" y2="100" stroke="#33130c" stroke-width="2" opacity=".45"/>
+          <rect x="12" y="94" width="106" height="3" fill="#c9a227" opacity=".5"/>
+
+          <!-- Kohlehaufen -->
+          <path d="M14 56 L23 44 L35 49 L47 37 L61 44 L75 35 L89 46 L101 42 L116 56 Z"
+                fill="url(#gCoal)" stroke="#0b0b0e" stroke-width="2" stroke-linejoin="round"/>
+          <g fill="#565660" opacity=".85">
+            <circle cx="38" cy="49" r="3"/>
+            <circle cx="63" cy="47" r="2.5"/>
+            <circle cx="87" cy="50" r="3"/>
+            <circle cx="104" cy="50" r="2"/>
+          </g>
+        </svg>
       </div>
 
-      <div class="part wagon">
-        <div class="body"></div>
-        <div class="wheel" style="left:14px"></div>
-        <div class="wheel" style="left:86px"></div>
+      <!-- ================= Personenwagen ================= -->
+      <div class="part coach">
+        <svg viewBox="0 0 175 150" width="175" height="150" aria-hidden="true">
+          <rect x="0" y="102" width="14" height="9" rx="2" fill="#28323d" stroke="#10171d" stroke-width="2"/>
+          <rect x="161" y="102" width="14" height="9" rx="2" fill="#28323d" stroke="#10171d" stroke-width="2"/>
+
+          <use href="#wheelSmall" x="28" y="133.5"/>
+          <use href="#wheelSmall" x="66" y="133.5"/>
+          <use href="#wheelSmall" x="109" y="133.5"/>
+          <use href="#wheelSmall" x="147" y="133.5"/>
+
+          <!-- Drehgestellrahmen -->
+          <rect x="20" y="117" width="54" height="9" rx="3" fill="#1c242c"/>
+          <rect x="101" y="117" width="54" height="9" rx="3" fill="#1c242c"/>
+
+          <rect x="6" y="100" width="163" height="17" rx="3" fill="#232b34" stroke="#10171d" stroke-width="2.5"/>
+
+          <!-- Wagenkasten -->
+          <rect x="8" y="50" width="159" height="52" rx="5" fill="url(#gCoach)" stroke="#0f2318" stroke-width="2.5"/>
+          <path d="M4 54 Q87.5 26 171 54 L171 60 L4 60 Z"
+                fill="#2a3a31" stroke="#0f2318" stroke-width="2.5" stroke-linejoin="round"/>
+
+          <!-- Fenster -->
+          <g fill="url(#gWin)" stroke="#0f2318" stroke-width="2">
+            <rect x="17"  y="66" width="21" height="21" rx="3"/>
+            <rect x="47"  y="66" width="21" height="21" rx="3"/>
+            <rect x="77"  y="66" width="21" height="21" rx="3"/>
+            <rect x="107" y="66" width="21" height="21" rx="3"/>
+            <rect x="137" y="66" width="21" height="21" rx="3"/>
+          </g>
+          <rect x="10" y="94" width="155" height="4" fill="#c9a227" opacity=".55"/>
+        </svg>
       </div>
+
     </div></div>
 
     <canvas id="fx"></canvas>
@@ -536,7 +595,7 @@
 
   const FIRE = ["#fff3b0", "#ffd166", "#ff9f1c", "#f4501e", "#c1200f"];
   const SMOKE = ["#3c3a37", "#4a4641", "#2e2c2a", "#565049"];
-  const DEBRIS = ["#2b333c", "#7a3b34", "#3f6b52", "#8d949c", "#d8a13c"];
+  const DEBRIS = ["#28323d", "#b4614a", "#448d65", "#828e9c", "#c9a227", "#3d2018"];
 
   /* Explosion skaliert mit der Bildbreite, damit sie auf dem Handy
      nicht das halbe Display ausfuellt. */

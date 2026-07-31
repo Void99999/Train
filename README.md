@@ -1,6 +1,6 @@
 # Zug auf Schienen 🚂💥
 
-Eine einzelne HTML-Datei: Ein Zug steht auf Schienen, die über die ganze Bildbreite laufen.
+Eine einzelne HTML-Datei: Eine gezeichnete Dampflok mit Tender und Personenwagen steht auf Schienen, die über die ganze Bildbreite laufen.
 Ein Klick auf **Start** lässt ihn mit Explosionssound in die Luft fliegen — danach steht auf dem Button nur noch **cool**.
 
 ## Starten
@@ -28,6 +28,8 @@ Animation trotzdem.
 
 Alles steckt in `index.html`:
 
+- Lok, Tender und Wagen sind inline gezeichnetes SVG; Farbverläufe und die
+  wiederverwendeten Räder liegen im `<svg id="artdefs">` am Anfang des Body
 - Farben oben in `:root` sowie in den Paletten `FIRE`, `SMOKE` und `DEBRIS`
 - Wucht der Explosion über die Partikelanzahl und die Geschwindigkeiten in `spawnExplosion()`
 - Verzögerung bis zum Knall im Click-Handler (`600`), Umschalten des Buttons (`700`)
