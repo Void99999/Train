@@ -7,7 +7,9 @@ schwarz, und aus der Blende heraus läuft eine Cutscene: ein Kampfhubschrauber f
 heran, ein Soldat feuert aus der offenen Schiebetür, dann wird der Heli getroffen und
 stürzt brennend ab. Nach der nächsten Schwarzblende sieht man den Soldaten aus der
 Egoperspektive: er kriecht über das brennende Schlachtfeld, während Geschosse über ihn
-hinwegfliegen. Das Gefecht ebbt langsam ab — und dann steht wieder der Startbildschirm da.
+hinwegfliegen. Das Gefecht ebbt langsam ab, er kriecht auf ein Haus zu, an dem eine
+kleine Lok wartet, richtet sich zitternd auf, steigt ein und drückt am Pult auf 100 %.
+Die Lok fährt an — und dann steht wieder der Startbildschirm da.
 
 ## Starten
 
@@ -54,7 +56,7 @@ python3 build-einzeldatei.py
 - Die Optionen wirken wirklich: Lautstärke, Bildschirmwackeln, Effektstärke.
   Sie werden im Browser gespeichert und beim nächsten Start wieder geladen.
 
-**Ablauf beim Start** — drei Akte, zusammen gut eine halbe Minute.
+**Ablauf beim Start** — vier Akte, zusammen etwa dreiviertel Minute.
 Leertaste oder Esc springt jederzeit zurück zum Startbildschirm.
 
 *1. Akt — der Zug* (`startSequence()`)
@@ -77,12 +79,30 @@ Fenstergröße.
    Feld, zerschossene Baumstümpfe, Krater
 2. Seine Hände kriechen abwechselnd nach vorn, die Sicht nickt im Takt mit
 3. Geschosse zischen über ihn hinweg, in der Ferne fallen Schüsse
-4. Das Gefecht ebbt ab: Feuer, Schüsse und Kopfnicken werden weniger
-5. Blende — und der Startbildschirm steht wieder da
+4. Das Gefecht ebbt ab: Feuer, Schüsse und Kopfnicken werden weniger —
+   und mit ihnen die Lautstärke der Einschläge
+5. Vor ihm wächst sein Ziel heran: ein Haus, davor eine wartende Lok
+6. Er richtet sich zitternd auf, dabei kommen seine Beine ins Bild
 
 Wie stark das Gefecht tobt, steuert `fpsState.calm` von 1 (voll) auf 0
 (ruhig); daran hängen Feuermenge, Schussfrequenz, Lautstärke und die
-Stärke des Kopfnickens.
+Stärke des Kopfnickens. `fpsState.goal` (0 → 1) zieht das Haus heran,
+`fpsState.stand` (0 → 1) richtet die Kamera auf und blendet die Beine ein;
+das Zittern beim Aufstehen hängt ebenfalls an `stand`.
+
+*4. Akt — die Lok* (`runCabScene()`)
+1. Im Führerstand: Fenster, Manometer, Rohre und das Pult
+2. Statt Fahrhebeln stehen dort vier Leistungsstufen: 25 %, 50 %, 75 %, 100 %
+3. Die Hand des Soldaten fährt hoch und drückt auf **100 %** — die Stufe
+   leuchtet auf, es klackt
+4. Die Lok fährt an: die Landschaft im Fenster zieht immer schneller vorbei
+   (`--speed` geht von 2,6 s über 1,1 s auf 0,6 s je Durchlauf)
+5. Blende auf Schwarz — und der Startbildschirm steht wieder da
+
+Die Hand ist aufrecht gezeichnet, mit der Zeigefingerspitze im Ursprung.
+`transform-origin: 0 0` sorgt dafür, dass der Punkt hinter `translate()`
+genau die Stelle ist, an der der Finger auftrifft; die Drehung legt den
+Handrücken nach links unten, damit die Beschriftung frei bleibt.
 
 **Zugexplosion**
 1. Dampfpfeife, die Lok fängt an zu beben
@@ -111,11 +131,13 @@ Web Audio API, läuft die Animation trotzdem.
 - **Höhe von Horizont und Gleis**: `--horizon` und `--track-y` in `:root` —
   alle Ebenen richten sich danach aus
 - **Wucht der Explosion**: Partikelzahlen und Geschwindigkeiten in `spawnBlast()`
-- **Ablauf und Timing**: die `later(...)`-Aufrufe in `runCutscene()` und `explode()`
+- **Ablauf und Timing**: die `later(...)`-Aufrufe in `startSequence()` und `explode()`
 - **Flugbahn des Helis**: `updateHeli()` — die Phasen `enter`, `hover`,
   `hit` und `fall`
 - **Länge der Akte**: die `later(...)`-Aufrufe in `startSequence()`,
-  `heliImpact()` und `runFieldScene()`
+  `heliImpact()`, `runFieldScene()` und `runCabScene()`
+- **Leistungsstufen im Führerstand**: die `.step`-Gruppen in `index.html`,
+  die Position der Hand in `css/style.css` unter `.cab-hand`
 
 Auf schmalen Bildschirmen rückt das Menü unter den Zug, das Gleis wandert nach
 oben und Zug wie Explosion werden kleiner. Die Schienen laufen immer über die

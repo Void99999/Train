@@ -520,6 +520,22 @@ body {
   display: block;
 }
 
+
+/* Ziel am Horizont: waechst heran, waehrend der Soldat darauf zukriecht.
+   Die Naeherung steuert das Skript ueber --goal (0 = fern, 1 = davor). */
+.fps-goal {
+  position: absolute;
+  left: 50%;
+  bottom: 27%;
+  width: 26%;
+  height: auto;
+  transform: translateX(-50%) scale(calc(.5 + var(--goal, 0) * 2.6));
+  transform-origin: 50% 100%;
+  opacity: calc(.25 + var(--goal, 0) * .75);
+  filter: blur(calc((1 - var(--goal, 0)) * 2.5px));
+  pointer-events: none;
+}
+
 /* Feuerherde markieren nur die Stellen; die Flammen kommen als Partikel */
 .fire-marks { position: absolute; inset: 0; }
 .fire-marks i {
@@ -574,6 +590,96 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .fpsLayer.crawl .hand.left, .fpsLayer.crawl .hand.right { animation: none; }
+}
+
+
+/* Beine erscheinen beim Aufrichten. --stand geht von 0 (liegend) auf 1. */
+.fps-legs {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 56%;
+  height: auto;
+  transform: translateX(-50%) translateY(calc((1 - var(--stand, 0)) * 60%));
+  opacity: var(--stand, 0);
+  pointer-events: none;
+  filter: drop-shadow(0 -10px 24px rgba(0,0,0,.6));
+}
+
+/* Beim Aufstehen wandern die Haende aus dem Bild */
+.fpsLayer.standing .hand { animation: none; transition: transform .9s ease-in, opacity .9s ease-in; }
+.fpsLayer.standing .hand.left  { transform: translate(-30%, 70%) rotate(-14deg); opacity: 0; }
+.fpsLayer.standing .hand.right { transform: scaleX(-1) translate(-30%, 70%) rotate(-14deg); opacity: 0; }
+
+
+/* ================== Fuehrerstand der Lok ================== */
+
+#cab {
+  position: absolute;
+  inset: 0;
+  z-index: 14;
+  overflow: hidden;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity .7s ease;
+}
+#cab.on { opacity: 1; visibility: visible; }
+
+/* Die Wandfarbe des SVG als Untergrund: bei hohen Fenstern bleibt oben ein
+   Streifen frei, der so nahtlos in die Fuehrerstandswand uebergeht. */
+#cab { background: #3d4a44; }
+
+/* Die vorbeiziehende Landschaft im Fenster: zwei Kacheln nebeneinander,
+   das Band wandert um genau eine Kachelbreite. --speed steuert die Dauer,
+   0s heisst: steht still. */
+.cab-band {
+  animation: cabScroll var(--speed, 0s) linear infinite;
+}
+@keyframes cabScroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-600px); }
+}
+
+.cab-front {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Die Hand faehrt zur letzten Stufe und drueckt zu.
+   Sie ist aufrecht gezeichnet, die Zeigefingerspitze sitzt im Ursprung.
+   Mit transform-origin 0 0 zeigt der Punkt hinter translate() also genau
+   dorthin, wo der Finger auftrifft; die Drehung legt den Handruecken nach
+   links unten, damit die Beschriftung frei bleibt. */
+.cab-hand {
+  transform-origin: 0 0;
+  transform: translate(880px, 900px) rotate(38deg) scale(.72);
+  transition: transform 1.5s cubic-bezier(.35, .1, .3, 1);
+}
+#cab.reach .cab-hand { transform: translate(834px, 566px) rotate(38deg) scale(.72); }
+#cab.press .cab-hand { transform: translate(812px, 520px) rotate(38deg) scale(.72); }
+
+/* Gedrueckte Stufe leuchtet auf */
+.step.full rect:nth-of-type(2) { transition: fill .25s ease; }
+#cab.press .step.full rect:nth-of-type(2) { fill: #b2451f; }
+#cab.press .step.full rect:nth-of-type(3) { fill: #d6602c; }
+
+.cab-vig {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(120% 92% at 50% 46%, rgba(0,0,0,0) 44%, rgba(0,0,0,.8) 100%);
+}
+
+@media (max-width: 760px) {
+  .fps-legs { width: 86%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cab-band { animation: none; }
 }
 
 /* ========================== Bildlook ============================ */

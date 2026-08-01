@@ -43,6 +43,9 @@
   const fpsBack   = $("#fpsBack");
   const fpsFore   = $("#fpsFore");
   const fpsScenes = $$(".fps-scene");
+  const fpsGoal   = $(".fps-goal");
+  const fpsLegs   = $(".fps-legs");
+  const cab       = $("#cab");
 
   const ctx   = fx.getContext("2d");
   const sctx  = skyfx.getContext("2d");
@@ -1156,15 +1159,15 @@
 
     later(function () { fade.classList.remove("on"); }, 4700);
 
-    /* Es wird ruhig, dann zurueck zum Startbildschirm */
-    later(function () { fade.classList.add("on"); }, 13200);
-    later(finishSequence, 15100);
+    /* Von hier uebernimmt der dritte Akt; das Ende liegt in
+       runCabScene(), nachdem die Lok angefahren ist. */
   }
 
 
   /* Zurueck auf Anfang: Szene aufraeumen und aufblenden */
   function finishSequence() {
     stopFieldScene();
+    cab.classList.remove("on", "reach", "press");
     world.style.visibility = "";
     parts.length = 0;
     waves.length = 0;
@@ -1320,6 +1323,7 @@
     timers.length = 0;
     stopRotor();
     stopFieldScene();
+    cab.classList.remove("on", "reach", "press");
     heli.classList.remove("on");
     heliState.on = false;
     impacted = true;
@@ -1329,12 +1333,111 @@
   }
 
 
+
+  /* Schweres Einatmen, wenn er sich hochstemmt */
+  function breathIn() {
+    const a = resume(); if (!a) return;
+    const t = a.currentTime;
+    const n = a.createBufferSource();
+    n.buffer = noiseBuffer(1.9, 0.2);
+    const bp = a.createBiquadFilter();
+    bp.type = "bandpass";
+    bp.frequency.setValueAtTime(420, t);
+    bp.frequency.linearRampToValueAtTime(900, t + 0.7);
+    bp.frequency.linearRampToValueAtTime(300, t + 1.8);
+    bp.Q.value = 1.6;
+    const g = a.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(0.11, t + 0.6);
+    g.gain.linearRampToValueAtTime(0.04, t + 1.1);
+    g.gain.linearRampToValueAtTime(0.09, t + 1.5);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 1.9);
+    n.connect(bp).connect(g).connect(master);
+    n.start(t); n.stop(t + 1.9);
+  }
+
+  /* Schwerer Schalter am Pult */
+  function buttonClack() {
+    const a = resume(); if (!a) return;
+    const t = a.currentTime;
+
+    const n = a.createBufferSource();
+    n.buffer = noiseBuffer(0.12, 4);
+    const hp = a.createBiquadFilter();
+    hp.type = "highpass";
+    hp.frequency.value = 1400;
+    const g = a.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.26, t + 0.003);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.11);
+    n.connect(hp).connect(g); g.connect(master); g.connect(reverb);
+    n.start(t); n.stop(t + 0.12);
+
+    const o = a.createOscillator();
+    const og = a.createGain();
+    o.type = "square";
+    o.frequency.setValueAtTime(220, t);
+    o.frequency.exponentialRampToValueAtTime(70, t + 0.08);
+    og.gain.setValueAtTime(0.0001, t);
+    og.gain.exponentialRampToValueAtTime(0.2, t + 0.004);
+    og.gain.exponentialRampToValueAtTime(0.0001, t + 0.13);
+    o.connect(og).connect(master);
+    o.start(t); o.stop(t + 0.14);
+  }
+
+  /* Die Lok faehrt an: Pfiff, dann Auspuffschlaege, die schneller werden */
+  function trainDeparture() {
+    const a = resume(); if (!a) return;
+    playWhistle(1.1);
+
+    const t0 = a.currentTime + 0.9;
+    let t = t0, gap = 0.62;
+    for (let i = 0; i < 26 && t < t0 + 8; i++) {
+      const n = a.createBufferSource();
+      n.buffer = noiseBuffer(0.4, 1.6);
+      const bp = a.createBiquadFilter();
+      bp.type = "bandpass";
+      bp.frequency.setValueAtTime(560, t);
+      bp.frequency.exponentialRampToValueAtTime(180, t + 0.3);
+      bp.Q.value = 0.7;
+      const g = a.createGain();
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.3, t + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + Math.min(0.42, gap * 0.9));
+      n.connect(bp).connect(g);
+      g.connect(master); g.connect(reverb);
+      n.start(t); n.stop(t + 0.42);
+
+      t += gap;
+      gap *= 0.87;                 /* die Schlaege ruecken zusammen */
+      if (gap < 0.13) gap = 0.13;
+    }
+
+    /* Rollgeraeusch, das anschwillt */
+    const roll = a.createBufferSource();
+    roll.buffer = noiseBuffer(9, 0);
+    roll.loop = true;
+    const lp = a.createBiquadFilter();
+    lp.type = "lowpass";
+    lp.frequency.setValueAtTime(180, t0);
+    lp.frequency.linearRampToValueAtTime(700, t0 + 5);
+    const rg = a.createGain();
+    rg.gain.setValueAtTime(0.0001, t0);
+    rg.gain.linearRampToValueAtTime(0.14, t0 + 4);
+    rg.gain.setValueAtTime(0.14, t0 + 5.4);
+    rg.gain.exponentialRampToValueAtTime(0.0001, t0 + 6.6);
+    roll.connect(lp).connect(rg).connect(master);
+    roll.start(t0); roll.stop(t0 + 6.8);
+  }
+
   /* ============ 6b. Egoperspektive: Schlachtfeld ============
      Dritter Akt. Der Soldat kriecht durch das brennende Feld, waehrend
      ueber ihm geschossen wird. Feuer und Geschosse laufen als Partikel
      auf demselben Canvas wie die Explosionen. */
 
-  const fpsState = { on: false, t0: 0, calm: 1 };   /* calm 1 = voll, 0 = ruhig */
+  const fpsState = { on: false, t0: 0, calm: 1, goal: 0, stand: 0 };
+  /* calm 1 = volles Gefecht, 0 = ruhig | goal 0 = Haus fern, 1 = davor
+     stand 0 = liegend, 1 = aufgerichtet */
 
   /* Zischen eines vorbeifliegenden Geschosses */
   function bulletWhizz() {
@@ -1349,7 +1452,7 @@
     bp.Q.value = 7;
     const g = a.createGain();
     g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(0.1 * fpsState.calm + 0.001, t + 0.05);
+    g.gain.exponentialRampToValueAtTime(0.1 * fpsState.calm * fpsState.calm + 0.0005, t + 0.05);
     g.gain.exponentialRampToValueAtTime(0.0001, t + 0.3);
     n.connect(bp).connect(g).connect(master);
     n.start(t); n.stop(t + 0.3);
@@ -1369,12 +1472,61 @@
       lp.frequency.value = 620;          /* dumpf = weit weg */
       const g = a.createGain();
       g.gain.setValueAtTime(0.0001, t);
-      g.gain.exponentialRampToValueAtTime(rand(0.05, 0.12) * fpsState.calm + 0.001, t + 0.008);
+      g.gain.exponentialRampToValueAtTime(rand(0.05, 0.12) * fpsState.calm * fpsState.calm + 0.0005, t + 0.008);
       g.gain.exponentialRampToValueAtTime(0.0001, t + 0.22);
       n.connect(lp).connect(g);
       g.connect(master); g.connect(reverb);
       n.start(t); n.stop(t + 0.24);
     }
+  }
+
+  /* Einschlag im Boden: Dreck spritzt auf, Funken springen weg */
+  function spawnImpact() {
+    const w = app.clientWidth, hgt = app.clientHeight;
+    const x = rand(w * 0.12, w * 0.88);
+    const y = rand(hgt * 0.62, hgt * 0.86);
+    const S = clamp(sceneScale(), 0.5, 1);
+
+    for (let i = 0; i < 7; i++) {
+      const a = -Math.PI / 2 + rand(-0.9, 0.9);
+      const sp = rand(5, 17);
+      parts.push({ type: "debris",
+        x: x, y: y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp,
+        w: rand(3, 9) * S, h: rand(2, 6) * S,
+        rot: Math.random() * Math.PI, vr: rand(-0.4, 0.4),
+        life: 1, decay: 0.02, grav: 0.55, drag: 0.99,
+        burning: false, rest: y + rand(0, 10), landed: false,
+        color: ["#2a1d10", "#3a2a17", "#1a130b"][(Math.random() * 3) | 0] });
+    }
+    for (let i = 0; i < 4; i++) {
+      const a = -Math.PI / 2 + rand(-1.1, 1.1);
+      parts.push({ type: "spark",
+        x: x, y: y, vx: Math.cos(a) * rand(4, 13), vy: Math.sin(a) * rand(4, 13),
+        r: rand(1.2, 2.2), life: 1, decay: 0.045, grav: 0.4, drag: 0.98,
+        color: "#ffd68a" });
+    }
+    parts.push({ type: "smoke",
+      x: x, y: y - 4, vx: rand(-.6, .6), vy: rand(-1.6, -.5),
+      r: rand(12, 26) * S, life: 1, decay: 0.028,
+      grav: -0.03, drag: 0.96, color: "#4a3d2c" });
+    return { x: x, y: y };
+  }
+
+  /* Aufschlag im Dreck: kurzer, dumpfer Knall */
+  function impactThud() {
+    const a = resume(); if (!a) return;
+    const t = a.currentTime;
+    const n = a.createBufferSource();
+    n.buffer = noiseBuffer(0.2, 2.6);
+    const lp = a.createBiquadFilter();
+    lp.type = "lowpass";
+    lp.frequency.value = 900;
+    const g = a.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.14 * fpsState.calm + 0.0005, t + 0.006);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.19);
+    n.connect(lp).connect(g).connect(master);
+    n.start(t); n.stop(t + 0.2);
   }
 
   /* Leuchtspur quer durchs Bild, ueber dem Kopf */
@@ -1419,10 +1571,19 @@
   function updateFps(time) {
     if (!fpsState.on) return;
     const el = (time - fpsState.t0) / 1000;
-    const bob = Math.sin(el * 3.3) * 10 * fpsState.calm;
-    const sway = Math.cos(el * 1.65) * 14 * fpsState.calm;
-    const tilt = Math.sin(el * 3.3 + 0.6) * 1.1 * fpsState.calm;
-    const tf = `translate(${sway.toFixed(1)}px, ${bob.toFixed(1)}px) rotate(${tilt.toFixed(2)}deg)`;
+    /* Beim Kriechen nickt die Sicht im Takt; beim Aufstehen wird daraus
+       ein feines Zittern. */
+    const crawl = 1 - fpsState.stand;
+    const shake = fpsState.stand * (Math.sin(el * 17) * 2.2 + Math.sin(el * 26) * 1.4);
+    const bob = Math.sin(el * 3.3) * 10 * crawl * (0.35 + fpsState.calm * 0.65) + shake;
+    const sway = Math.cos(el * 1.65) * 14 * crawl + shake * 0.5;
+    const tilt = Math.sin(el * 3.3 + 0.6) * 1.1 * crawl + fpsState.stand * Math.sin(el * 13) * 0.35;
+
+    /* Die Sicht hebt sich beim Aufrichten */
+    const lift = -fpsState.stand * app.clientHeight * 0.16;
+    fpsGoal.style.setProperty("--goal", fpsState.goal.toFixed(3));
+    fpsLegs.style.setProperty("--stand", fpsState.stand.toFixed(3));
+    const tf = `translate(${sway.toFixed(1)}px, ${(bob + lift).toFixed(1)}px) rotate(${tilt.toFixed(2)}deg)`;
     for (let i = 0; i < fpsScenes.length; i++) fpsScenes[i].style.transform = tf;
   }
 
@@ -1443,36 +1604,112 @@
     /* Geschosse in unregelmaessigen Abstaenden */
     function nextShot() {
       if (!fpsState.on) return;
-      const n = 1 + ((Math.random() * 3) | 0);
-      for (let i = 0; i < n; i++) {
-        later(function () { spawnFlyby(); bulletWhizz(); }, i * rand(60, 160));
+      /* Unter dieser Schwelle ist das Gefecht vorbei - kein Ton, kein Bild */
+      if (fpsState.calm > 0.08) {
+        const n = 1 + ((Math.random() * 3) | 0);
+        for (let i = 0; i < n; i++) {
+          later(function () {
+            spawnFlyby();
+            bulletWhizz();
+            /* manche Geschosse schlagen neben ihm ein */
+            if (Math.random() < 0.45 * fpsState.calm) { spawnImpact(); impactThud(); }
+          }, i * rand(60, 160));
+        }
+        if (Math.random() < 0.7 * fpsState.calm + 0.1) distantFire();
       }
-      if (Math.random() < 0.7) distantFire();
-      flybyTimer = setTimeout(nextShot, rand(400, 1100) / Math.max(0.25, fpsState.calm));
+      /* Pausen werden laenger, je ruhiger es wird */
+      const gap = rand(380, 950) * (1 + (1 - fpsState.calm) * 5);
+      flybyTimer = setTimeout(nextShot, gap);
       timers.push(flybyTimer);
     }
     nextShot();
 
-    /* Das Gefecht ebbt ab: Feuer, Schuesse und Kopfnicken werden weniger */
-    const calmStart = performance.now() + 4500;
-    const calmDur = 4500;
-    const calmer = setInterval(function () {
+    /* Das Gefecht ebbt ab, gleichzeitig kommt das Haus naeher */
+    const t0 = performance.now();
+    const calmStart = t0 + 3500, calmDur = 4500;
+    const goalDur = 8500;
+    const prog = setInterval(function () {
       const k = (performance.now() - calmStart) / calmDur;
-      if (k <= 0) return;
-      fpsState.calm = clamp(1 - k, 0, 1);
-      if (fpsState.calm <= 0.02) { clearInterval(calmer); }
-    }, 100);
-    timers.push(calmer);
+      if (k > 0) {
+        fpsState.calm = clamp(1 - k, 0, 1);
+        if (fpsState.calm <= 0.35 && fpsState.calm > 0.3) fadeFireLoop();
+      }
+      fpsState.goal = clamp((performance.now() - t0) / goalDur, 0, 1);
+      if (fpsState.calm <= 0.02 && fpsState.goal >= 1) clearInterval(prog);
+    }, 80);
+    timers.push(prog);
+
+    /* Er richtet sich auf - zitternd */
+    later(function () {
+      fpsFore.classList.remove("crawl");
+      fpsFore.classList.add("standing");
+      breathIn();
+      const s0 = performance.now();
+      const rise = setInterval(function () {
+        const k = clamp((performance.now() - s0) / 2600, 0, 1);
+        /* ruckelig, nicht gleichmaessig - er kommt muehsam hoch */
+        fpsState.stand = k * k * (3 - 2 * k) * (0.94 + Math.sin(k * 22) * 0.06);
+        if (k >= 1) clearInterval(rise);
+      }, 40);
+      timers.push(rise);
+    }, 9000);
+
+    /* Umschnitt in den Fuehrerstand */
+    later(function () { fade.classList.add("on"); }, 12600);
+    later(function () {
+      stopFieldScene();
+      cab.classList.add("on");
+      runCabScene();
+    }, 14300);
+    later(function () { fade.classList.remove("on"); }, 14800);
+  }
+
+
+  /* ============ 6c. Fuehrerstand ============
+     Der Soldat greift zur letzten Leistungsstufe; danach faehrt die Lok an. */
+  function runCabScene() {
+    later(function () { cab.classList.add("reach"); }, 900);
+    later(function () {
+      cab.classList.add("press");
+      buttonClack();
+    }, 2500);
+    /* Die Lok faehrt an: Auspuffschlaege, dann rollt die Landschaft vorbei */
+    later(function () {
+      trainDeparture();
+      const out = $(".cab-band");
+      out.style.setProperty("--speed", "2.6s");
+      later(function () { out.style.setProperty("--speed", "1.1s"); }, 1800);
+      later(function () { out.style.setProperty("--speed", ".6s"); }, 3400);
+    }, 2900);
+
+    /* Schwarzblende, dann steht wieder das Startmenue */
+    later(function () { fade.classList.add("on"); }, 7600);
+    later(function () {
+      cab.classList.remove("on", "reach", "press");
+      const out = $(".cab-band");
+      if (out) out.style.setProperty("--speed", "0s");
+      finishSequence();
+    }, 9400);
+  }
+
+
+  /* Das Knistern des Feuers folgt dem Abebben */
+  function fadeFireLoop() {
+    if (fireNode) fireNode.gain.gain.setTargetAtTime(0.02, ac.currentTime, 2.5);
   }
 
   function stopFieldScene() {
     fpsState.on = false;
+    fpsState.goal = 0;
+    fpsState.stand = 0;
     fpsBack.classList.remove("on");
-    fpsFore.classList.remove("on", "crawl");
+    fpsFore.classList.remove("on", "crawl", "standing");
     if (fieldTimer) { clearInterval(fieldTimer); fieldTimer = null; }
     if (flybyTimer) { clearTimeout(flybyTimer); flybyTimer = null; }
     stopFireLoop();
     for (let i = 0; i < fpsScenes.length; i++) fpsScenes[i].style.transform = "";
+    if (fpsGoal) fpsGoal.style.setProperty("--goal", "0");
+    if (fpsLegs) fpsLegs.style.setProperty("--stand", "0");
   }
 
   /* ================== 6. Explosionssequenz ====================== */
