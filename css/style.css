@@ -303,7 +303,10 @@ body {
   display: flex;
   align-items: flex-end;
   gap: 0;   /* die Kupplungen an den Fahrzeugenden schliessen die Fuge */
-  filter: drop-shadow(0 12px 14px rgba(0, 0, 0, .55));
+  /* Nur ein enger Kontaktschatten. Ein nach unten versetzter Schlagschatten
+     laesst das Fahrzeug ueber dem Gleis schweben - den Bodenschatten
+     zeichnet jedes Fahrzeug selbst auf Hoehe der Radaufstandsflaeche. */
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, .6));
 }
 
 .part { position: relative; will-change: transform, opacity; }

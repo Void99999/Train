@@ -67,7 +67,7 @@
   function groundY() {
     const t = $(".track").getBoundingClientRect();
     const a = app.getBoundingClientRect();
-    return t.bottom - a.top;
+    return t.bottom - a.top + 12;
   }
 
 
@@ -520,7 +520,9 @@
   const FIRE   = ["#fff6cc", "#ffd166", "#ff9f1c", "#f4501e", "#c1200f"];
   const SMOKE  = ["#3c3a37", "#4a4641", "#2e2c2a", "#565049"];
   /* Bewusst gedeckt und dunkel: helle Farben lesen sich sonst als Konfetti */
-  const DEBRIS = ["#151a20", "#7d1f1c", "#4a1413", "#454f59", "#6b5520", "#9c8763"];
+  /* Bewusst dunkel und entsaettigt: unter dem Feuerschein werden helle
+     Toene stark aufgehellt und lesen sich sonst als Konfetti. */
+  const DEBRIS = ["#10151a", "#1d232a", "#3a1512", "#2b3138", "#241a10", "#432c14"];
 
   const parts = [];
   const waves = [];
@@ -618,7 +620,7 @@
 
     /* Trümmer, teils mit Feuerschweif */
     const gy = groundY();
-    for (let i = 0; i < Math.round(70 * settings.quality); i++) {
+    for (let i = 0; i < Math.round(48 * settings.quality); i++) {
       const a = -Math.PI / 2 + rand(-0.5, 0.5) * Math.PI * 1.7;
       const sp = rand(7, 22) * S;
       push({ type: "debris",
@@ -627,7 +629,7 @@
         w: rand(5, 20) * S, h: rand(4, 15) * S,
         rot: Math.random() * Math.PI, vr: rand(-0.3, 0.3),
         life: 1, decay: 0.0035, grav: 0.42, drag: 0.995,
-        burning: Math.random() < 0.45, rest: gy + rand(2, 22), landed: false,
+        burning: Math.random() < 0.45, rest: gy + rand(0, 26), landed: false,
         color: DEBRIS[(Math.random() * DEBRIS.length) | 0] });
     }
 
@@ -658,7 +660,7 @@
       const a = -Math.PI / 2 + rand(-0.6, 0.6);
       const sp = rand(1, 3.2);
       push({ type: "fire",
-        x: cx + rand(-0.5, 0.5) * 340 * S, y: gy - rand(0, 16),
+        x: cx + rand(-0.5, 0.5) * 340 * S, y: gy + rand(0, 14),
         vx: Math.cos(a) * sp, vy: Math.sin(a) * sp,
         r: rand(9, 24) * S, life: 1, decay: rand(0.018, 0.035),
         grav: -0.05, drag: 0.97,
@@ -667,7 +669,7 @@
     /* aufsteigende Rauchsäule */
     for (let i = 0; i < 2; i++) {
       push({ type: "smoke",
-        x: cx + rand(-0.5, 0.5) * 200 * S, y: gy - rand(0, 20),
+        x: cx + rand(-0.5, 0.5) * 200 * S, y: gy + rand(-4, 12),
         vx: rand(-0.6, 0.6), vy: rand(-1.6, -0.7),
         r: rand(24, 54) * S, life: 1, decay: rand(0.0035, 0.007),
         grav: -0.03, drag: 0.99,
@@ -676,7 +678,7 @@
     /* einzelne Glutfunken */
     for (let i = 0; i < 3; i++) {
       push({ type: "spark",
-        x: cx + rand(-0.5, 0.5) * 320 * S, y: gy - rand(0, 12),
+        x: cx + rand(-0.5, 0.5) * 320 * S, y: gy + rand(0, 10),
         vx: rand(-1, 1), vy: rand(-3.5, -1.5),
         r: rand(1, 2), life: 1, decay: rand(0.008, 0.016),
         grav: -0.02, drag: 0.985,
