@@ -221,6 +221,20 @@ body {
 .grass path { fill: #0d1310; }
 
 
+
+/* ===================== Tiefenschaerfe =====================
+   Die Kamera liegt auf dem Zug. Alles dahinter und davor wird nach
+   Entfernung weichgezeichnet - der Effekt, der ein Bild sofort
+   gerendert statt gezeichnet wirken laesst. */
+.ridge-far  { filter: blur(3px); }
+.haze-far   { filter: blur(3px); }
+.ridge-mid  { filter: blur(1.8px); }
+.haze-mid   { filter: blur(1.8px); }
+.treeline   { filter: blur(1px); }
+.poles      { filter: blur(.7px); }
+.grass      { filter: blur(1.6px); }   /* Vordergrund, naeher als die Schaerfeebene */
+.moon       { filter: blur(1.2px); }
+
 /* ============================ Gleis ============================= */
 
 .track {

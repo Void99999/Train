@@ -126,6 +126,29 @@
       <stop offset="100%" stop-color="#ffa347" stop-opacity=".26"/>
     </linearGradient>
 
+    <!-- Der helle Horizont spiegelt sich als schmales Band im Kessel -->
+    <linearGradient id="mHorizon" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%"   stop-color="#ffd9a0" stop-opacity="0"/>
+      <stop offset="18%"  stop-color="#ffd9a0" stop-opacity=".1"/>
+      <stop offset="52%"  stop-color="#fff0d0" stop-opacity=".15"/>
+      <stop offset="84%"  stop-color="#ffd9a0" stop-opacity=".08"/>
+      <stop offset="100%" stop-color="#ffd9a0" stop-opacity="0"/>
+    </linearGradient>
+    <!-- Weiche Russ- und Schmutzflecken; echte Maschinen sind nicht makellos -->
+    <radialGradient id="mSoot" cx="50%" cy="50%" r="50%">
+      <stop offset="0%"   stop-color="#05070a" stop-opacity=".5"/>
+      <stop offset="60%"  stop-color="#05070a" stop-opacity=".22"/>
+      <stop offset="100%" stop-color="#05070a" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="mRust" cx="50%" cy="50%" r="50%">
+      <stop offset="0%"   stop-color="#7a4520" stop-opacity=".34"/>
+      <stop offset="100%" stop-color="#7a4520" stop-opacity="0"/>
+    </radialGradient>
+    <!-- Licht, das vom Boden zurueck auf die Unterseite faellt -->
+    <linearGradient id="mBounce" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0%"   stop-color="#ff9c42" stop-opacity=".2"/>
+      <stop offset="100%" stop-color="#ff9c42" stop-opacity="0"/>
+    </linearGradient>
     <linearGradient id="mTyre" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%"   stop-color="#d5e1ec"/>
       <stop offset="40%"  stop-color="#7b8998"/>
@@ -321,7 +344,13 @@
             <!-- Kessel spiegelt oben den Nachthimmel, unten das warme Bodenlicht -->
             <rect x="70" y="30" width="184" height="14" rx="7" fill="url(#mSkyRefl)"/>
             <rect x="70" y="66" width="184" height="12" rx="6" fill="url(#mWarmRefl)"/>
-            <rect x="74" y="33" width="176" height="4" rx="2" fill="#dceaf7" opacity=".5"/>
+            <!-- Scharfe Glanzkante: glattes Metall, enges Highlight -->
+            <rect x="74" y="33" width="176" height="3" rx="1.5" fill="#eef6ff" opacity=".62"/>
+            <rect x="74" y="36.5" width="176" height="2" rx="1" fill="#c3d8ee" opacity=".28"/>
+            <!-- Spiegelung des Horizonts im Kesselblech -->
+            <rect x="70" y="50" width="184" height="7" rx="3.5" fill="url(#mHorizon)"/>
+            <!-- Bodenlicht auf der Unterseite -->
+            <rect x="70" y="64" width="184" height="14" rx="7" fill="url(#mBounce)"/>
             <rect x="28" y="26" width="48" height="12" rx="6" fill="url(#mSkyRefl)"/>
             <rect x="28" y="68" width="48" height="12" rx="6" fill="url(#mWarmRefl)"/>
 
@@ -329,6 +358,15 @@
             <rect x="30" y="74" width="292" height="6" fill="#000" opacity=".45" filter="url(#fSoft)"/>
             <rect x="30" y="86" width="300" height="4" fill="#000" opacity=".5" filter="url(#fSoft)"/>
             <rect x="248" y="24" width="90" height="5" fill="#000" opacity=".4" filter="url(#fSoft)"/>
+
+            <!-- Russ um Schornstein und Rauchkammer, Schmutz am Fahrwerk -->
+            <ellipse cx="48" cy="24" rx="42" ry="26" fill="url(#mSoot)"/>
+            <ellipse cx="96" cy="34" rx="34" ry="14" fill="url(#mSoot)" opacity=".7"/>
+            <ellipse cx="190" cy="76" rx="60" ry="12" fill="url(#mSoot)" opacity=".55"/>
+            <ellipse cx="120" cy="100" rx="70" ry="12" fill="url(#mSoot)" opacity=".5"/>
+            <ellipse cx="286" cy="99" rx="46" ry="10" fill="url(#mSoot)" opacity=".45"/>
+            <ellipse cx="60" cy="96" rx="30" ry="9" fill="url(#mRust)"/>
+            <ellipse cx="246" cy="94" rx="26" ry="8" fill="url(#mRust)" opacity=".8"/>
 
             <!-- Kesselringe -->
             <g stroke="#0a0e13" stroke-width="4" opacity=".8">
@@ -468,6 +506,12 @@
             <path d="M16 34 L26 24 L40 29 L54 20 L70 27 L86 19 L102 28 L118 24 L134 34 Z" fill="url(#mCoal)"/>
 
             <rect x="12" y="36" width="126" height="12" rx="5" fill="url(#mSkyRefl)"/>
+            <rect x="14" y="37" width="122" height="2.5" rx="1.25" fill="#eef6ff" opacity=".45"/>
+            <rect x="12" y="55" width="126" height="4" rx="2" fill="url(#mHorizon)"/>
+            <rect x="12" y="66" width="126" height="12" rx="5" fill="url(#mBounce)"/>
+            <ellipse cx="40" cy="74" rx="40" ry="10" fill="url(#mSoot)" opacity=".6"/>
+            <ellipse cx="110" cy="72" rx="34" ry="10" fill="url(#mSoot)" opacity=".5"/>
+            <ellipse cx="70" cy="96" rx="56" ry="9" fill="url(#mRust)" opacity=".7"/>
             <rect x="12" y="66" width="126" height="12" rx="4" fill="url(#mWarmRefl)"/>
             <rect x="10" y="76" width="130" height="5" fill="#000" opacity=".45" filter="url(#fSoft)"/>
             <g stroke="#1a0d09" stroke-width="1.8" opacity=".45">
@@ -550,6 +594,11 @@
             </g>
 
             <rect x="12" y="43" width="166" height="7" rx="3.5" fill="url(#mSkyRefl)"/>
+            <rect x="14" y="43.5" width="162" height="2" rx="1" fill="#eef6ff" opacity=".4"/>
+            <rect x="12" y="72" width="166" height="8" rx="4" fill="url(#mBounce)"/>
+            <ellipse cx="50" cy="78" rx="48" ry="8" fill="url(#mSoot)" opacity=".45"/>
+            <ellipse cx="140" cy="78" rx="44" ry="8" fill="url(#mSoot)" opacity=".4"/>
+            <ellipse cx="95" cy="96" rx="70" ry="8" fill="url(#mRust)" opacity=".55"/>
             <rect x="12" y="72" width="166" height="8" rx="4" fill="url(#mWarmRefl)"/>
             <rect x="10" y="76" width="170" height="5" fill="#000" opacity=".45" filter="url(#fSoft)"/>
             <path d="M9 37 Q95 22 181 37" fill="none" stroke="#9aa9b6" stroke-width="1.6" opacity=".4"/>
