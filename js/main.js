@@ -26,6 +26,7 @@
   const camera    = $("#camera");
   const world     = $("#world");
   const trainWrap = $("#trainWrap");
+  const trainLayer = $("#trainLayer");
   const train     = $("#train");
   const beam      = $("#beam");
   const fx        = $("#fx");
@@ -60,11 +61,13 @@
     return clamp(app.clientWidth / 1100, 0.45, 1) * settings.quality;
   }
 
-  /* Höhe der Schienenoberkante in Pixeln - dort landen Trümmer */
+  /* Boden vor dem Gleis. Bewusst die Gleisunterkante und nicht die
+     Oberkante: sonst kommen Truemmer und Glut mitten im Schotter zu
+     liegen und stecken sichtbar in der Schiene. */
   function groundY() {
     const t = $(".track").getBoundingClientRect();
     const a = app.getBoundingClientRect();
-    return t.top - a.top + 24;
+    return t.bottom - a.top;
   }
 
 
@@ -624,7 +627,7 @@
         w: rand(5, 20) * S, h: rand(4, 15) * S,
         rot: Math.random() * Math.PI, vr: rand(-0.3, 0.3),
         life: 1, decay: 0.0035, grav: 0.42, drag: 0.995,
-        burning: Math.random() < 0.45, rest: gy + rand(-4, 10), landed: false,
+        burning: Math.random() < 0.45, rest: gy + rand(2, 22), landed: false,
         color: DEBRIS[(Math.random() * DEBRIS.length) | 0] });
     }
 
@@ -914,8 +917,15 @@
     /* Hauptknall */
     later(function () {
       train.classList.remove("rumbling");
-      beam.style.transition = "opacity .2s";
+      /* Erst die Flacker-Animation abschalten: Keyframes ueberschreiben
+         sonst die inline gesetzte Deckkraft und der Kegel bleibt stehen. */
+      beam.style.animation = "none";
+      beam.style.transition = "opacity .25s";
       beam.style.opacity = "0";
+
+      /* Zugteile vor die vordere Schiene heben, sonst fliegen sie dahinter
+         und sehen aus, als steckten sie im Gleis. */
+      trainLayer.style.zIndex = "7";
 
       const c = trainCenter();
       firelight.style.setProperty("--fx-x", (c.x / app.clientWidth  * 100).toFixed(1) + "%");
@@ -970,8 +980,10 @@
     $$("#train .part").forEach(function (p) { p.style.transition = ""; });
 
     train.classList.remove("rumbling");
+    beam.style.animation = "";
     beam.style.transition = "opacity .4s";
     beam.style.opacity = "";
+    trainLayer.style.zIndex = "";
 
     startBtn.querySelector(".lbl").textContent = "Start";
     startBtn.classList.remove("done");

@@ -70,6 +70,7 @@ body {
   position: absolute;
   inset: 0;
   will-change: transform;
+  filter: contrast(1.07) saturate(1.06);
 }
 
 #world {
@@ -287,7 +288,7 @@ body {
 #train {
   display: flex;
   align-items: flex-end;
-  gap: 4px;
+  gap: 0;   /* die Kupplungen an den Fahrzeugenden schliessen die Fuge */
   filter: drop-shadow(0 12px 14px rgba(0, 0, 0, .55));
 }
 
@@ -392,6 +393,20 @@ body {
   /* Position setzt das Skript auf die Explosionsstelle */
   background: radial-gradient(64% 54% at var(--fx-x, 50%) var(--fx-y, 68%),
     rgba(255, 146, 48, .58) 0%, rgba(255, 88, 18, .26) 40%, rgba(255, 60, 10, 0) 74%);
+}
+
+/* Feines Filmkorn ueber der ganzen Szene. Nimmt der Vektorgrafik den
+   makellos glatten Look; als gekacheltes Hintergrundbild statt als
+   Filter, damit es nur einmal gerechnet wird. */
+#grain {
+  position: absolute;
+  inset: 0;
+  z-index: 12;
+  pointer-events: none;
+  opacity: .5;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.42'/%3E%3C/svg%3E");
+  background-size: 200px 200px;
 }
 
 #vignette {
