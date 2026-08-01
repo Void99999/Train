@@ -35,6 +35,10 @@
   const firelight = $("#firelight");
   const startBtn  = $("#startBtn");
   const hint      = $("#hint");
+  const heli      = $("#heli");
+  const bars      = $("#bars");
+  const skipHint  = $("#skip");
+  const ui        = $("#ui");
 
   const ctx   = fx.getContext("2d");
   const sctx  = skyfx.getContext("2d");
@@ -515,6 +519,132 @@
   }
 
 
+
+  /* ---------------- Sounds der Cutscene ---------------- */
+
+  /* Rotorenlauf: tiefes Rauschen, im Rotortakt moduliert, dazu die
+     Turbine. Laeuft als Schleife, bis stopRotor() sie ausblendet. */
+  let rotorNode = null;
+  function startRotor() {
+    const a = resume(); if (!a || rotorNode) return;
+    const t = a.currentTime;
+
+    const out = a.createGain();
+    out.gain.setValueAtTime(0.0001, t);
+    out.gain.exponentialRampToValueAtTime(0.5, t + 1.1);
+    out.connect(master);
+    out.connect(reverb);
+
+    /* Rotorschlaege: Amplitude im Takt der Blattdurchgaenge */
+    const beat = a.createOscillator();
+    const beatGain = a.createGain();
+    beat.type = "sine";
+    beat.frequency.value = 13;
+    beatGain.gain.value = 0.65;
+    const depth = a.createGain();
+    depth.gain.value = 0.35;
+    beat.connect(beatGain).connect(depth.gain);
+    beat.start(t);
+
+    const src = a.createBufferSource();
+    src.buffer = noiseBuffer(3, 0);
+    src.loop = true;
+    const lp = a.createBiquadFilter();
+    lp.type = "lowpass";
+    lp.frequency.value = 260;
+    src.connect(lp).connect(depth).connect(out);
+    src.start(t);
+
+    /* Turbinenpfeifen darueber */
+    const turb = a.createOscillator();
+    const tg = a.createGain();
+    turb.type = "sawtooth";
+    turb.frequency.setValueAtTime(540, t);
+    tg.gain.value = 0.035;
+    const bp = a.createBiquadFilter();
+    bp.type = "bandpass";
+    bp.frequency.value = 1800;
+    bp.Q.value = 3;
+    turb.connect(bp).connect(tg).connect(out);
+    turb.start(t);
+
+    rotorNode = { out: out, src: src, beat: beat, turb: turb, freq: turb.frequency, rate: beat.frequency };
+  }
+
+  /* Turbine und Rotor sterben ab - Tonhoehe und Takt fallen */
+  function rotorFail() {
+    if (!rotorNode) return;
+    const t = ac.currentTime;
+    rotorNode.freq.exponentialRampToValueAtTime(90, t + 2.4);
+    rotorNode.rate.linearRampToValueAtTime(4, t + 2.4);
+    rotorNode.out.gain.setTargetAtTime(0.25, t, 1.2);
+  }
+
+  function stopRotor() {
+    if (!rotorNode) return;
+    const n = rotorNode;
+    rotorNode = null;
+    n.out.gain.setTargetAtTime(0.0001, ac.currentTime, 0.25);
+    setTimeout(function () {
+      [n.src, n.beat, n.turb].forEach(function (x) { try { x.stop(); } catch (e) {} });
+    }, 1400);
+  }
+
+  /* Maschinengewehr: harte, kurze Schuesse in schneller Folge */
+  function machineGun(shots, gap) {
+    const a = resume(); if (!a) return;
+    const t0 = a.currentTime;
+    for (let i = 0; i < shots; i++) {
+      const t = t0 + i * gap;
+
+      const n = a.createBufferSource();
+      n.buffer = noiseBuffer(0.16, 3.5);
+      const bp = a.createBiquadFilter();
+      bp.type = "bandpass";
+      bp.frequency.value = 1700;
+      bp.Q.value = 0.8;
+      const g = a.createGain();
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.34, t + 0.004);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.13);
+      n.connect(bp).connect(g);
+      g.connect(master); g.connect(reverb);
+      n.start(t); n.stop(t + 0.16);
+
+      const o = a.createOscillator();
+      const og = a.createGain();
+      o.type = "sine";
+      o.frequency.setValueAtTime(180, t);
+      o.frequency.exponentialRampToValueAtTime(52, t + 0.09);
+      og.gain.setValueAtTime(0.0001, t);
+      og.gain.exponentialRampToValueAtTime(0.3, t + 0.004);
+      og.gain.exponentialRampToValueAtTime(0.0001, t + 0.12);
+      o.connect(og).connect(master);
+      o.start(t); o.stop(t + 0.14);
+    }
+  }
+
+  /* Cockpit-Warnton: harter Zweiklang, mehrfach wiederholt */
+  function alarmSound(reps) {
+    const a = resume(); if (!a) return;
+    const t0 = a.currentTime;
+    for (let i = 0; i < reps; i++) {
+      [0, 1].forEach(function (k) {
+        const t = t0 + i * 0.5 + k * 0.25;
+        const o = a.createOscillator();
+        const g = a.createGain();
+        o.type = "square";
+        o.frequency.setValueAtTime(k ? 660 : 880, t);
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(0.11, t + 0.012);
+        g.gain.setValueAtTime(0.11, t + 0.17);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 0.23);
+        o.connect(g); g.connect(master); g.connect(reverb);
+        o.start(t); o.stop(t + 0.25);
+      });
+    }
+  }
+
   /* ==================== 5. Partikelsystem ======================= */
 
   const FIRE   = ["#fff6cc", "#ffd166", "#ff9f1c", "#f4501e", "#c1200f"];
@@ -783,6 +913,7 @@
   function frame(time) {
     updateParallax(time);
     updateShake();
+    updateHeli(time);
     drawSky(time);
 
     ctx.clearRect(0, 0, fx.clientWidth, fx.clientHeight);
@@ -849,6 +980,240 @@
     requestAnimationFrame(frame);
   }
 
+
+
+  /* =============== 6a. Cutscene: Heli-Angriff =============== */
+
+  /* Flugzustand. Die Bahn rechnet die Hauptschleife mit, damit Trudeln
+     und Sturz sauber beschleunigen koennen. */
+  const heliState = {
+    on: false, phase: "", t0: 0,
+    x: 0, y: 0, rot: 0, spin: 0, vy: 0, vx: 0,
+    fromX: 0, toX: 0, baseY: 0, dur: 1
+  };
+
+  function heliScale() {
+    return clamp(app.clientWidth / 1440, 0.55, 1.15);
+  }
+
+  function placeHeli() {
+    heli.style.transform =
+      `translate(${heliState.x.toFixed(1)}px, ${heliState.y.toFixed(1)}px) ` +
+      `rotate(${heliState.rot.toFixed(2)}deg) scale(${heliScale().toFixed(3)})`;
+  }
+
+  /* Bildschirmposition der Waffenmuendung - dort sitzen Muendungsfeuer
+     und Leuchtspuren. */
+  function muzzlePos() {
+    const f = $(".flash", heli);
+    if (!f) return null;
+    const r = f.getBoundingClientRect();
+    const a = app.getBoundingClientRect();
+    return { x: r.left + r.width / 2 - a.left, y: r.top + r.height / 2 - a.top };
+  }
+
+  function spawnTracer() {
+    const m = muzzlePos(); if (!m) return;
+    const S = sceneScale();
+    /* Leuchtspur nach vorn unten, leicht gestreut */
+    /* nach vorn unten aus der Tuer heraus, leicht gestreut */
+    const ang = Math.PI + rand(0.12, 0.42);
+    const sp = rand(26, 38) * clamp(S, 0.5, 1);
+    parts.push({ type: "spark",
+      x: m.x, y: m.y,
+      vx: Math.cos(ang) * sp, vy: -Math.sin(ang) * sp,
+      r: 2.6, life: 1, decay: 0.05, grav: 0.5, drag: 0.995,
+      color: "#fff0b8" });
+    /* Muendungsrauch */
+    parts.push({ type: "smoke",
+      x: m.x, y: m.y, vx: rand(-2.5, -0.5), vy: rand(-0.8, 0.4),
+      r: rand(6, 14) * clamp(S, 0.5, 1), life: 1, decay: 0.05,
+      grav: -0.03, drag: 0.94, color: "#6b6b66" });
+  }
+
+  /* Funken und Rauch am getroffenen Heck */
+  let damageTick = 0;
+  function spawnHeliDamage() {
+    /* Nur jeden dritten Frame: sonst verschwindet der Heli hinter seinem
+       eigenen Qualm. */
+    if (++damageTick % 3) return;
+    const r = heli.getBoundingClientRect();
+    const a = app.getBoundingClientRect();
+    const hx = r.left + r.width * 0.86 - a.left;   /* am Heck */
+    const hy = r.top + r.height * 0.5 - a.top;
+    const S = clamp(sceneScale(), 0.5, 1);
+
+    const ang = Math.random() * Math.PI * 2;
+    parts.push({ type: "spark",
+      x: hx, y: hy, vx: Math.cos(ang) * rand(2, 8), vy: Math.sin(ang) * rand(2, 8),
+      r: rand(1.2, 2.2), life: 1, decay: 0.04, grav: 0.3, drag: 0.98,
+      color: "#ffd06a" });
+    parts.push({ type: "smoke",
+      x: hx, y: hy, vx: rand(-1, 1), vy: rand(-1, -.1),
+      r: rand(9, 18) * S, life: 1, decay: 0.022,
+      grav: -0.03, drag: 0.985, color: "#2a2a28" });
+    if (Math.random() < 0.5) {
+      parts.push({ type: "fire",
+        x: hx, y: hy, vx: rand(-1.2, 1.2), vy: rand(-1.2, .4),
+        r: rand(7, 15) * S, life: 1, decay: 0.055,
+        grav: -0.02, drag: 0.95, color: FIRE[(Math.random() * FIRE.length) | 0] });
+    }
+  }
+
+  /* Flugbahn: laeuft in der Hauptschleife mit.
+     Alle Bewegungen rechnen mit der echten vergangenen Zeit, nicht mit
+     einem angenommenen 60stel - sonst haengt die Fluggeschwindigkeit an
+     der Bildrate. Der Sprung wird gekappt, damit ein Ruckler den Heli
+     nicht durchs Bild schleudert. */
+  let heliLast = 0;
+  function updateHeli(time) {
+    if (!heliState.on) { heliLast = time; return; }
+    const dt = clamp((time - heliLast) / 1000, 0, 0.05);
+    heliLast = time;
+    const el = (time - heliState.t0) / 1000;
+
+    if (heliState.phase === "enter") {
+      const k = clamp(el / heliState.dur, 0, 1);
+      const e = 1 - Math.pow(1 - k, 3);          /* weich ausrollen */
+      heliState.x = heliState.fromX + (heliState.toX - heliState.fromX) * e;
+      heliState.y = heliState.baseY + Math.sin(el * 2.2) * 5;
+      heliState.rot = -7 + 7 * e;
+
+    } else if (heliState.phase === "hover") {
+      heliState.y = heliState.baseY + Math.sin(el * 2.2) * 6;
+      heliState.x = heliState.toX + Math.sin(el * 1.1) * 8;
+      heliState.rot = Math.sin(el * 1.7) * 1.6;
+
+    } else if (heliState.phase === "hit") {
+      /* getroffen: der Rumpf beginnt zu schlingern */
+      heliState.y = heliState.baseY + Math.sin(el * 9) * 9;
+      heliState.x = heliState.toX + Math.sin(el * 6) * 12;
+      heliState.rot = Math.sin(el * 11) * 7;
+
+    } else if (heliState.phase === "fall") {
+      /* Drehmoment weg: der Heli dreht sich auf und sackt weg */
+      heliState.spin += 150 * dt * (1 + el * 1.8);   /* Trudeln wird schneller */
+      heliState.rot = heliState.spin;
+      heliState.vy += 900 * dt;                      /* Schwerkraft */
+      heliState.y += heliState.vy * dt;
+      heliState.x += heliState.vx * dt;
+      spawnHeliDamage();
+      if (heliState.y >= heliState.impactY) heliImpact();
+    }
+    placeHeli();
+  }
+
+  /* Aufschlag auf den Zug: der laute Knall, der den Zug mitreisst */
+  let impacted = false;
+  function heliImpact() {
+    if (impacted) return;
+    impacted = true;
+    stopRotor();
+    heli.classList.remove("on");
+    heliState.on = false;
+    explode();
+  }
+
+  /* Die Sequenz */
+  let cutscene = false;
+
+  function runCutscene() {
+    cutscene = true;
+    impacted = false;
+    ui.classList.add("cine");
+    bars.classList.add("on");
+    skipHint.hidden = false;
+    startRotor();
+
+    const S = heliScale();
+    const w = app.clientWidth;
+    heliState.on = true;
+    heliState.phase = "enter";
+    heliState.t0 = performance.now();
+    heliState.dur = 2.0;
+    heliState.fromX = w + 120;
+    heliState.toX = w * 0.52;
+    heliState.baseY = app.clientHeight * 0.16;
+    heliState.x = heliState.fromX;
+    heliState.y = heliState.baseY;
+    heliState.rot = -7;
+    heliState.spin = 0;
+    heliState.vy = 0;
+    heliState.vx = 0;
+    placeHeli();
+    heli.classList.add("on");
+
+    /* Anflug abgeschlossen, Heli steht ueber der Strecke */
+    later(function () {
+      heliState.phase = "hover";
+      heliState.t0 = performance.now();
+    }, 2000);
+
+    /* Der Soldat feuert */
+    later(function () {
+      machineGun(22, 0.075);
+      const flash = $(".flash", heli);
+      let n = 0;
+      const gun = setInterval(function () {
+        flash.style.opacity = flash.style.opacity === "1" ? "0" : "1";
+        if (flash.style.opacity === "1") spawnTracer();
+        if (++n > 44) { clearInterval(gun); flash.style.opacity = "0"; }
+      }, 37);
+      timers.push(gun);
+    }, 2500);
+
+    /* Treffer und Alarm */
+    later(function () {
+      alarmSound(5);
+      $(".hitsmoke", heli).style.opacity = "1";
+      heliState.phase = "hit";
+      heliState.t0 = performance.now();
+      addShake(7);
+      rotorFail();
+    }, 4300);
+
+    /* Absturz */
+    later(function () {
+      const c = trainCenter();
+      const S = heliScale();
+      heliState.phase = "fall";
+      heliState.t0 = performance.now();
+      heliState.vy = 40;
+      /* Aufschlaghoehe: dort steht der Zug */
+      heliState.impactY = groundY() - 150 * S;
+      /* Fallzeit aus v0, Schwerkraft und Fallhoehe, daraus die
+         Seitwaertsfahrt, damit er mittig auf dem Zug ankommt. */
+      const dropH = Math.max(40, heliState.impactY - heliState.y);
+      const tFall = (-40 + Math.sqrt(1600 + 4 * 450 * dropH)) / (2 * 450);
+      const heliMid = heliState.x + 220 * S;
+      heliState.vx = (c.x - heliMid) / Math.max(0.4, tFall);
+      addShake(5);
+    }, 5900);
+
+    /* Sicherheitsnetz, falls der Aufschlag nicht ausgeloest wurde */
+    later(heliImpact, 8600);
+
+    /* Zurueck ins Menue */
+    later(function () {
+      bars.classList.remove("on");
+      skipHint.hidden = true;
+      ui.classList.remove("cine");
+    }, 9600);
+  }
+
+  /* Cutscene abbrechen und direkt zur Explosion springen */
+  function skipCutscene() {
+    if (!cutscene) return;
+    timers.forEach(function (t) { clearTimeout(t); clearInterval(t); });
+    timers.length = 0;
+    stopRotor();
+    heli.classList.remove("on");
+    heliState.on = false;
+    bars.classList.remove("on");
+    skipHint.hidden = true;
+    ui.classList.remove("cine");
+    if (!exploded) heliImpact();
+  }
 
   /* ================== 6. Explosionssequenz ====================== */
 
@@ -955,12 +1320,13 @@
       startBtn.classList.add("done");
       startBtn.disabled = false;
       hint.textContent = "Taste R setzt die Szene zurück.";
+      cutscene = false;
     }, 1900);
   }
 
   /* Szene in den Ausgangszustand bringen */
   function reset() {
-    timers.forEach(clearTimeout);
+    timers.forEach(function (t) { clearTimeout(t); clearInterval(t); });
     timers.length = 0;
     if (emberTimer) { clearInterval(emberTimer); emberTimer = null; }
     stopFireLoop();
@@ -980,6 +1346,18 @@
     /* Reflow erzwingen, damit die entfernte Transition nicht nachwirkt */
     void train.offsetWidth;
     $$("#train .part").forEach(function (p) { p.style.transition = ""; });
+
+    cutscene = false;
+    impacted = false;
+    heliState.on = false;
+    heli.classList.remove("on");
+    heli.style.transform = "";
+    bars.classList.remove("on");
+    skipHint.hidden = true;
+    ui.classList.remove("cine");
+    stopRotor();
+    const hs = $(".hitsmoke", heli); if (hs) hs.style.opacity = "0";
+    const mf = $(".flash", heli);    if (mf) mf.style.opacity = "0";
 
     train.classList.remove("rumbling");
     beam.style.animation = "";
@@ -1036,9 +1414,9 @@
     btn.addEventListener("click", function () {
       const action = btn.dataset.action;
       if (action === "start") {
-        if (exploded) { uiTick(); return; }
+        if (exploded || cutscene) { uiTick(); return; }
         uiConfirm();
-        explode();
+        runCutscene();
       } else if (action === "panel") {
         showPanel(btn.dataset.panel);
       }
@@ -1053,6 +1431,11 @@
   });
 
   document.addEventListener("keydown", function (e) {
+    if (cutscene && (e.key === " " || e.key === "Escape")) {
+      e.preventDefault();
+      skipCutscene();
+      return;
+    }
     if (e.key === "Escape") { closePanel(); return; }
     if (openPanel) return;
 

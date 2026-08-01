@@ -84,7 +84,6 @@ body {
   left: -4%;
   right: -4%;
   width: 108%;
-  will-change: transform;
 }
 
 
@@ -226,14 +225,13 @@ body {
    Die Kamera liegt auf dem Zug. Alles dahinter und davor wird nach
    Entfernung weichgezeichnet - der Effekt, der ein Bild sofort
    gerendert statt gezeichnet wirken laesst. */
-.ridge-far  { filter: blur(3px); }
-.haze-far   { filter: blur(3px); }
-.ridge-mid  { filter: blur(1.8px); }
-.haze-mid   { filter: blur(1.8px); }
-.treeline   { filter: blur(1px); }
-.poles      { filter: blur(.7px); }
-.grass      { filter: blur(1.6px); }   /* Vordergrund, naeher als die Schaerfeebene */
-.moon       { filter: blur(1.2px); }
+.ridge-far  { filter: blur(2.4px); }
+.ridge-mid  { filter: blur(1.4px); }
+.treeline   { filter: blur(.8px); }
+.grass      { filter: blur(1.4px); }   /* Vordergrund, naeher als die Schaerfeebene */
+.moon       { filter: blur(1px); }
+/* Die Dunstschleier sind schon weiche Verlaeufe - ein zusaetzlicher
+   Weichzeichner brachte nichts und kostete Bildrate. */
 
 /* ============================ Gleis ============================= */
 
@@ -383,6 +381,106 @@ body {
 }
 #train.rumbling { animation: rumble .085s linear infinite; }
 
+
+
+/* ================== Cutscene: Kampfhubschrauber ==================
+   Der Heli fliegt herein, der Soldat feuert, dann stuerzt er brennend
+   auf den Zug. Position und Neigung steuert das Skript ueber die
+   Variablen --hx/--hy/--hrot; die Rotoren laufen ueber CSS. */
+
+#heli {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 11;   /* ueber dem Effekt-Canvas, damit der Schweif hinter ihm bleibt */
+  width: 440px;
+  transform-origin: 50% 55%;
+  transform: translate(var(--hx, 120vw), var(--hy, 10vh)) rotate(var(--hrot, 0deg)) scale(var(--hs, 1));
+  filter: drop-shadow(0 10px 26px rgba(0, 0, 0, .6));
+  pointer-events: none;
+  opacity: 0;
+  will-change: transform;
+}
+#heli.on { opacity: 1; }
+#heli svg { display: block; width: 100%; height: auto; }
+
+/* Rotoren: die Flaeche flimmert, statt sichtbar zu rotieren -
+   genau so liest sich eine schnell drehende Scheibe. */
+.mainrotor  { animation: rotorBlur .09s linear infinite; transform-origin: 146.5px 40px; }
+.mainrotor.slow { animation-duration: .13s; }
+.tailrotor  { animation: rotorSpin .07s linear infinite; transform-origin: 406px 64px; }
+
+@keyframes rotorBlur {
+  0%, 100% { transform: scaleX(1);    opacity: .55; }
+  50%      { transform: scaleX(.965); opacity: .3; }
+}
+@keyframes rotorSpin {
+  from { transform: rotate(0deg)   scaleY(1); }
+  50%  { transform: rotate(180deg) scaleY(.25); }
+  to   { transform: rotate(360deg) scaleY(1); }
+}
+
+/* Positionslichter blinken versetzt */
+.navlight       { animation: navBlink 1.6s steps(1, end) infinite; }
+.navlight.green { animation-delay: .8s; }
+@keyframes navBlink {
+  0%, 22%   { opacity: 1; }
+  23%, 100% { opacity: .12; }
+}
+
+/* Muendungsfeuer wird vom Skript getaktet */
+.flash { transform-origin: 104px 113px; }
+
+/* Kinobalken */
+#bars {
+  position: absolute;
+  inset: 0;
+  z-index: 25;
+  pointer-events: none;
+}
+#bars i {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 0;
+  background: #000;
+  transition: height .55s cubic-bezier(.4, 0, .2, 1);
+}
+#bars i.top    { top: 0; }
+#bars i.bottom { bottom: 0; }
+#bars.on i     { height: 11vh; }
+
+#skip {
+  position: absolute;
+  right: 24px;
+  bottom: calc(11vh + 16px);
+  z-index: 26;
+  margin: 0;
+  font-size: 13px;
+  letter-spacing: .14em;
+  color: rgba(234, 241, 248, .5);
+  pointer-events: none;
+}
+#skip[hidden] { display: none; }
+
+/* Waehrend der Cutscene tritt das Menue zurueck */
+#ui.cine {
+  opacity: 0;
+  transition: opacity .45s ease;
+  pointer-events: none;
+}
+
+@media (max-width: 760px) {
+  #heli { width: 300px; }
+}
+@media (max-width: 520px) {
+  #heli { width: 230px; }
+  #skip { font-size: 11px; right: 12px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mainrotor, .tailrotor, .navlight { animation: none; }
+}
 
 /* ========================== Bildlook ============================ */
 

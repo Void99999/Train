@@ -2,8 +2,9 @@
 
 Startbildschirm für ein Spiel: eine Dampflok mit Tender und Personenwagen steht
 nachts auf Schienen, die über die ganze Bildbreite laufen. Ein Klick auf **Start**
-lässt den Zug mit Explosionssound in die Luft fliegen — danach steht auf dem Button
-nur noch **cool**.
+startet eine Cutscene: ein Kampfhubschrauber fliegt heran, ein Soldat feuert aus der
+offenen Schiebetür, dann wird der Heli getroffen und stürzt brennend auf den Zug —
+der Aufschlag reißt ihn mit. Danach steht auf dem Button nur noch **cool**.
 
 ## Starten
 
@@ -45,9 +46,24 @@ python3 build-einzeldatei.py
 
 **Menü**
 - Start, Optionen, Steuerung — mit Maus **und** Tastatur bedienbar
-  (↑ ↓ wählen, Enter bestätigen, Esc schließen, R setzt die Szene zurück)
+  (↑ ↓ wählen, Enter bestätigen, Esc schließen, R setzt die Szene zurück,
+  Leertaste überspringt die Cutscene)
 - Die Optionen wirken wirklich: Lautstärke, Bildschirmwackeln, Effektstärke.
   Sie werden im Browser gespeichert und beim nächsten Start wieder geladen.
+
+**Cutscene beim Start**
+1. Kinobalken fahren ein, das Menü tritt zurück, die Rotoren laufen an
+2. Der Hubschrauber fliegt von rechts heran und geht über der Strecke in
+   den Schwebeflug
+3. Der Soldat in der offenen Schiebetür feuert — Mündungsfeuer,
+   Leuchtspuren und Maschinengewehrsalve
+4. Treffer: Cockpit-Alarm, Funken und Rauch am Heck, die Turbine stirbt ab
+5. Der Heli trudelt brennend nach unten und schlägt auf dem Zug ein
+6. Leertaste oder Esc überspringt die Cutscene
+
+Der Aufschlag löst aus, sobald der Heli den Zug wirklich erreicht — nicht
+nach einer festen Zeit. So sitzt der Treffer unabhängig von Bildrate und
+Fenstergröße.
 
 **Explosion**
 1. Dampfpfeife, die Lok fängt an zu beben
@@ -76,7 +92,9 @@ Web Audio API, läuft die Animation trotzdem.
 - **Höhe von Horizont und Gleis**: `--horizon` und `--track-y` in `:root` —
   alle Ebenen richten sich danach aus
 - **Wucht der Explosion**: Partikelzahlen und Geschwindigkeiten in `spawnBlast()`
-- **Ablauf und Timing**: die `later(...)`-Aufrufe in `explode()`
+- **Ablauf und Timing**: die `later(...)`-Aufrufe in `runCutscene()` und `explode()`
+- **Flugbahn des Helis**: `updateHeli()` — die Phasen `enter`, `hover`,
+  `hit` und `fall`
 
 Auf schmalen Bildschirmen rückt das Menü unter den Zug, das Gleis wandert nach
 oben und Zug wie Explosion werden kleiner. Die Schienen laufen immer über die

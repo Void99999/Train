@@ -625,6 +625,153 @@
       </div>
       </div><!-- /#trainLayer -->
 
+
+      <!-- ============== Kampfhubschrauber der Cutscene ==============
+           Nase zeigt nach links. Die Schiebetuer an der Seite ist offen,
+           darin steht ein Soldat. Rotoren laufen als CSS-Animation. -->
+      <div id="heli" aria-hidden="true">
+        <svg viewBox="0 0 440 210" width="440" height="210">
+          <defs>
+            <linearGradient id="hBody" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%"   stop-color="#5b6a63"/>
+              <stop offset="22%"  stop-color="#3f4c46"/>
+              <stop offset="55%"  stop-color="#2b3531"/>
+              <stop offset="100%" stop-color="#141a18"/>
+            </linearGradient>
+            <linearGradient id="hGlass" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%"   stop-color="#9fc7d8" stop-opacity=".75"/>
+              <stop offset="45%"  stop-color="#3d5a68" stop-opacity=".7"/>
+              <stop offset="100%" stop-color="#16232a" stop-opacity=".85"/>
+            </linearGradient>
+            <linearGradient id="hRotor" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%"   stop-color="#aab6bf" stop-opacity="0"/>
+              <stop offset="12%"  stop-color="#aab6bf" stop-opacity=".5"/>
+              <stop offset="50%"  stop-color="#dfe8ee" stop-opacity=".22"/>
+              <stop offset="88%"  stop-color="#aab6bf" stop-opacity=".5"/>
+              <stop offset="100%" stop-color="#aab6bf" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+
+          <!-- Heckausleger und Leitwerk -->
+          <g fill="#03060a" stroke="#03060a" stroke-width="5" stroke-linejoin="round">
+            <path d="M244 84 L392 93 L392 107 L244 118 Z"/>
+            <path d="M368 96 L398 40 L418 45 L404 100 Z"/>
+            <path d="M350 98 L338 80 L360 78 L370 96 Z"/>
+          </g>
+          <path d="M244 84 L392 93 L392 107 L244 118 Z" fill="url(#hBody)"/>
+          <path d="M368 96 L398 40 L418 45 L404 100 Z" fill="url(#hBody)"/>
+          <path d="M350 98 L338 80 L360 78 L370 96 Z" fill="#2b3531"/>
+          <path d="M250 88 L388 96" stroke="#7d8d85" stroke-width="1.6" opacity=".4"/>
+
+          <!-- Heckrotor -->
+          <circle class="tailrotor" cx="406" cy="64" r="26" fill="url(#hRotor)" opacity=".55"/>
+          <circle cx="406" cy="64" r="4" fill="#1b2320" stroke="#03060a" stroke-width="2"/>
+
+          <!-- Rumpf -->
+          <path d="M28 100 C28 78 44 68 70 66 L214 66 C240 68 252 80 252 100
+                   C252 120 240 132 214 134 L70 134 C44 132 28 122 28 100 Z"
+                fill="#03060a" stroke="#03060a" stroke-width="5" stroke-linejoin="round"/>
+          <path d="M28 100 C28 78 44 68 70 66 L214 66 C240 68 252 80 252 100
+                   C252 120 240 132 214 134 L70 134 C44 132 28 122 28 100 Z"
+                fill="url(#hBody)"/>
+          <!-- Lichtkante oben, Bodenlicht unten -->
+          <path d="M52 70 C90 66 170 66 212 68" stroke="#a9bcb3" stroke-width="2" opacity=".4" fill="none"/>
+          <path d="M40 122 C90 132 170 133 214 130" stroke="#ff9c42" stroke-width="3" opacity=".18" fill="none"/>
+
+          <!-- Triebwerk auf dem Ruecken -->
+          <path d="M176 66 L246 70 L248 84 L176 82 Z" fill="#03060a" stroke="#03060a" stroke-width="4" stroke-linejoin="round"/>
+          <path d="M176 66 L246 70 L248 84 L176 82 Z" fill="#33403a"/>
+          <path d="M240 72 L248 74 L248 82 L240 80 Z" fill="#0b0f0d"/>
+
+          <!-- Cockpitverglasung -->
+          <path d="M36 100 C36 84 48 75 68 74 L96 74 L96 112 L68 112 C48 111 36 110 36 100 Z"
+                fill="#03060a" stroke="#03060a" stroke-width="4"/>
+          <path d="M38 100 C38 85 49 77 68 76 L94 76 L94 110 L68 110 C49 109 38 108 38 100 Z"
+                fill="url(#hGlass)"/>
+          <path d="M44 92 C48 84 58 80 70 79" stroke="#cfe6f2" stroke-width="2" opacity=".5" fill="none"/>
+          <line x1="70" y1="76" x2="70" y2="110" stroke="#0d1512" stroke-width="2.5"/>
+
+          <!-- Offene Schiebetuer: dunkler Innenraum, Tuerblatt nach hinten geschoben -->
+          <rect x="128" y="76" width="76" height="50" rx="4" fill="#03060a"/>
+          <rect x="131" y="79" width="70" height="44" rx="3" fill="#0d1411"/>
+          <rect x="131" y="79" width="70" height="12" fill="#000" opacity=".45"/>
+          <!-- zurueckgeschobenes Tuerblatt -->
+          <rect x="204" y="74" width="26" height="54" rx="3" fill="#03060a"/>
+          <rect x="206" y="76" width="22" height="50" rx="2" fill="#3a4740"/>
+          <rect x="209" y="80" width="16" height="3" rx="1.5" fill="#8b9b93" opacity=".5"/>
+          <!-- Fuehrungsschiene -->
+          <rect x="126" y="70" width="106" height="4" rx="2" fill="#1c2320"/>
+
+          <!-- ===== Soldat in der Tuer ===== -->
+          <g class="gunner">
+            <!-- Beine, angewinkelt am Tuerrahmen -->
+            <path d="M158 106 L156 124 L164 124 L166 108 Z" fill="#1e2a22"/>
+            <path d="M170 106 L172 124 L180 124 L176 108 Z" fill="#243027"/>
+            <!-- Rumpf mit Weste -->
+            <path d="M154 84 L176 82 L180 108 L156 110 Z" fill="#2c3a30"/>
+            <path d="M157 88 L175 86 L177 102 L159 104 Z" fill="#1a241d"/>
+            <rect x="160" y="90" width="12" height="4" rx="1.5" fill="#4a5b4c"/>
+            <!-- Helm -->
+            <path d="M156 84 C154 72 178 70 178 82 L178 86 L156 88 Z" fill="#26332a"/>
+            <path d="M158 78 C160 73 172 72 176 77" stroke="#5d6f60" stroke-width="1.6" opacity=".6" fill="none"/>
+            <circle cx="160" cy="82" r="2.6" fill="#141b16"/>
+            <!-- Arme -->
+            <path d="M154 90 L134 100 L138 105 L157 97 Z" fill="#2c3a30"/>
+            <path d="M158 96 L142 106 L146 110 L160 102 Z" fill="#243027"/>
+            <!-- Waffe, zeigt aus der Tuer nach vorn unten -->
+            <g class="gun">
+              <path d="M140 98 L106 110 L104 116 L140 105 Z" fill="#141a18" stroke="#03060a" stroke-width="2" stroke-linejoin="round"/>
+              <rect x="118" y="106" width="18" height="3" rx="1.5" fill="#4c5a52" transform="rotate(-19 127 107)"/>
+              <path d="M142 100 L150 98 L152 104 L143 106 Z" fill="#1c2420"/>
+              <!-- Muendungsfeuer -->
+              <g class="flash" opacity="0">
+                <path d="M104 113 L86 106 L94 113 L86 120 Z" fill="#ffd76b"/>
+                <path d="M104 113 L92 109 L97 113 L92 117 Z" fill="#fff6d6"/>
+                <circle cx="102" cy="113" r="7" fill="#ffb23f" opacity=".55"/>
+              </g>
+            </g>
+          </g>
+
+          <!-- Stummelfluegel mit Raketenbehaelter -->
+          <path d="M172 120 L226 126 L226 134 L172 130 Z" fill="#03060a" stroke="#03060a" stroke-width="4" stroke-linejoin="round"/>
+          <path d="M172 120 L226 126 L226 134 L172 130 Z" fill="#37443d"/>
+          <rect x="180" y="132" width="52" height="16" rx="7" fill="#03060a"/>
+          <rect x="182" y="134" width="48" height="12" rx="5" fill="#2f3b34"/>
+          <g fill="#0e1512">
+            <circle cx="187" cy="140" r="2.6"/><circle cx="195" cy="140" r="2.6"/>
+            <circle cx="203" cy="140" r="2.6"/>
+          </g>
+
+          <!-- Landekufen -->
+          <g stroke="#03060a" stroke-width="7" stroke-linecap="round" fill="none">
+            <path d="M96 132 L88 160"/><path d="M186 134 L192 160"/>
+            <path d="M64 162 C66 156 74 158 84 159 L206 161"/>
+          </g>
+          <g stroke="#55635b" stroke-width="3.4" stroke-linecap="round" fill="none">
+            <path d="M96 132 L88 160"/><path d="M186 134 L192 160"/>
+            <path d="M64 162 C66 156 74 158 84 159 L206 161"/>
+          </g>
+
+          <!-- Positionslichter -->
+          <circle class="navlight red" cx="34" cy="118" r="4" fill="#ff3b2f"/>
+          <circle class="navlight green" cx="250" cy="110" r="4" fill="#37e06a"/>
+
+          <!-- Rotormast und Hauptrotor -->
+          <rect x="140" y="42" width="13" height="26" rx="3" fill="#03060a"/>
+          <rect x="142" y="44" width="9" height="22" rx="2" fill="#4a5750"/>
+          <circle cx="146.5" cy="42" r="9" fill="#03060a"/>
+          <circle cx="146.5" cy="42" r="6" fill="#5c6a62"/>
+          <ellipse class="mainrotor" cx="146.5" cy="40" rx="212" ry="5" fill="url(#hRotor)"/>
+          <ellipse class="mainrotor slow" cx="146.5" cy="40" rx="212" ry="2" fill="#cfdbe3" opacity=".3"/>
+
+          <!-- Schadensrauch, erst nach dem Treffer sichtbar -->
+          <g class="hitsmoke" opacity="0">
+            <circle cx="300" cy="100" r="16" fill="#1b1b1b" opacity=".5"/>
+            <circle cx="330" cy="96" r="20" fill="#242424" opacity=".4"/>
+          </g>
+        </svg>
+      </div>
+
       <!-- Grasbüschel im Vordergrund, Pfad wird per JS erzeugt -->
       <svg class="layer grass" data-depth="42" viewBox="0 0 1200 120" preserveAspectRatio="none" aria-hidden="true">
         <path id="grassPath"/>
@@ -638,6 +785,10 @@
     <!-- Explosion, Funken, Glühwürmchen -->
     <canvas id="fx"></canvas>
   </div><!-- /#camera -->
+
+  <!-- Kinobalken der Cutscene -->
+  <div id="bars" aria-hidden="true"><i class="top"></i><i class="bottom"></i></div>
+  <p id="skip" hidden>Leertaste oder Esc zum Überspringen</p>
 
   <!-- Bildlook: Filmkorn, Randabdunklung, Blitz -->
   <div id="grain"></div>
