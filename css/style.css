@@ -482,6 +482,100 @@ body {
   .mainrotor, .tailrotor, .navlight { animation: none; }
 }
 
+
+/* ================ Egoperspektive: Schlachtfeld ================
+   Dritter Akt der Sequenz. Der Container liegt ueber der Weltszene,
+   aber unter der Schwarzblende, damit die Uebergaenge sauber sind. */
+
+.fpsLayer {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity .6s ease;
+}
+.fpsLayer.on { opacity: 1; visibility: visible; }
+
+/* Hintergrund unter dem Partikel-Canvas, Haende darueber.
+   #fpsBack bekommt bewusst keinen z-index: ein positiver Wert wuerde
+   die Kamera-Ebene mit z-index auto ueberdecken und damit das
+   Partikel-Canvas mit Feuer und Leuchtspuren verbergen. */
+#fpsBack { z-index: auto; }
+#fpsFore { z-index: 13; }
+
+/* Traegt das Kopfnicken beim Kriechen */
+.fps-scene {
+  position: absolute;
+  inset: -4%;
+  will-change: transform;
+}
+
+.fps-back {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Feuerherde markieren nur die Stellen; die Flammen kommen als Partikel */
+.fire-marks { position: absolute; inset: 0; }
+.fire-marks i {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+}
+
+/* Haende ragen von unten ins Bild und kriechen abwechselnd nach vorn */
+.hand {
+  position: absolute;
+  bottom: -6%;
+  width: 34%;
+  max-width: 460px;
+  height: auto;
+  filter: drop-shadow(0 -8px 18px rgba(0, 0, 0, .6));
+  will-change: transform;
+}
+.hand.left  { left: -4%;  transform-origin: 50% 100%; }
+.hand.right { right: -4%; transform-origin: 50% 100%; transform: scaleX(-1); }
+
+.fpsLayer.crawl .hand.left  { animation: crawlL 1.9s ease-in-out infinite; }
+.fpsLayer.crawl .hand.right { animation: crawlR 1.9s ease-in-out infinite; }
+
+@keyframes crawlL {
+  0%, 100% { transform: translate(0, 6%)   rotate(-3deg); }
+  30%      { transform: translate(6%, -9%) rotate(4deg); }
+  60%      { transform: translate(2%, 2%)  rotate(0deg); }
+}
+@keyframes crawlR {
+  0%, 100% { transform: scaleX(-1) translate(2%, -6%) rotate(2deg); }
+  40%      { transform: scaleX(-1) translate(0, 5%)   rotate(-3deg); }
+  75%      { transform: scaleX(-1) translate(5%, -8%) rotate(4deg); }
+}
+
+.fps-vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(120% 90% at 50% 58%, rgba(0,0,0,0) 40%, rgba(0,0,0,.82) 100%),
+    linear-gradient(rgba(0,0,0,.5), rgba(0,0,0,0) 26%);
+}
+
+@media (max-width: 760px) {
+  /* Im Hochformat rutschen die Haende sonst fast aus dem Bild */
+  .hand { width: 62%; bottom: -3%; }
+}
+@media (max-width: 520px) {
+  .hand { width: 72%; bottom: -2%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fpsLayer.crawl .hand.left, .fpsLayer.crawl .hand.right { animation: none; }
+}
+
 /* ========================== Bildlook ============================ */
 
 /* canvas ist ein ersetztes Element: ohne explizite Groesse gewinnt die

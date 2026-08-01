@@ -40,6 +40,9 @@
   const skipHint  = $("#skip");
   const ui        = $("#ui");
   const fade      = $("#fade");
+  const fpsBack   = $("#fpsBack");
+  const fpsFore   = $("#fpsFore");
+  const fpsScenes = $$(".fps-scene");
 
   const ctx   = fx.getContext("2d");
   const sctx  = skyfx.getContext("2d");
@@ -915,6 +918,7 @@
     updateParallax(time);
     updateShake();
     updateHeli(time);
+    updateFps(time);
     drawSky(time);
 
     ctx.clearRect(0, 0, fx.clientWidth, fx.clientHeight);
@@ -1135,17 +1139,68 @@
     }, 110);
     timers.push(t);
 
-    /* Erst jetzt ist die Sequenz vorbei */
+    /* Danach die Schwarzblende zum dritten Akt */
+    later(function () { fade.classList.add("on"); }, 2200);
+
     later(function () {
-      bars.classList.remove("on");
-      skipHint.hidden = true;
-      ui.classList.remove("cine");
-      startBtn.querySelector(".lbl").textContent = "cool";
-      startBtn.classList.add("done");
-      startBtn.disabled = false;
-      hint.textContent = "Taste R setzt die Szene zurück.";
-      cutscene = false;
-    }, 1400);
+      /* hinter der Blende umbauen: Weltszene raus, Schlachtfeld rein */
+      parts.length = 0;
+      waves.length = 0;
+      fireGlow = 0;
+      firelight.style.opacity = "0";
+      stopFireLoop();
+      ctx.clearRect(0, 0, fx.clientWidth, fx.clientHeight);
+      world.style.visibility = "hidden";
+      runFieldScene();
+    }, 4200);
+
+    later(function () { fade.classList.remove("on"); }, 4700);
+
+    /* Es wird ruhig, dann zurueck zum Startbildschirm */
+    later(function () { fade.classList.add("on"); }, 13200);
+    later(finishSequence, 15100);
+  }
+
+
+  /* Zurueck auf Anfang: Szene aufraeumen und aufblenden */
+  function finishSequence() {
+    stopFieldScene();
+    world.style.visibility = "";
+    parts.length = 0;
+    waves.length = 0;
+    fireGlow = 0;
+    firelight.style.opacity = "0";
+    ctx.clearRect(0, 0, fx.clientWidth, fx.clientHeight);
+
+    bars.classList.remove("on");
+    skipHint.hidden = true;
+    ui.classList.remove("cine");
+
+    /* Zug und Menue stehen wieder wie vor dem Start */
+    trainLayer.style.display = "";
+    $$("#train .part").forEach(function (p) {
+      p.style.transition = "none";
+      p.style.transform = "";
+      p.style.opacity = "";
+    });
+    void train.offsetWidth;
+    $$("#train .part").forEach(function (p) { p.style.transition = ""; });
+    train.classList.remove("rumbling");
+    beam.style.animation = "";
+    beam.style.transition = "";
+    beam.style.opacity = "";
+    trainLayer.style.zIndex = "";
+    heli.style.transform = "";
+
+    startBtn.querySelector(".lbl").textContent = "Start";
+    startBtn.classList.remove("done");
+    startBtn.disabled = false;
+    hint.textContent = "Pfeiltasten zum Wählen, Enter zum Bestätigen.";
+
+    exploded = false;
+    impacted = false;
+    cutscene = false;
+    later(function () { fade.classList.remove("on"); }, 120);
   }
 
   /* Die Sequenz */
@@ -1263,13 +1318,161 @@
     if (!cutscene) return;
     timers.forEach(function (t) { clearTimeout(t); clearInterval(t); });
     timers.length = 0;
-    fade.classList.remove("on");
-    trainLayer.style.display = "none";
-    parts.length = 0;
-    waves.length = 0;
+    stopRotor();
+    stopFieldScene();
+    heli.classList.remove("on");
     heliState.on = false;
-    exploded = true;
-    heliImpact();
+    impacted = true;
+    fade.classList.add("on");
+    /* kurz schwarz, dann steht wieder der Startbildschirm */
+    setTimeout(finishSequence, 900);
+  }
+
+
+  /* ============ 6b. Egoperspektive: Schlachtfeld ============
+     Dritter Akt. Der Soldat kriecht durch das brennende Feld, waehrend
+     ueber ihm geschossen wird. Feuer und Geschosse laufen als Partikel
+     auf demselben Canvas wie die Explosionen. */
+
+  const fpsState = { on: false, t0: 0, calm: 1 };   /* calm 1 = voll, 0 = ruhig */
+
+  /* Zischen eines vorbeifliegenden Geschosses */
+  function bulletWhizz() {
+    const a = resume(); if (!a) return;
+    const t = a.currentTime;
+    const n = a.createBufferSource();
+    n.buffer = noiseBuffer(0.3, 1.2);
+    const bp = a.createBiquadFilter();
+    bp.type = "bandpass";
+    bp.frequency.setValueAtTime(rand(2600, 3600), t);
+    bp.frequency.exponentialRampToValueAtTime(rand(700, 1100), t + 0.22);
+    bp.Q.value = 7;
+    const g = a.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.1 * fpsState.calm + 0.001, t + 0.05);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.3);
+    n.connect(bp).connect(g).connect(master);
+    n.start(t); n.stop(t + 0.3);
+  }
+
+  /* Gefecht in der Ferne: gedaempfte Salven */
+  function distantFire() {
+    const a = resume(); if (!a) return;
+    const t0 = a.currentTime;
+    const shots = 2 + ((Math.random() * 5) | 0);
+    for (let i = 0; i < shots; i++) {
+      const t = t0 + i * rand(0.07, 0.13);
+      const n = a.createBufferSource();
+      n.buffer = noiseBuffer(0.24, 3);
+      const lp = a.createBiquadFilter();
+      lp.type = "lowpass";
+      lp.frequency.value = 620;          /* dumpf = weit weg */
+      const g = a.createGain();
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(rand(0.05, 0.12) * fpsState.calm + 0.001, t + 0.008);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.22);
+      n.connect(lp).connect(g);
+      g.connect(master); g.connect(reverb);
+      n.start(t); n.stop(t + 0.24);
+    }
+  }
+
+  /* Leuchtspur quer durchs Bild, ueber dem Kopf */
+  function spawnFlyby() {
+    const w = app.clientWidth, hgt = app.clientHeight;
+    const dir = Math.random() < 0.5 ? 1 : -1;
+    const y = rand(hgt * 0.12, hgt * 0.42);
+    parts.push({ type: "spark",
+      x: dir > 0 ? -40 : w + 40, y: y,
+      vx: dir * rand(46, 70), vy: rand(-2, 4),
+      r: 3, life: 1, decay: 0.022, grav: 0.02, drag: 1,
+      color: Math.random() < 0.4 ? "#fff2c8" : "#ffc45c" });
+  }
+
+  /* Flammen und Rauch an den markierten Feuerstellen */
+  function spawnFieldFire() {
+    const a = app.getBoundingClientRect();
+    const marks = $$(".fire-marks i");
+    for (let i = 0; i < marks.length; i++) {
+      if (Math.random() > 0.45 * fpsState.calm) continue;
+      const r = marks[i].getBoundingClientRect();
+      const x = r.left - a.left, y = r.top - a.top;
+      const S = clamp(sceneScale(), 0.5, 1) * (0.5 + fpsState.calm * 0.8);
+      parts.push({ type: "fire",
+        x: x + rand(-30, 30), y: y + rand(-8, 8),
+        vx: rand(-.8, .8), vy: rand(-2.6, -1),
+        r: rand(14, 34) * S, life: 1, decay: rand(0.016, 0.03),
+        grav: -0.05, drag: 0.97,
+        color: FIRE[1 + ((Math.random() * 4) | 0)] });
+      if (Math.random() < 0.5) {
+        parts.push({ type: "smoke",
+          x: x + rand(-24, 24), y: y - rand(0, 20),
+          vx: rand(-.6, .6), vy: rand(-1.8, -.6),
+          r: rand(26, 54) * S, life: 1, decay: rand(0.005, 0.01),
+          grav: -0.04, drag: 0.99,
+          color: SMOKE[(Math.random() * SMOKE.length) | 0] });
+      }
+    }
+  }
+
+  /* Kopfnicken beim Kriechen */
+  function updateFps(time) {
+    if (!fpsState.on) return;
+    const el = (time - fpsState.t0) / 1000;
+    const bob = Math.sin(el * 3.3) * 10 * fpsState.calm;
+    const sway = Math.cos(el * 1.65) * 14 * fpsState.calm;
+    const tilt = Math.sin(el * 3.3 + 0.6) * 1.1 * fpsState.calm;
+    const tf = `translate(${sway.toFixed(1)}px, ${bob.toFixed(1)}px) rotate(${tilt.toFixed(2)}deg)`;
+    for (let i = 0; i < fpsScenes.length; i++) fpsScenes[i].style.transform = tf;
+  }
+
+  let fieldTimer = null, flybyTimer = null;
+
+  function runFieldScene() {
+    fpsState.on = true;
+    fpsState.t0 = performance.now();
+    fpsState.calm = 1;
+    fpsBack.classList.add("on");
+    fpsFore.classList.add("on", "crawl");
+    startFireLoop();
+
+    /* Feuer laeuft dauerhaft mit */
+    fieldTimer = setInterval(spawnFieldFire, 90);
+    timers.push(fieldTimer);
+
+    /* Geschosse in unregelmaessigen Abstaenden */
+    function nextShot() {
+      if (!fpsState.on) return;
+      const n = 1 + ((Math.random() * 3) | 0);
+      for (let i = 0; i < n; i++) {
+        later(function () { spawnFlyby(); bulletWhizz(); }, i * rand(60, 160));
+      }
+      if (Math.random() < 0.7) distantFire();
+      flybyTimer = setTimeout(nextShot, rand(400, 1100) / Math.max(0.25, fpsState.calm));
+      timers.push(flybyTimer);
+    }
+    nextShot();
+
+    /* Das Gefecht ebbt ab: Feuer, Schuesse und Kopfnicken werden weniger */
+    const calmStart = performance.now() + 4500;
+    const calmDur = 4500;
+    const calmer = setInterval(function () {
+      const k = (performance.now() - calmStart) / calmDur;
+      if (k <= 0) return;
+      fpsState.calm = clamp(1 - k, 0, 1);
+      if (fpsState.calm <= 0.02) { clearInterval(calmer); }
+    }, 100);
+    timers.push(calmer);
+  }
+
+  function stopFieldScene() {
+    fpsState.on = false;
+    fpsBack.classList.remove("on");
+    fpsFore.classList.remove("on", "crawl");
+    if (fieldTimer) { clearInterval(fieldTimer); fieldTimer = null; }
+    if (flybyTimer) { clearTimeout(flybyTimer); flybyTimer = null; }
+    stopFireLoop();
+    for (let i = 0; i < fpsScenes.length; i++) fpsScenes[i].style.transform = "";
   }
 
   /* ================== 6. Explosionssequenz ====================== */
@@ -1401,6 +1604,8 @@
     cutscene = false;
     impacted = false;
     fade.classList.remove("on");
+    stopFieldScene();
+    world.style.visibility = "";
     trainLayer.style.display = "";
     heliState.on = false;
     heli.classList.remove("on");

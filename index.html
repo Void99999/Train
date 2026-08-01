@@ -224,6 +224,51 @@
 
 <div id="app">
 
+  <!-- ============== Egoperspektive: Schlachtfeld ==============
+       Dritter Akt. Der Hintergrund liegt vor der Kamera-Ebene, damit
+       Feuer und Leuchtspuren vom Partikel-Canvas darueber gezeichnet
+       werden; die Haende kommen danach noch einmal obendrauf. -->
+  <div id="fpsBack" class="fpsLayer" aria-hidden="true">
+    <div class="fps-scene">
+      <svg class="fps-back" viewBox="0 0 1200 620" preserveAspectRatio="xMidYMax slice">
+        <defs>
+          <linearGradient id="fSky" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%"   stop-color="#0a0805"/>
+            <stop offset="38%"  stop-color="#2a1409"/>
+            <stop offset="66%"  stop-color="#6b2c0c"/>
+            <stop offset="88%"  stop-color="#b8540f"/>
+            <stop offset="100%" stop-color="#5d2a0b"/>
+          </linearGradient>
+          <linearGradient id="fGround" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%"   stop-color="#3a2412"/>
+            <stop offset="26%"  stop-color="#241708"/>
+            <stop offset="100%" stop-color="#0b0704"/>
+          </linearGradient>
+          <radialGradient id="fGlow" cx="50%" cy="100%" r="70%">
+            <stop offset="0%"   stop-color="#ff8a26" stop-opacity=".55"/>
+            <stop offset="100%" stop-color="#ff8a26" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+
+        <rect width="1200" height="410" fill="url(#fSky)"/>
+        <rect y="150" width="1200" height="260" fill="url(#fGlow)"/>
+        <g><path d="M20 400 L24 345 L36 358 L32 400 Z" fill="#0b0906"/><path d="M77 400 L80 358 L94 366 L91 400 Z" fill="#0b0906"/><path d="M120 400 L117 347 L126 357 L128 400 Z" fill="#0b0906"/><path d="M200 400 L195 340 L207 344 L212 400 Z" fill="#0b0906"/><path d="M291 400 L288 367 L303 372 L306 400 Z" fill="#0b0906"/><path d="M356 400 L347 317 L357 330 L366 400 Z" fill="#0b0906"/><path d="M430 400 L423 345 L438 354 L445 400 Z" fill="#0b0906"/><path d="M468 400 L476 362 L491 368 L483 400 Z" fill="#0b0906"/><path d="M554 400 L556 365 L566 373 L564 400 Z" fill="#0b0906"/><path d="M624 400 L628 361 L635 372 L631 400 Z" fill="#0b0906"/><path d="M714 400 L716 366 L726 374 L724 400 Z" fill="#0b0906"/><path d="M792 400 L801 348 L810 357 L801 400 Z" fill="#0b0906"/><path d="M864 400 L859 312 L873 320 L878 400 Z" fill="#0b0906"/><path d="M899 400 L895 309 L909 314 L914 400 Z" fill="#0b0906"/><path d="M978 400 L982 321 L994 332 L990 400 Z" fill="#0b0906"/><path d="M1056 400 L1062 324 L1070 333 L1064 400 Z" fill="#0b0906"/><path d="M1104 400 L1105 360 L1118 373 L1117 400 Z" fill="#0b0906"/><path d="M1155 400 L1157 306 L1169 318 L1167 400 Z" fill="#0b0906"/></g>
+        <rect y="398" width="1200" height="222" fill="url(#fGround)"/>
+        <g><ellipse cx="278" cy="535" rx="16.5" ry="2.2" fill="#241d14" opacity="0.96"/><ellipse cx="99" cy="486" rx="4.4" ry="3.8" fill="#241d14" opacity="0.98"/><ellipse cx="1103" cy="488" rx="7.3" ry="2.9" fill="#241d14" opacity="0.59"/><ellipse cx="209" cy="468" rx="9.0" ry="7.1" fill="#16130f" opacity="0.89"/><ellipse cx="262" cy="435" rx="15.8" ry="7.8" fill="#1d1a13" opacity="0.56"/><ellipse cx="968" cy="440" rx="9.0" ry="4.8" fill="#120f0b" opacity="0.77"/><ellipse cx="1113" cy="441" rx="18.7" ry="2.6" fill="#1d1a13" opacity="0.61"/><ellipse cx="650" cy="435" rx="10.5" ry="7.8" fill="#241d14" opacity="0.60"/><ellipse cx="748" cy="459" rx="13.5" ry="5.7" fill="#241d14" opacity="0.78"/><ellipse cx="641" cy="539" rx="16.9" ry="5.6" fill="#241d14" opacity="0.70"/><ellipse cx="785" cy="568" rx="21.2" ry="7.5" fill="#120f0b" opacity="0.99"/><ellipse cx="573" cy="569" rx="13.1" ry="2.5" fill="#120f0b" opacity="0.51"/><ellipse cx="537" cy="422" rx="8.5" ry="2.3" fill="#1d1a13" opacity="0.75"/><ellipse cx="326" cy="560" rx="9.8" ry="5.7" fill="#241d14" opacity="0.52"/><ellipse cx="554" cy="426" rx="14.0" ry="5.6" fill="#241d14" opacity="0.73"/><ellipse cx="446" cy="545" rx="7.1" ry="6.1" fill="#1d1a13" opacity="0.97"/><ellipse cx="504" cy="521" rx="11.7" ry="6.1" fill="#16130f" opacity="0.78"/><ellipse cx="179" cy="521" rx="13.2" ry="6.1" fill="#241d14" opacity="0.89"/><ellipse cx="166" cy="555" rx="17.7" ry="4.7" fill="#120f0b" opacity="0.96"/><ellipse cx="453" cy="434" rx="9.4" ry="7.6" fill="#120f0b" opacity="0.68"/><ellipse cx="764" cy="490" rx="5.1" ry="5.9" fill="#241d14" opacity="0.64"/><ellipse cx="1181" cy="526" rx="20.6" ry="7.7" fill="#120f0b" opacity="0.56"/><ellipse cx="955" cy="544" rx="14.9" ry="2.9" fill="#16130f" opacity="0.70"/><ellipse cx="690" cy="560" rx="9.6" ry="6.4" fill="#16130f" opacity="0.54"/><ellipse cx="819" cy="568" rx="4.4" ry="4.9" fill="#1d1a13" opacity="0.83"/><ellipse cx="1054" cy="429" rx="21.4" ry="6.7" fill="#120f0b" opacity="0.68"/><ellipse cx="335" cy="454" rx="17.1" ry="3.0" fill="#1d1a13" opacity="0.56"/><ellipse cx="872" cy="432" rx="9.3" ry="6.3" fill="#241d14" opacity="0.90"/><ellipse cx="245" cy="555" rx="12.0" ry="5.2" fill="#1d1a13" opacity="0.56"/><ellipse cx="897" cy="599" rx="10.8" ry="3.1" fill="#1d1a13" opacity="0.65"/><ellipse cx="1133" cy="503" rx="21.1" ry="2.6" fill="#120f0b" opacity="0.72"/><ellipse cx="234" cy="454" rx="12.8" ry="7.7" fill="#241d14" opacity="0.54"/><ellipse cx="339" cy="489" rx="21.8" ry="3.1" fill="#241d14" opacity="0.94"/><ellipse cx="169" cy="432" rx="14.6" ry="2.9" fill="#120f0b" opacity="0.75"/><ellipse cx="1120" cy="447" rx="17.0" ry="7.9" fill="#120f0b" opacity="0.79"/><ellipse cx="900" cy="415" rx="19.2" ry="7.5" fill="#120f0b" opacity="0.61"/><ellipse cx="527" cy="487" rx="17.1" ry="4.2" fill="#120f0b" opacity="0.58"/><ellipse cx="866" cy="572" rx="21.4" ry="2.7" fill="#120f0b" opacity="0.80"/><ellipse cx="955" cy="475" rx="6.6" ry="3.0" fill="#16130f" opacity="0.61"/><ellipse cx="25" cy="491" rx="20.0" ry="2.8" fill="#16130f" opacity="0.53"/><ellipse cx="1072" cy="485" rx="7.5" ry="5.0" fill="#1d1a13" opacity="0.83"/><ellipse cx="1111" cy="524" rx="7.6" ry="4.4" fill="#16130f" opacity="0.89"/><ellipse cx="947" cy="538" rx="20.0" ry="7.0" fill="#120f0b" opacity="0.93"/><ellipse cx="614" cy="596" rx="7.6" ry="5.3" fill="#241d14" opacity="0.88"/><ellipse cx="700" cy="588" rx="17.7" ry="6.0" fill="#241d14" opacity="0.99"/><ellipse cx="216" cy="571" rx="14.6" ry="2.9" fill="#120f0b" opacity="0.77"/><ellipse cx="185" cy="577" rx="19.5" ry="2.5" fill="#241d14" opacity="0.80"/><ellipse cx="701" cy="483" rx="13.6" ry="6.1" fill="#241d14" opacity="0.65"/><ellipse cx="234" cy="474" rx="7.1" ry="7.1" fill="#1d1a13" opacity="0.87"/><ellipse cx="899" cy="440" rx="10.6" ry="6.2" fill="#1d1a13" opacity="0.56"/><ellipse cx="774" cy="442" rx="10.0" ry="3.8" fill="#241d14" opacity="0.85"/><ellipse cx="596" cy="434" rx="4.4" ry="3.9" fill="#16130f" opacity="0.87"/><ellipse cx="501" cy="581" rx="11.7" ry="6.7" fill="#1d1a13" opacity="0.64"/><ellipse cx="283" cy="458" rx="12.6" ry="4.6" fill="#120f0b" opacity="0.83"/><ellipse cx="149" cy="435" rx="7.9" ry="2.6" fill="#120f0b" opacity="0.58"/><ellipse cx="1051" cy="456" rx="15.0" ry="3.7" fill="#16130f" opacity="0.55"/><ellipse cx="852" cy="499" rx="10.1" ry="4.6" fill="#1d1a13" opacity="0.96"/><ellipse cx="684" cy="427" rx="15.9" ry="2.3" fill="#241d14" opacity="0.85"/><ellipse cx="650" cy="466" rx="19.0" ry="4.2" fill="#16130f" opacity="0.93"/><ellipse cx="1173" cy="415" rx="11.8" ry="6.8" fill="#241d14" opacity="0.56"/><ellipse cx="726" cy="459" rx="17.9" ry="5.5" fill="#241d14" opacity="0.92"/><ellipse cx="348" cy="418" rx="5.3" ry="6.3" fill="#120f0b" opacity="0.92"/><ellipse cx="1032" cy="572" rx="7.5" ry="7.2" fill="#16130f" opacity="0.72"/><ellipse cx="1176" cy="575" rx="8.3" ry="6.3" fill="#16130f" opacity="0.76"/><ellipse cx="411" cy="410" rx="18.6" ry="5.8" fill="#1d1a13" opacity="0.57"/><ellipse cx="310" cy="512" rx="15.8" ry="2.9" fill="#120f0b" opacity="0.72"/><ellipse cx="671" cy="526" rx="13.1" ry="4.2" fill="#1d1a13" opacity="0.89"/><ellipse cx="1138" cy="584" rx="20.9" ry="4.2" fill="#16130f" opacity="0.57"/><ellipse cx="1177" cy="540" rx="6.7" ry="3.3" fill="#120f0b" opacity="0.56"/><ellipse cx="410" cy="429" rx="20.7" ry="6.0" fill="#120f0b" opacity="0.51"/></g>
+        <!-- Krater und Furchen im Boden -->
+        <ellipse cx="300" cy="470" rx="180" ry="30" fill="#0a0705" opacity=".55"/>
+        <ellipse cx="860" cy="510" rx="220" ry="36" fill="#0a0705" opacity=".5"/>
+      </svg>
+
+      <!-- Feuerherde; die Flammen zeichnet das Skript als Partikel -->
+      <div class="fire-marks">
+        <i style="left:12%;bottom:33%"></i><i style="left:31%;bottom:31%"></i>
+        <i style="left:52%;bottom:34%"></i><i style="left:71%;bottom:30%"></i>
+        <i style="left:88%;bottom:33%"></i>
+      </div>
+    </div>
+  </div>
+
   <!-- #camera bekommt den Screenshake, #world die Parallaxe -->
   <div id="camera">
     <div id="world">
@@ -785,6 +830,76 @@
     <!-- Explosion, Funken, Glühwürmchen -->
     <canvas id="fx"></canvas>
   </div><!-- /#camera -->
+
+
+  <!-- Haende des Soldaten, liegen vor Feuer und Geschossen -->
+  <div id="fpsFore" class="fpsLayer" aria-hidden="true">
+    <div class="fps-scene">
+      <svg class="hand left" viewBox="0 0 260 320">
+        <g fill="#1a1e14" stroke="#0d1109" stroke-width="6" stroke-linejoin="round">
+          <path d="M56 320 L52 196 Q50 168 78 160 L172 152 Q204 154 208 184 L216 320 Z"/>
+        </g>
+        <path d="M56 320 L52 196 Q50 168 78 160 L172 152 Q204 154 208 184 L216 320 Z" fill="#232719"/>
+        <path d="M62 300 L58 200 Q57 180 78 174" fill="none" stroke="#3c4431" stroke-width="4" opacity=".6"/>
+        <!-- Handruecken -->
+        <path d="M52 200 Q46 150 74 132 L176 122 Q212 130 212 178 Z"
+              fill="#0d1109" stroke="#0d1109" stroke-width="6" stroke-linejoin="round"/>
+        <path d="M52 200 Q46 150 74 132 L176 122 Q212 130 212 178 Z" fill="#282d1d"/>
+        <!-- Finger, in den Boden gekrallt -->
+        <g fill="#282d1d" stroke="#0d1109" stroke-width="5" stroke-linejoin="round">
+          <path d="M66 140 Q60 96 80 88 Q98 84 102 120 L100 146 Z"/>
+          <path d="M104 130 Q100 80 122 74 Q142 72 144 112 L142 138 Z"/>
+          <path d="M146 126 Q144 78 166 76 Q186 78 186 114 L182 136 Z"/>
+          <path d="M188 130 Q190 92 208 92 Q224 96 220 126 L214 148 Z"/>
+        </g>
+        <!-- Daumen -->
+        <path d="M50 186 Q22 176 20 200 Q20 222 48 226 L58 210 Z"
+              fill="#282d1d" stroke="#0d1109" stroke-width="5" stroke-linejoin="round"/>
+        <!-- Knoechelfalten -->
+        <g stroke="#171b11" stroke-width="3" opacity=".7" fill="none">
+          <path d="M70 150 Q120 138 200 140"/>
+          <path d="M62 172 Q120 160 206 162"/>
+        </g>
+        <!-- Bodenlicht von vorn -->
+        <path d="M52 200 Q46 150 74 132 L176 122 Q212 130 212 178 Z" fill="#ff8a26" opacity=".26"/>
+        <path d="M66 140 Q60 96 80 88 Q98 84 102 120" fill="none" stroke="#ffb066" stroke-width="4" opacity=".4"/>
+        <path d="M104 130 Q100 80 122 74 Q142 72 144 112" fill="none" stroke="#ffb066" stroke-width="4" opacity=".35"/>
+      </svg>
+
+      <svg class="hand right" viewBox="0 0 260 320">
+        <g fill="#1a1e14" stroke="#0d1109" stroke-width="6" stroke-linejoin="round">
+          <path d="M56 320 L52 196 Q50 168 78 160 L172 152 Q204 154 208 184 L216 320 Z"/>
+        </g>
+        <path d="M56 320 L52 196 Q50 168 78 160 L172 152 Q204 154 208 184 L216 320 Z" fill="#232719"/>
+        <path d="M62 300 L58 200 Q57 180 78 174" fill="none" stroke="#3c4431" stroke-width="4" opacity=".6"/>
+        <!-- Handruecken -->
+        <path d="M52 200 Q46 150 74 132 L176 122 Q212 130 212 178 Z"
+              fill="#0d1109" stroke="#0d1109" stroke-width="6" stroke-linejoin="round"/>
+        <path d="M52 200 Q46 150 74 132 L176 122 Q212 130 212 178 Z" fill="#282d1d"/>
+        <!-- Finger, in den Boden gekrallt -->
+        <g fill="#282d1d" stroke="#0d1109" stroke-width="5" stroke-linejoin="round">
+          <path d="M66 140 Q60 96 80 88 Q98 84 102 120 L100 146 Z"/>
+          <path d="M104 130 Q100 80 122 74 Q142 72 144 112 L142 138 Z"/>
+          <path d="M146 126 Q144 78 166 76 Q186 78 186 114 L182 136 Z"/>
+          <path d="M188 130 Q190 92 208 92 Q224 96 220 126 L214 148 Z"/>
+        </g>
+        <!-- Daumen -->
+        <path d="M50 186 Q22 176 20 200 Q20 222 48 226 L58 210 Z"
+              fill="#282d1d" stroke="#0d1109" stroke-width="5" stroke-linejoin="round"/>
+        <!-- Knoechelfalten -->
+        <g stroke="#171b11" stroke-width="3" opacity=".7" fill="none">
+          <path d="M70 150 Q120 138 200 140"/>
+          <path d="M62 172 Q120 160 206 162"/>
+        </g>
+        <!-- Bodenlicht von vorn -->
+        <path d="M52 200 Q46 150 74 132 L176 122 Q212 130 212 178 Z" fill="#ff8a26" opacity=".26"/>
+        <path d="M66 140 Q60 96 80 88 Q98 84 102 120" fill="none" stroke="#ffb066" stroke-width="4" opacity=".4"/>
+        <path d="M104 130 Q100 80 122 74 Q142 72 144 112" fill="none" stroke="#ffb066" stroke-width="4" opacity=".35"/>
+      </svg>
+
+      <div class="fps-vignette"></div>
+    </div>
+  </div>
 
   <!-- Kinobalken der Cutscene -->
   <div id="bars" aria-hidden="true"><i class="top"></i><i class="bottom"></i></div>

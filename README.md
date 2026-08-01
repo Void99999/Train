@@ -5,7 +5,9 @@ nachts auf Schienen, die über die ganze Bildbreite laufen. Ein Klick auf **Star
 lässt den Zug mit Explosionssound in die Luft fliegen. Danach wird das Bild langsam
 schwarz, und aus der Blende heraus läuft eine Cutscene: ein Kampfhubschrauber fliegt
 heran, ein Soldat feuert aus der offenen Schiebetür, dann wird der Heli getroffen und
-stürzt brennend ab. Am Ende steht auf dem Button nur noch **cool**.
+stürzt brennend ab. Nach der nächsten Schwarzblende sieht man den Soldaten aus der
+Egoperspektive: er kriecht über das brennende Schlachtfeld, während Geschosse über ihn
+hinwegfliegen. Das Gefecht ebbt langsam ab — und dann steht wieder der Startbildschirm da.
 
 ## Starten
 
@@ -52,16 +54,15 @@ python3 build-einzeldatei.py
 - Die Optionen wirken wirklich: Lautstärke, Bildschirmwackeln, Effektstärke.
   Sie werden im Browser gespeichert und beim nächsten Start wieder geladen.
 
-**Ablauf beim Start** (`startSequence()`)
-1. Kinobalken fahren ein, das Menü tritt zurück
-2. Der Zug explodiert (siehe unten)
-3. Das Bild blendet langsam auf Schwarz
-4. Hinter der Blende wird die Szene geräumt — der Zug ist weg
-5. Aus dem Schwarzen heraus läuft die Cutscene
-6. Leertaste oder Esc überspringt alles
+**Ablauf beim Start** — drei Akte, zusammen gut eine halbe Minute.
+Leertaste oder Esc springt jederzeit zurück zum Startbildschirm.
 
-**Cutscene**
-1. Der Hubschrauber fliegt von rechts heran und geht in den Schwebeflug
+*1. Akt — der Zug* (`startSequence()`)
+Kinobalken fahren ein, das Menü tritt zurück, der Zug explodiert. Danach
+blendet das Bild langsam auf Schwarz; dahinter wird die Szene geräumt.
+
+*2. Akt — der Hubschrauber* (`runHeliScene()`)
+1. Der Heli fliegt von rechts heran und geht in den Schwebeflug
 2. Der Soldat in der offenen Schiebetür feuert — Mündungsfeuer,
    Leuchtspuren und Maschinengewehrsalve
 3. Treffer: Cockpit-Alarm, Funken und Rauch am Heck, die Turbine stirbt ab
@@ -70,6 +71,18 @@ python3 build-einzeldatei.py
 Der Aufschlag löst aus, sobald der Heli den Boden wirklich erreicht — nicht
 nach einer festen Zeit. So sitzt der Treffer unabhängig von Bildrate und
 Fenstergröße.
+
+*3. Akt — das Schlachtfeld* (`runFieldScene()`)
+1. Nach der Schwarzblende die Egoperspektive des Soldaten: brennendes
+   Feld, zerschossene Baumstümpfe, Krater
+2. Seine Hände kriechen abwechselnd nach vorn, die Sicht nickt im Takt mit
+3. Geschosse zischen über ihn hinweg, in der Ferne fallen Schüsse
+4. Das Gefecht ebbt ab: Feuer, Schüsse und Kopfnicken werden weniger
+5. Blende — und der Startbildschirm steht wieder da
+
+Wie stark das Gefecht tobt, steuert `fpsState.calm` von 1 (voll) auf 0
+(ruhig); daran hängen Feuermenge, Schussfrequenz, Lautstärke und die
+Stärke des Kopfnickens.
 
 **Zugexplosion**
 1. Dampfpfeife, die Lok fängt an zu beben
@@ -101,6 +114,8 @@ Web Audio API, läuft die Animation trotzdem.
 - **Ablauf und Timing**: die `later(...)`-Aufrufe in `runCutscene()` und `explode()`
 - **Flugbahn des Helis**: `updateHeli()` — die Phasen `enter`, `hover`,
   `hit` und `fall`
+- **Länge der Akte**: die `later(...)`-Aufrufe in `startSequence()`,
+  `heliImpact()` und `runFieldScene()`
 
 Auf schmalen Bildschirmen rückt das Menü unter den Zug, das Gleis wandert nach
 oben und Zug wie Explosion werden kleiner. Die Schienen laufen immer über die
