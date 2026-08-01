@@ -543,6 +543,19 @@ body {
   pointer-events: none;
 }
 
+/* Schwarzblende. Liegt ueber allem ausser dem Menue, damit die Szene
+   dahinter unbemerkt umgebaut werden kann. */
+#fade {
+  position: absolute;
+  inset: 0;
+  z-index: 15;
+  background: #000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 1.8s ease-in-out;
+}
+#fade.on { opacity: 1; }
+
 
 /* ============================= Menü ============================= */
 

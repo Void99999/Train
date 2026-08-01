@@ -39,6 +39,7 @@
   const bars      = $("#bars");
   const skipHint  = $("#skip");
   const ui        = $("#ui");
+  const fade      = $("#fade");
 
   const ctx   = fx.getContext("2d");
   const sctx  = skyfx.getContext("2d");
@@ -1103,26 +1104,55 @@
     placeHeli();
   }
 
-  /* Aufschlag auf den Zug: der laute Knall, der den Zug mitreisst */
+  /* Aufschlag des Helis auf dem Boden - der laute Knall am Ende */
   let impacted = false;
   function heliImpact() {
     if (impacted) return;
     impacted = true;
     stopRotor();
+
+    const r = heli.getBoundingClientRect();
+    const a = app.getBoundingClientRect();
+    const cx = clamp(r.left + r.width / 2 - a.left, 60, app.clientWidth - 60);
+    const cy = groundY() - 30;
+
     heli.classList.remove("on");
     heliState.on = false;
-    explode();
+
+    firelight.style.setProperty("--fx-x", (cx / app.clientWidth  * 100).toFixed(1) + "%");
+    firelight.style.setProperty("--fx-y", (cy / app.clientHeight * 100).toFixed(1) + "%");
+    playBlast();
+    playDebrisRain();
+    spawnBlast(cx, cy);
+    doFlash(0.95, 480);
+    addShake(38 * clamp(sceneScale(), 0.5, 1.3));
+    later(startFireLoop, 350);
+
+    let n = 0;
+    const t = setInterval(function () {
+      spawnEmbers(cx, cy);
+      if (++n > 40) { clearInterval(t); stopFireLoop(); }
+    }, 110);
+    timers.push(t);
+
+    /* Erst jetzt ist die Sequenz vorbei */
+    later(function () {
+      bars.classList.remove("on");
+      skipHint.hidden = true;
+      ui.classList.remove("cine");
+      startBtn.querySelector(".lbl").textContent = "cool";
+      startBtn.classList.add("done");
+      startBtn.disabled = false;
+      hint.textContent = "Taste R setzt die Szene zurück.";
+      cutscene = false;
+    }, 1400);
   }
 
   /* Die Sequenz */
   let cutscene = false;
 
-  function runCutscene() {
-    cutscene = true;
+  function runHeliScene() {
     impacted = false;
-    ui.classList.add("cine");
-    bars.classList.add("on");
-    skipHint.hidden = false;
     startRotor();
 
     const S = heliScale();
@@ -1174,31 +1204,58 @@
 
     /* Absturz */
     later(function () {
-      const c = trainCenter();
       const S = heliScale();
       heliState.phase = "fall";
       heliState.t0 = performance.now();
       heliState.vy = 40;
-      /* Aufschlaghoehe: dort steht der Zug */
-      heliState.impactY = groundY() - 150 * S;
-      /* Fallzeit aus v0, Schwerkraft und Fallhoehe, daraus die
-         Seitwaertsfahrt, damit er mittig auf dem Zug ankommt. */
+      heliState.impactY = groundY() - 120 * S;
+      /* Aufschlagstelle: gut im Bild, leicht links der Mitte. Nicht am
+         Zug ausrichten - der ist zu diesem Zeitpunkt schon ausgeblendet
+         und liefert eine Nullposition. */
+      const targetX = app.clientWidth * 0.44;
+      /* Fallzeit aus Anfangstempo, Schwerkraft und Fallhoehe */
       const dropH = Math.max(40, heliState.impactY - heliState.y);
       const tFall = (-40 + Math.sqrt(1600 + 4 * 450 * dropH)) / (2 * 450);
       const heliMid = heliState.x + 220 * S;
-      heliState.vx = (c.x - heliMid) / Math.max(0.4, tFall);
+      heliState.vx = (targetX - heliMid) / Math.max(0.4, tFall);
       addShake(5);
     }, 5900);
 
     /* Sicherheitsnetz, falls der Aufschlag nicht ausgeloest wurde */
     later(heliImpact, 8600);
+  }
 
-    /* Zurueck ins Menue */
+
+  /* ============ Gesamtablauf ============
+     Zuerst geht der Zug hoch, dann blendet das Bild langsam auf Schwarz.
+     Hinter der Blende wird die Szene geraeumt, danach faehrt die
+     Cutscene mit dem Hubschrauber auf. */
+  function startSequence() {
+    cutscene = true;
+    ui.classList.add("cine");
+    bars.classList.add("on");
+    skipHint.hidden = false;
+
+    explode();
+
+    later(function () { fade.classList.add("on"); }, 4400);
+
+    /* Im Schwarzen: Wrack und Truemmer raeumen, Zug verschwindet */
     later(function () {
-      bars.classList.remove("on");
-      skipHint.hidden = true;
-      ui.classList.remove("cine");
-    }, 9600);
+      parts.length = 0;
+      waves.length = 0;
+      fireGlow = 0;
+      firelight.style.opacity = "0";
+      stopFireLoop();
+      trainLayer.style.display = "none";
+      ctx.clearRect(0, 0, fx.clientWidth, fx.clientHeight);
+    }, 6400);
+
+    /* Aufblenden, die Cutscene laeuft an */
+    later(function () {
+      fade.classList.remove("on");
+      runHeliScene();
+    }, 6900);
   }
 
   /* Cutscene abbrechen und direkt zur Explosion springen */
@@ -1206,13 +1263,13 @@
     if (!cutscene) return;
     timers.forEach(function (t) { clearTimeout(t); clearInterval(t); });
     timers.length = 0;
-    stopRotor();
-    heli.classList.remove("on");
+    fade.classList.remove("on");
+    trainLayer.style.display = "none";
+    parts.length = 0;
+    waves.length = 0;
     heliState.on = false;
-    bars.classList.remove("on");
-    skipHint.hidden = true;
-    ui.classList.remove("cine");
-    if (!exploded) heliImpact();
+    exploded = true;
+    heliImpact();
   }
 
   /* ================== 6. Explosionssequenz ====================== */
@@ -1314,14 +1371,8 @@
       }, 110);
     }, 1150);
 
-    /* Der Button quittiert */
-    later(function () {
-      startBtn.querySelector(".lbl").textContent = "cool";
-      startBtn.classList.add("done");
-      startBtn.disabled = false;
-      hint.textContent = "Taste R setzt die Szene zurück.";
-      cutscene = false;
-    }, 1900);
+    /* Der Button quittiert erst, wenn die ganze Sequenz durch ist -
+       das uebernimmt heliImpact(). */
   }
 
   /* Szene in den Ausgangszustand bringen */
@@ -1349,6 +1400,8 @@
 
     cutscene = false;
     impacted = false;
+    fade.classList.remove("on");
+    trainLayer.style.display = "";
     heliState.on = false;
     heli.classList.remove("on");
     heli.style.transform = "";
@@ -1416,7 +1469,7 @@
       if (action === "start") {
         if (exploded || cutscene) { uiTick(); return; }
         uiConfirm();
-        runCutscene();
+        startSequence();
       } else if (action === "panel") {
         showPanel(btn.dataset.panel);
       }

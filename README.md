@@ -2,9 +2,10 @@
 
 Startbildschirm für ein Spiel: eine Dampflok mit Tender und Personenwagen steht
 nachts auf Schienen, die über die ganze Bildbreite laufen. Ein Klick auf **Start**
-startet eine Cutscene: ein Kampfhubschrauber fliegt heran, ein Soldat feuert aus der
-offenen Schiebetür, dann wird der Heli getroffen und stürzt brennend auf den Zug —
-der Aufschlag reißt ihn mit. Danach steht auf dem Button nur noch **cool**.
+lässt den Zug mit Explosionssound in die Luft fliegen. Danach wird das Bild langsam
+schwarz, und aus der Blende heraus läuft eine Cutscene: ein Kampfhubschrauber fliegt
+heran, ein Soldat feuert aus der offenen Schiebetür, dann wird der Heli getroffen und
+stürzt brennend ab. Am Ende steht auf dem Button nur noch **cool**.
 
 ## Starten
 
@@ -51,21 +52,26 @@ python3 build-einzeldatei.py
 - Die Optionen wirken wirklich: Lautstärke, Bildschirmwackeln, Effektstärke.
   Sie werden im Browser gespeichert und beim nächsten Start wieder geladen.
 
-**Cutscene beim Start**
-1. Kinobalken fahren ein, das Menü tritt zurück, die Rotoren laufen an
-2. Der Hubschrauber fliegt von rechts heran und geht über der Strecke in
-   den Schwebeflug
-3. Der Soldat in der offenen Schiebetür feuert — Mündungsfeuer,
-   Leuchtspuren und Maschinengewehrsalve
-4. Treffer: Cockpit-Alarm, Funken und Rauch am Heck, die Turbine stirbt ab
-5. Der Heli trudelt brennend nach unten und schlägt auf dem Zug ein
-6. Leertaste oder Esc überspringt die Cutscene
+**Ablauf beim Start** (`startSequence()`)
+1. Kinobalken fahren ein, das Menü tritt zurück
+2. Der Zug explodiert (siehe unten)
+3. Das Bild blendet langsam auf Schwarz
+4. Hinter der Blende wird die Szene geräumt — der Zug ist weg
+5. Aus dem Schwarzen heraus läuft die Cutscene
+6. Leertaste oder Esc überspringt alles
 
-Der Aufschlag löst aus, sobald der Heli den Zug wirklich erreicht — nicht
+**Cutscene**
+1. Der Hubschrauber fliegt von rechts heran und geht in den Schwebeflug
+2. Der Soldat in der offenen Schiebetür feuert — Mündungsfeuer,
+   Leuchtspuren und Maschinengewehrsalve
+3. Treffer: Cockpit-Alarm, Funken und Rauch am Heck, die Turbine stirbt ab
+4. Der Heli trudelt brennend nach unten und schlägt mit lautem Knall auf
+
+Der Aufschlag löst aus, sobald der Heli den Boden wirklich erreicht — nicht
 nach einer festen Zeit. So sitzt der Treffer unabhängig von Bildrate und
 Fenstergröße.
 
-**Explosion**
+**Zugexplosion**
 1. Dampfpfeife, die Lok fängt an zu beben
 2. Vorknall am Kessel mit kleinem Lichtblitz
 3. Hauptknall: Blitz, Druckwelle, Screenshake, Feuerball in drei Wellen,
