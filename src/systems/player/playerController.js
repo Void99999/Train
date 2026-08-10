@@ -30,6 +30,9 @@ const BODY_RADIUS = 0.32;
 const BODY_HEIGHT = 1.8;
 const CROUCH_BODY_HEIGHT = 1.15;
 
+/** Metres between footfalls at a walk. */
+const STRIDE_LENGTH = 0.82;
+
 /** Pitch is clamped just short of straight up and straight down. */
 const PITCH_LIMIT = Math.PI / 2 - 0.02;
 
@@ -46,6 +49,9 @@ export class PlayerController {
   #crouching = false;
   #headBobPhase = 0;
   #enabled = true;
+  /** Distance walked since the last footstep, for the footstep rhythm. */
+  #stepDistance = 0;
+  #pendingStep = false;
 
   /**
    * @param {object} deps
@@ -206,6 +212,36 @@ export class PlayerController {
     if (this.#grounded && wantsToMove) {
       this.#headBobPhase += delta * (sprinting ? 13 : 8.5);
     }
+
+    this.#trackFootsteps(delta, sprinting);
+  }
+
+  /**
+   * Footsteps are paced by distance rather than by time, so they stay in step
+   * with the legs whether the player is walking, sprinting or crouching.
+   */
+  #trackFootsteps(delta, sprinting) {
+    if (!this.#grounded || this.speed < 0.4) {
+      this.#stepDistance = STRIDE_LENGTH * 0.6;
+      return;
+    }
+
+    this.#stepDistance += this.speed * delta;
+    const stride = sprinting ? STRIDE_LENGTH * 1.25 : STRIDE_LENGTH;
+    if (this.#stepDistance >= stride) {
+      this.#stepDistance -= stride;
+      this.#pendingStep = true;
+    }
+  }
+
+  /**
+   * True once per footstep. Consuming it clears the flag, so the caller plays
+   * exactly one sound per step no matter how often it asks.
+   */
+  consumeFootstep() {
+    if (!this.#pendingStep) return false;
+    this.#pendingStep = false;
+    return true;
   }
 
   #targetSpeed(sprinting) {
@@ -230,8 +266,15 @@ export class PlayerController {
     const sin = Math.sin(this.yaw);
     const cos = Math.cos(this.yaw);
 
-    let wishX = sin * forward + cos * right;
-    let wishZ = cos * forward - sin * right;
+    // Forward is (sin yaw, cos yaw). The player's right is that turned a
+    // quarter turn clockwise seen from above - forward at (yaw - 90 degrees) -
+    // which is (-cos yaw, sin yaw).
+    //
+    // Getting this backwards is what made A and D swap: with the camera
+    // looking along +Z in a right-handed space, +X is on the player's LEFT,
+    // not their right.
+    let wishX = sin * forward - cos * right;
+    let wishZ = cos * forward + sin * right;
 
     const length = Math.hypot(wishX, wishZ);
     if (length > 0) {

@@ -52,7 +52,9 @@ export class Renderer {
     // Filmic tone mapping and sRGB output: the difference between "3D shapes"
     // and something that reads as photographed.
     this.#renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.#renderer.toneMappingExposure = 1.05;
+    // Slightly hot on purpose: ACES rolls the highlights off gently, so a
+    // little extra exposure lifts the shadows without blowing the lamps out.
+    this.#renderer.toneMappingExposure = 1.35;
     this.#renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.#renderer.shadowMap.enabled = quality.shadows;
     this.#renderer.shadowMap.type = THREE.PCFShadowMap;

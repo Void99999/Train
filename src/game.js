@@ -41,7 +41,10 @@ import { Crew } from "./systems/ai/loader.js";
 import { MenuSystem } from "./ui/menus.js";
 import { Hud } from "./ui/hud.js";
 import { CinematicOverlay } from "./ui/cinematicOverlay.js";
+import { WeaponWheel } from "./ui/weaponWheel.js";
 import { el } from "./ui/dom.js";
+
+import { AudioDirector } from "./audio/audioDirector.js";
 
 import { weaponSpec } from "./data/weapons.js";
 import { TRAIN } from "./data/balance.js";
@@ -85,6 +88,7 @@ export class Game {
   /** The first-person controller. Owns where the player is and where they look. */
   #player = null;
   #pointerPrompt = null;
+  #wheelOpen = false;
 
   constructor({ canvas, overlay, hudRoot }) {
     this.events = new EventBus();
@@ -124,6 +128,9 @@ export class Game {
 
     this.hud = new Hud({ root: hudRoot, localization: this.localization });
     this.hud.hide();
+
+    this.audio = new AudioDirector({ events: this.events, settings: this.settings });
+    this.weaponWheel = new WeaponWheel({ root: overlay, localization: this.localization });
 
     this.#overlayRoot = overlay;
     this.cinematic = new CinematicOverlay({ root: hudRoot, localization: this.localization });
@@ -231,6 +238,10 @@ export class Game {
     this.#world.syncTrain(train);
     this.#player.setColliders(this.#world.colliders);
     this.#player.setStamina(stamina);
+
+    // Browsers only allow audio to start from a user gesture. The click on
+    // Start is that gesture, so this is the one place it can happen.
+    this.audio.start();
 
     this.events.emit(GAME_EVENT.runStarted, { mode: this.settings.mode });
     this.playIntro();
@@ -382,6 +393,7 @@ export class Game {
     this.menus.hide();
     this.hud.show();
     this.#player.setEnabled(true);
+    this.audio.setMuted(false);
     this.#requestPointerLock();
   }
 
@@ -393,6 +405,8 @@ export class Game {
     // keys: a key still held when the menu opened must not keep them walking.
     this.#player.setEnabled(false);
     this.input.releaseAll();
+    this.audio.setMuted(true);
+    this.#closeWeaponWheel(false);
     this.menus.show("pause");
     this.#hidePointerPrompt();
     document.exitPointerLock?.();
@@ -411,6 +425,8 @@ export class Game {
 
     this.#run = null;
     this.#player.setEnabled(false);
+    this.#closeWeaponWheel(false);
+    this.audio.setMuted(false);
     this.state.transitionTo(STATE.mainMenu);
     this.hud.hide();
     this.hud.setPrompt(null);
@@ -505,6 +521,21 @@ export class Game {
 
     if (!this.#run || !this.state.isSimulating) return;
 
+    /* ------------------------------------------------------- weapon wheel */
+
+    if (this.input.wasPressed(ACTION.weaponWheel)) this.#openWeaponWheel();
+    if (this.input.wasReleased(ACTION.weaponWheel)) this.#closeWeaponWheel(true);
+
+    const mouse = this.input.consumeMouseDelta();
+
+    if (this.#wheelOpen) {
+      // While the wheel is up the mouse drives the selector, not the camera.
+      this.weaponWheel.applyMouseDelta(mouse.x, mouse.y);
+      return;
+    }
+
+    /* ------------------------------------------------------------- driving */
+
     if (this.input.wasPressed(ACTION.throttleUp)) this.#run.train.throttleUp();
     if (this.input.wasPressed(ACTION.throttleDown)) this.#run.train.throttleDown();
 
@@ -517,12 +548,101 @@ export class Game {
       if (restored > 0) this.hud.toast(this.localization.t("MEDICAL_MEDKIT"));
     }
 
+    if (this.input.wasPressed(ACTION.interact)) this.#interact();
+
     // Mouse look. Only while the pointer is captured, so moving the mouse over
     // a menu can never spin the camera behind it.
-    const delta = this.input.consumeMouseDelta();
     if (document.pointerLockElement) {
-      this.#player.look(-delta.x * MOUSE_SENSITIVITY, -delta.y * MOUSE_SENSITIVITY);
+      this.#player.look(-mouse.x * MOUSE_SENSITIVITY, -mouse.y * MOUSE_SENSITIVITY);
     }
+  }
+
+  /* ------------------------------------------------------------ weapons */
+
+  /**
+   * Opens the wheel with only the weapons the player owns.
+   * A wheel showing weapons that cannot be selected is a shop, not a selector.
+   */
+  #openWeaponWheel() {
+    if (this.#wheelOpen || !this.#run) return;
+    const { inventory, train } = this.#run;
+
+    this.#wheelOpen = true;
+    this.weaponWheel.open(
+      inventory.wheelOrder,
+      inventory.equippedWeaponId,
+      (id) => this.localization.t(WEAPON_NAME_KEYS[id] ?? "WEAPON_PISTOL"),
+      (id) => ({
+        magazine: inventory.weaponState(id)?.roundsInMagazine ?? 0,
+        reserve: inventory.reserveRoundsFor(id, train),
+      }),
+    );
+    this.audio.play("ui_move");
+  }
+
+  /**
+   * Closes the wheel. `equip` is false when the wheel is being torn down for
+   * some other reason - pausing, quitting - and the selection must not stick.
+   */
+  #closeWeaponWheel(equip) {
+    if (!this.#wheelOpen) return;
+    this.#wheelOpen = false;
+    const chosen = this.weaponWheel.close();
+
+    if (equip && chosen && this.#run) {
+      const changed = chosen !== this.#run.inventory.equippedWeaponId;
+      this.#run.inventory.equip(chosen);
+      this.audio.play(changed ? "mechanical_clunk" : "ui_move");
+    }
+  }
+
+  /**
+   * Fires the equipped weapon if the trigger is down and it is able to.
+   * Automatic weapons keep firing while held; the rate of fire is enforced by
+   * the weapon itself, so this can be called every frame.
+   */
+  #updateFiring() {
+    if (this.#wheelOpen || !this.#run) return;
+    if (!this.input.isHeld(ACTION.fire)) return;
+
+    const { inventory, train } = this.#run;
+    const weapon = inventory.equippedWeapon;
+    if (!weapon) return;
+
+    const shot = weapon.fire();
+    if (shot) {
+      // The player's own weapon plays flat rather than positioned - it is
+      // happening at the listener, and panning it sounds wrong.
+      this.events.emit(GAME_EVENT.weaponFired, { weaponId: shot.weaponId, shot });
+      return;
+    }
+
+    // Out of rounds: reload from the train's stores rather than making the
+    // player press R to find out the magazine was empty.
+    if (weapon.isEmpty && !weapon.isReloading) inventory.reloadEquipped(train);
+  }
+
+  /** Acts on whatever the player is standing in front of. */
+  #interact() {
+    const nearby = this.#nearbyInteractable();
+    if (!nearby) return;
+
+    if (nearby.id === "rear-door") this.audio.play("door");
+    else this.audio.play("mechanical_clunk");
+  }
+
+  #nearbyInteractable() {
+    const position = this.#player.position;
+    const reach = 0.6;
+
+    return this.#world.interactables.find((item) => {
+      const box = item.box;
+      return (
+        position.x - reach < box.maxX && position.x + reach > box.minX &&
+        position.y < box.maxY && position.y + this.#player.bodyHeight > box.minY &&
+        position.z - reach < box.maxZ && position.z + reach > box.minZ
+      );
+    });
   }
 
   /** Translates held keys into the controller's movement intent. */
@@ -553,7 +673,15 @@ export class Game {
       this.#stage.update(delta, this.#elapsed);
       this.#cutscene.update(delta, this.#cutsceneContext);
       // The cutscene drives how fast the world slides past.
-      this.#world.update(delta, this.#cutsceneContext?.scrollSpeed ?? 0, sky);
+      this.#world.update(delta, this.#cutsceneContext?.scrollSpeed ?? 0, sky, this.#elapsed);
+      this.audio.update(delta, {
+        train: {
+          speed: this.#cutsceneContext?.scrollSpeed ?? 0,
+          maxSpeedKmh: 80,
+          throttleFraction: Math.min(1, (this.#cutsceneContext?.scrollSpeed ?? 0) / 22),
+          inside: false,
+        },
+      });
       return;
     }
 
@@ -569,6 +697,11 @@ export class Game {
       // The controller drives stamina, because only it knows whether the
       // player is actually moving.
       this.#player.update(delta, this.#movementIntent());
+      this.#updateFiring();
+
+      if (this.#player.consumeFootstep()) {
+        this.audio.play("footstep", { running: this.#run.stamina.isSprinting });
+      }
 
       statistics.sample({
         distanceKm: train.distanceKm,
@@ -579,11 +712,23 @@ export class Game {
       if (train.isDead) this.#failRun(RUN_FAILURE.locomotiveDestroyed);
 
       this.#stage.update(delta, this.#elapsed);
-      this.#world.update(delta, train.speedMetresPerSecond, sky);
+      this.#world.update(delta, train.speedMetresPerSecond, sky, this.#elapsed);
       this.#world.setThrottleIndicator(train.throttleIndex);
-      this.#placeFirstPersonCamera();
+      this.#world.setSpeedIndicator(train.speedKmh / TRAIN.baseMaxSpeedKmh);
+      this.#placeFirstPersonCamera(train);
       this.hud.update(this.#buildHudSnapshot());
       this.#updateInteractionPrompt();
+
+      this.audio.update(delta, {
+        listenerPosition: this.#player.eyePosition,
+        listenerForward: this.#player.forwardVector,
+        train: {
+          speed: train.speedMetresPerSecond,
+          maxSpeedKmh: train.maxSpeedKmh,
+          throttleFraction: train.throttleFraction,
+          inside: true,
+        },
+      });
     } else {
       this.#stage.update(delta, this.#elapsed);
       this.#world.update(delta, 0, sky);
@@ -597,17 +742,7 @@ export class Game {
    * a better description of "at the controls" than a line from the eye.
    */
   #updateInteractionPrompt() {
-    const position = this.#player.position;
-    const reach = 0.6;
-
-    const nearby = this.#world.interactables.find((item) => {
-      const box = item.box;
-      return (
-        position.x - reach < box.maxX && position.x + reach > box.minX &&
-        position.y < box.maxY && position.y + this.#player.bodyHeight > box.minY &&
-        position.z - reach < box.maxZ && position.z + reach > box.minZ
-      );
-    });
+    const nearby = this.#nearbyInteractable();
 
     this.hud.setPrompt(
       nearby
@@ -631,8 +766,6 @@ export class Game {
     const camera = this.#renderer.camera;
     const drift = Math.sin(this.#menuCameraTime * 0.1) * 1.8;
 
-    // A three-quarter view from ahead of the locomotive, framed so the machine
-    // sits in the right of the picture and the menu has the left to itself.
     camera.position.set(13.5, 4.4 + Math.sin(this.#menuCameraTime * 0.17) * 0.2, 15 + drift);
     camera.lookAt(new THREE.Vector3(-4.5, 2.6, -1 + drift * 0.3));
   }
@@ -643,14 +776,35 @@ export class Game {
    * The camera follows the controller rather than being placed at a fixed
    * point - that is the whole difference between standing in the cab and
    * being bolted to it.
+   *
+   * A small amount of ride motion is added on top, scaled by speed. It is
+   * deliberately tiny - a centimetre or two, well under the threshold where
+   * shake becomes uncomfortable - but a completely steady camera inside a
+   * machine doing 80 km/h is most of why the train reads as a still room.
    */
-  #placeFirstPersonCamera() {
+  #placeFirstPersonCamera(train = null) {
     const camera = this.#renderer.camera;
     const eye = this.#player.eyePosition;
-    camera.position.set(eye.x, eye.y, eye.z);
+
+    let sway = { x: 0, y: 0 };
+    if (train) {
+      const fraction = Math.min(1, Math.abs(train.speedKmh) / TRAIN.baseMaxSpeedKmh);
+      const amount = fraction * 0.011;
+      const t = this.#elapsed;
+      sway = {
+        x: (Math.sin(t * 9.1) + Math.sin(t * 23.3) * 0.4) * amount,
+        y: (Math.sin(t * 13.7 + 0.8) + Math.sin(t * 31.1) * 0.35) * amount,
+      };
+    }
+
+    camera.position.set(eye.x + sway.x, eye.y + sway.y, eye.z);
 
     const forward = this.#player.forwardVector;
-    camera.lookAt(eye.x + forward.x, eye.y + forward.y, eye.z + forward.z);
+    camera.lookAt(
+      eye.x + sway.x + forward.x,
+      eye.y + sway.y + forward.y,
+      eye.z + forward.z,
+    );
   }
 
   /* ------------------------------------------------------------------ HUD */
@@ -702,11 +856,14 @@ export class Game {
             position: { ...this.#player.position },
             eyeY: this.#player.eyePosition.y,
             grounded: this.#player.isGrounded,
+            yaw: this.#player.yaw,
             clear: this.#player.isClear,
             speed: this.#player.speed,
           }
         : null,
       colliderCount: this.#world.colliders.size,
+      ownedWeapons: this.#run?.inventory.wheelOrder ?? [],
+      magazine: this.#run?.inventory.equippedWeapon?.roundsInMagazine ?? 0,
       interactableCount: this.#world.interactables.length,
       pointerLocked: Boolean(document.pointerLockElement),
       cinematicActive: this.cinematic.isActive,
@@ -721,6 +878,17 @@ export class Game {
    * twenty beats on a machine without a GPU. It changes nothing about how the
    * cutscene behaves - it is the same update call the loop makes.
    */
+  /** Diagnostic: sets the throttle notch directly. */
+  debugSetThrottle(index) {
+    this.#run?.train.setThrottleIndex(index);
+  }
+
+  /** Diagnostic: the speed the current notch is asking for, in km/h. */
+  debugTargetSpeedKmh() {
+    const train = this.#run?.train;
+    return train ? train.maxSpeedKmh * train.throttleFraction : 0;
+  }
+
   /** Diagnostic: turns the camera, for automated screenshots without a mouse. */
   debugLook(yaw, pitch) {
     this.#player.look(yaw, pitch);

@@ -68,16 +68,30 @@ function buildBogie({ wheelRadius = 0.52, axles = 2, width = 2.2 }) {
   for (let axle = 0; axle < axles; axle += 1) {
     const z = (axle - (axles - 1) / 2) * 1.5;
     for (const side of [-1, 1]) {
+      // Wheels are named so the world can spin them with the train's speed.
+      // A train whose wheels do not turn reads as a prop being dragged.
       const wheel = cylinder(wheelRadius, 0.16, tyre, 24);
       wheel.rotation.z = Math.PI / 2;
       wheel.position.set(side * (width / 2), wheelRadius, z);
+      wheel.name = "wheel";
+      wheel.userData.radius = wheelRadius;
       group.add(wheel);
 
       // Wheel face detail so the wheels are not featureless discs up close.
       const hub = cylinder(wheelRadius * 0.4, 0.18, steel, 12);
       hub.rotation.z = Math.PI / 2;
       hub.position.set(side * (width / 2), wheelRadius, z);
+      hub.name = "wheel";
+      hub.userData.radius = wheelRadius;
       group.add(hub);
+
+      // A counterweight on the wheel face, so the rotation is visible.
+      const crank = box(0.09, wheelRadius * 0.75, 0.09, steel);
+      crank.position.set(side * (width / 2 + 0.09), wheelRadius, z);
+      crank.name = "wheel";
+      crank.userData.radius = wheelRadius;
+      crank.userData.crankOffset = wheelRadius * 0.42;
+      group.add(crank);
     }
 
     const axleBar = cylinder(0.08, width, steel, 8);
@@ -118,7 +132,10 @@ export function buildLocomotive({ size, wear = 0.3 }) {
   const group = new THREE.Group();
   const { length, width, height } = size;
 
-  const paint = metalMaterial({ colour: TRAIN_GREEN, wear, seed: 7, repeat: 3 });
+  // Grime runs up from the running gear rather than covering the whole hull.
+  const paint = metalMaterial({
+    colour: TRAIN_GREEN, wear, seed: 7, repeat: 3, repeatY: 1, grimeBias: 0.3,
+  });
   const frame = metalMaterial({ colour: FRAME_GREY, wear: wear + 0.2, seed: 11, repeat: 2 });
   const trim = metalMaterial({ colour: RUSTY_STEEL, wear: wear + 0.3, seed: 13, repeat: 1 });
 
@@ -229,7 +246,9 @@ export function buildTransportWagon({ size, level, wear = 0.35 }) {
   const group = new THREE.Group();
   const { length, width, height } = size;
 
-  const paint = metalMaterial({ colour: TRAIN_GREEN, wear, seed: 20 + level, repeat: 3 });
+  const paint = metalMaterial({
+    colour: TRAIN_GREEN, wear, seed: 20 + level, repeat: 3, repeatY: 1, grimeBias: 0.3,
+  });
   const frame = metalMaterial({ colour: FRAME_GREY, wear: wear + 0.2, seed: 30 + level, repeat: 2 });
   const trim = metalMaterial({ colour: RUSTY_STEEL, wear: wear + 0.25, seed: 40 + level, repeat: 1 });
 
@@ -295,7 +314,9 @@ export function buildCombatWagon({ size, level, mount, wear = 0.35 }) {
   const group = new THREE.Group();
   const { length, width, height } = size;
 
-  const paint = metalMaterial({ colour: TRAIN_GREEN, wear, seed: 50 + level, repeat: 3 });
+  const paint = metalMaterial({
+    colour: TRAIN_GREEN, wear, seed: 50 + level, repeat: 3, repeatY: 1, grimeBias: 0.3,
+  });
   const frame = metalMaterial({ colour: FRAME_GREY, wear: wear + 0.2, seed: 60 + level, repeat: 2 });
   const trim = metalMaterial({ colour: RUSTY_STEEL, wear: wear + 0.25, seed: 70 + level, repeat: 1 });
 

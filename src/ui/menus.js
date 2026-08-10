@@ -91,9 +91,16 @@ export class MenuSystem {
     return this.#currentScreen;
   }
 
+  /**
+   * Escape inside a sub-screen goes back one level.
+   *
+   * The pause screen is deliberately absent: the game's own input manager owns
+   * Escape while a run is in progress. Handling it here as well made the key
+   * fire twice - the menu resumed the game, and the game's handler then saw
+   * the same press in a state where Escape means pause, and paused it again.
+   */
   #cancelFrom(name) {
     if (name === "options" || name === "language") this.#goBack();
-    else if (name === "pause") this.#actions.resumeRun();
   }
 
   /** Options and Language are reachable from both menus and return to the right one. */

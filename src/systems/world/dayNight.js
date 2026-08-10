@@ -172,11 +172,20 @@ export class DayNightCycle {
    * like night and light enough to drive a train through.
    */
   get moonIntensity() {
-    return this.darkness * 0.85;
+    return this.darkness * 1.25;
   }
 
+  /**
+   * Ambient never drops to nothing.
+   *
+   * Real moonlight is far darker than this. It is raised deliberately: the
+   * player has to be able to read the inside of the cab and the shape of the
+   * land at 3am, and a scene the player cannot parse is not atmospheric, it is
+   * broken. Night stays clearly night - the sun contributes nothing, colours
+   * go cold and blue, and contrast comes from practical lamps.
+   */
   get ambientIntensity() {
-    return 0.26 + (1 - this.darkness) * 0.45;
+    return 0.45 + (1 - this.darkness) * 0.4;
   }
 
   /** True once artificial lights should be burning. */

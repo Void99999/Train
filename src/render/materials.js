@@ -75,8 +75,8 @@ function hexToRgb(hex) {
  * @param {number} options.seed
  * @param {number} [options.size]     texture resolution
  */
-function createMetalTextures({ colour, wear, seed, size = 512 }) {
-  const key = `metal:${colour}:${wear.toFixed(2)}:${seed}:${size}`;
+function createMetalTextures({ colour, wear, seed, size = 512, grimeBias = 0 }) {
+  const key = `metal:${colour}:${wear.toFixed(2)}:${seed}:${size}:${grimeBias}`;
   if (textureCache.has(key)) return textureCache.get(key);
 
   const albedoCanvas = document.createElement("canvas");
@@ -92,7 +92,9 @@ function createMetalTextures({ colour, wear, seed, size = 512 }) {
   const noise = makeNoise(seed);
   const grime = makeNoise(seed + 977);
   const base = hexToRgb(colour);
-  const rust = hexToRgb(0x6b3a20);
+  // Desaturated on purpose: real rust on a painted surface is browner and
+  // patchier than the orange this used to produce.
+  const rust = hexToRgb(0x5b4433);
   const steel = hexToRgb(0x51565a);
 
   for (let y = 0; y < size; y += 1) {
@@ -103,8 +105,19 @@ function createMetalTextures({ colour, wear, seed, size = 512 }) {
       // Broad patches of paint loss, plus vertical streaks where water runs.
       const patch = fractalNoise(noise, u, v, 5);
       const streak = fractalNoise(grime, u * 3, v * 0.35, 3);
-      const exposure = Math.max(0, patch * 0.75 + streak * 0.45 - (1 - wear) * 0.9);
-      const rustAmount = Math.min(1, exposure * 2.2);
+
+      // Wear concentrates where wear actually happens. `grimeBias` pushes it
+      // toward the bottom of the surface - skirting boards, kick plates, the
+      // foot of a wall - instead of spreading the same dirt evenly over
+      // everything, which is what makes a repeating texture look cheap.
+      //
+      // Texture rows run top-down but UV space runs bottom-up, so this is
+      // inverted: without the flip the rust collects along the ceiling.
+      const fromFloor = 1 - y / size;
+      const localWear = Math.min(1, wear + grimeBias * Math.pow(fromFloor, 2.4));
+
+      const exposure = Math.max(0, patch * 0.75 + streak * 0.45 - (1 - localWear) * 0.9);
+      const rustAmount = Math.min(1, exposure * 1.5);
       const bareAmount = Math.min(1, Math.max(0, exposure - 0.35) * 1.8);
 
       // Fine grain keeps large flat panels from reading as plastic.
@@ -154,14 +167,27 @@ function createMetalTextures({ colour, wear, seed, size = 512 }) {
  * @param {number} [options.wear]    0-1, how badly used the surface is
  * @param {number} [options.repeat]  texture tiling across the surface
  */
-export function metalMaterial({ colour, wear = 0.35, seed = 1, repeat = 2, metalness = 0.85 } = {}) {
-  const { albedo, roughness } = createMetalTextures({ colour, wear, seed });
+export function metalMaterial({
+  colour,
+  wear = 0.35,
+  seed = 1,
+  repeat = 2,
+  /**
+   * Vertical tiling, separate from horizontal. A surface using `grimeBias`
+   * must not tile vertically: repeating a top-to-bottom gradient stacks it,
+   * and the seam reads as a hard band of dirt across the middle of the wall.
+   */
+  repeatY = repeat,
+  metalness = 0.85,
+  grimeBias = 0,
+} = {}) {
+  const { albedo, roughness } = createMetalTextures({ colour, wear, seed, grimeBias });
   const map = albedo.clone();
   const roughnessMap = roughness.clone();
   map.needsUpdate = true;
   roughnessMap.needsUpdate = true;
-  map.repeat.set(repeat, repeat);
-  roughnessMap.repeat.set(repeat, repeat);
+  map.repeat.set(repeat, repeatY);
+  roughnessMap.repeat.set(repeat, repeatY);
 
   return new THREE.MeshStandardMaterial({
     map,
@@ -314,6 +340,74 @@ export function lampMaterial(colour = 0xffdca8, intensity = 2.4) {
     emissiveIntensity: intensity,
     roughness: 0.5,
     metalness: 0,
+  });
+}
+
+/**
+ * A painted or stencilled marking: throttle numbers, gauge faces, warning
+ * plates. Drawn as text on a canvas, which is how the cab gets markings that
+ * are actually readable rather than a coloured rectangle standing in for one.
+ */
+export function labelMaterial(text, {
+  colour = "#e8e2d4",
+  background = "#1b1f21",
+  width = 128,
+  height = 128,
+  fontSize = 62,
+  emissive = 0,
+} = {}) {
+  const key = `label:${text}:${colour}:${background}:${width}x${height}:${fontSize}`;
+  if (textureCache.has(key)) {
+    return new THREE.MeshStandardMaterial({
+      map: textureCache.get(key).albedo,
+      roughness: 0.65,
+      metalness: 0.1,
+      emissive: new THREE.Color(emissive ? colour : 0x000000),
+      emissiveIntensity: emissive,
+      emissiveMap: emissive ? textureCache.get(key).albedo : null,
+    });
+  }
+
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const context = canvas.getContext("2d");
+
+  context.fillStyle = background;
+  context.fillRect(0, 0, width, height);
+
+  // A little grime over the plate, so markings are not pristine white.
+  const noise = makeNoise(text.length * 977 + 13);
+  const image = context.getImageData(0, 0, width, height);
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const shade = 0.85 + fractalNoise(noise, (x / width) * 6, (y / height) * 6, 3) * 0.3;
+      const index = (y * width + x) * 4;
+      image.data[index] *= shade;
+      image.data[index + 1] *= shade;
+      image.data[index + 2] *= shade;
+    }
+  }
+  context.putImageData(image, 0, 0);
+
+  context.fillStyle = colour;
+  context.font = `600 ${fontSize}px system-ui, sans-serif`;
+  context.textAlign = "center";
+  context.textBaseline = "middle";
+  context.fillText(text, width / 2, height / 2);
+
+  const albedo = new THREE.CanvasTexture(canvas);
+  albedo.colorSpace = THREE.SRGBColorSpace;
+  albedo.anisotropy = 4;
+  textureCache.set(key, { albedo, roughness: albedo });
+
+  return new THREE.MeshStandardMaterial({
+    map: albedo,
+    roughness: 0.65,
+    metalness: 0.1,
+    emissive: new THREE.Color(emissive ? colour : 0x000000),
+    emissiveIntensity: emissive,
+    emissiveMap: emissive ? albedo : null,
   });
 }
 

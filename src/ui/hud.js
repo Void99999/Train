@@ -12,7 +12,7 @@
  * whole ending depends on that being a surprise.
  */
 
-import { el, clear } from "./dom.js";
+import { el } from "./dom.js";
 import { formatMoney, formatDistanceKm, formatSpeedKmh } from "../core/localization.js";
 import { TRAIN } from "../data/balance.js";
 
@@ -20,6 +20,7 @@ const TOAST_LIFETIME_MS = 3200;
 
 export class Hud {
   #root;
+  #layer;
   #localization;
   #nodes = {};
   #toasts = [];
@@ -34,8 +35,16 @@ export class Hud {
     return (key, params) => this.#localization.t(key, params);
   }
 
+  /**
+   * Builds the HUD into a container of its own.
+   *
+   * Rebuilding must never clear the shared root: other layers live there too,
+   * and wiping it takes them with it. This is not hypothetical - the cinematic
+   * overlay and the HUD shared a root, each cleared it on build, and whichever
+   * built second silently deleted the other.
+   */
   #build() {
-    clear(this.#root);
+    this.#layer?.remove();
     const t = this.t;
 
     this.#nodes.money = el("span", { class: "hud__value hud__value--money" }, "0");
@@ -70,7 +79,9 @@ export class Hud {
     this.#nodes.vignette = el("div", { class: "hud__vignette" });
     this.#nodes.toastStack = el("div", { class: "toast-stack" });
 
-    this.#root.append(
+    this.#layer = el(
+      "div",
+      { class: "hud__layer" },
       el(
         "div",
         { class: "hud__corner hud__corner--top-left" },
@@ -132,6 +143,8 @@ export class Hud {
       this.#nodes.vignette,
       this.#nodes.toastStack,
     );
+
+    this.#root.append(this.#layer);
   }
 
   /** Rebuilds every label in the new language. */

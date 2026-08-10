@@ -725,3 +725,101 @@ input[type="range"]:focus-visible {
   letter-spacing: 0.14em;
   color: var(--steel-400);
 }
+
+/* -------------------------------------------------------- weapon wheel */
+
+.wheel {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  gap: 1.5rem;
+  justify-items: center;
+  background: rgb(4 6 7 / 0.45);
+  animation: wheel-in 120ms ease-out both;
+}
+
+@keyframes wheel-in {
+  from { opacity: 0; }
+}
+
+.wheel__dial {
+  position: relative;
+  width: 340px;
+  height: 340px;
+}
+
+.wheel__ring {
+  position: absolute;
+  inset: 52px;
+  border: 1px solid var(--steel-600);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgb(10 13 14 / 0.55) 55%, transparent 72%);
+}
+
+/* Follows the mouse, so the player can see what the wheel thinks they mean. */
+.wheel__pointer {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--signal-green);
+  box-shadow: 0 0 12px rgb(125 154 95 / 0.8);
+  transition: opacity 100ms linear;
+}
+
+.wheel__slot {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  min-width: 8.5rem;
+  padding: 0.5rem 0.75rem;
+  text-align: center;
+  border: 1px solid var(--steel-700);
+  background: rgb(10 13 14 / 0.82);
+  transition: border-color 120ms ease, background 120ms ease;
+}
+
+.wheel__slot[data-selected="true"] {
+  border-color: var(--signal-green);
+  background: rgb(30 38 26 / 0.92);
+}
+
+.wheel__slot-name {
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--steel-200);
+}
+
+.wheel__slot[data-selected="true"] .wheel__slot-name {
+  color: var(--steel-100);
+}
+
+.wheel__slot-ammo {
+  margin-top: 0.15rem;
+  font-family: var(--font-display);
+  font-size: 0.78rem;
+  letter-spacing: 0.1em;
+  color: var(--steel-400);
+}
+
+.wheel__hint {
+  font-size: 0.72rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--steel-400);
+}
+
+/*
+  Each interface layer gets its own container inside the shared root. Nothing
+  may clear the root itself - the HUD and the cinematic overlay both live
+  there, and clearing takes the other one with it.
+*/
+.hud__layer {
+  position: absolute;
+  inset: 0;
+}

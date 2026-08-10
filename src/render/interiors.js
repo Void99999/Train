@@ -17,7 +17,7 @@
 
 import * as THREE from "../../vendor/three/three.module.js";
 import { Box } from "../systems/world/collision.js";
-import { metalMaterial, glassMaterial, lampMaterial } from "./materials.js";
+import { metalMaterial, glassMaterial, lampMaterial, labelMaterial } from "./materials.js";
 
 const WALL = 0.12;
 
@@ -105,10 +105,26 @@ export function buildLocomotiveCab(size) {
   // Wear is kept low in here. The outside of the train has spent years in the
   // weather; the inside is a working cab that somebody looked after, and
   // running it through the same rust values turns the whole room orange.
-  const paint = metalMaterial({ colour: INTERIOR_GREEN, wear: 0.16, seed: 210, repeat: 2 });
-  const floorMaterial = metalMaterial({ colour: FLOOR_STEEL, wear: 0.3, seed: 211, repeat: 4 });
-  const panel = metalMaterial({ colour: PANEL_GREY, wear: 0.18, seed: 212, repeat: 2 });
-  const trim = metalMaterial({ colour: 0x5a5b58, wear: 0.26, seed: 213, repeat: 1 });
+  // Wear is placed where wear happens rather than sprayed over everything.
+  // Walls are mostly sound with grime gathering toward the bottom; the floor
+  // is scuffed all over; handrails and door edges are polished back to bare
+  // metal by hands; the machinery bay is oily.
+  const paint = metalMaterial({
+    colour: INTERIOR_GREEN,
+    wear: 0.06,
+    seed: 210,
+    repeat: 2,
+    // One tile top to bottom, so the grime gradient runs once up the wall.
+    repeatY: 1,
+    grimeBias: 0.34,
+  });
+  const floorMaterial = metalMaterial({ colour: FLOOR_STEEL, wear: 0.4, seed: 211, repeat: 4 });
+  const panel = metalMaterial({ colour: PANEL_GREY, wear: 0.16, seed: 212, repeat: 2 });
+  const trim = metalMaterial({ colour: 0x5a5b58, wear: 0.22, seed: 213, repeat: 1 });
+  // Touched constantly: worn bright rather than dirty.
+  const handworn = metalMaterial({ colour: 0x8d8f8a, wear: 0.5, seed: 214, repeat: 1, metalness: 0.95 });
+  // Down at boot level, behind the console, near the machinery.
+  const grimy = metalMaterial({ colour: 0x3a3c38, wear: 0.62, seed: 215, repeat: 2 });
   const glass = glassMaterial();
 
   const innerWidth = cab.innerHalfWidth * 2;
@@ -295,34 +311,68 @@ export function buildLocomotiveCab(size) {
     ),
   );
 
-  // Four throttle notches: 25 / 50 / 75 / 100. Physical buttons on the desk,
-  // matching the four settings the simulation actually has.
-  const notches = [];
-  for (let i = 0; i < 4; i += 1) {
-    const notch = mesh(
-      new THREE.BoxGeometry(0.16, 0.05, 0.16),
-      metalMaterial({ colour: 0x6a6f70, wear: 0.4, seed: 220 + i, repeat: 1 }),
-    );
-    notch.position.set(-0.75 + i * 0.24, consoleTop + 0.08, consoleZ - 0.12);
-    notch.name = `throttle-notch-${i + 1}`;
-    group.add(notch);
+  /*
+   * The throttle quadrant. Four detents in a machined slot with the settings
+   * stencilled beside them, rather than four cubes sitting on a table.
+   */
+  const quadrantZ = consoleZ - 0.14;
+  const quadrant = mesh(new THREE.BoxGeometry(1.22, 0.1, 0.34), panel);
+  quadrant.position.set(-0.42, consoleTop + 0.09, quadrantZ);
+  group.add(quadrant);
 
-    // Dark until selected. A lamp material at zero emissive still shows its
-    // base colour, which made every notch look lit.
+  // The slot the lever runs in.
+  const slot = mesh(new THREE.BoxGeometry(1.02, 0.03, 0.06), grimy, { castShadow: false });
+  slot.position.set(-0.42, consoleTop + 0.145, quadrantZ);
+  group.add(slot);
+
+  const notchLabels = ["25", "50", "75", "100"];
+  for (let i = 0; i < 4; i += 1) {
+    const x = -0.81 + i * 0.26;
+
+    // A detent in the quadrant.
+    const detent = mesh(new THREE.BoxGeometry(0.035, 0.05, 0.1), handworn, { castShadow: false });
+    detent.position.set(x, consoleTop + 0.15, quadrantZ - 0.07);
+    group.add(detent);
+
+    // The stencilled setting, lying flat on the quadrant so it can be read
+    // from the driver's position.
+    const plate = mesh(
+      new THREE.PlaneGeometry(0.16, 0.09),
+      labelMaterial(notchLabels[i], { width: 192, height: 108, fontSize: 74 }),
+      { castShadow: false },
+    );
+    plate.rotation.x = -Math.PI / 2;
+    plate.position.set(x, consoleTop + 0.146, quadrantZ + 0.1);
+    group.add(plate);
+
+    // The indicator lamp for that setting. Dark until selected - a lamp
+    // material at zero emissive still shows its base colour, which made every
+    // notch look permanently lit.
     const light = mesh(
-      new THREE.BoxGeometry(0.1, 0.02, 0.1),
+      new THREE.BoxGeometry(0.055, 0.02, 0.055),
       new THREE.MeshStandardMaterial({
         color: 0x1a1d1a,
-        emissive: 0x7d9a5f,
+        emissive: 0x8fbf63,
         emissiveIntensity: 0,
-        roughness: 0.5,
+        roughness: 0.45,
       }),
+      { castShadow: false },
     );
-    light.position.set(-0.75 + i * 0.24, consoleTop + 0.115, consoleZ - 0.12);
+    light.position.set(x, consoleTop + 0.152, quadrantZ - 0.14);
     light.name = `throttle-light-${i + 1}`;
     group.add(light);
-    notches.push(light);
   }
+
+  // The throttle lever itself, sitting in the quadrant.
+  const throttleLever = mesh(new THREE.CylinderGeometry(0.022, 0.03, 0.3, 8), handworn);
+  throttleLever.rotation.x = -0.25;
+  throttleLever.position.set(-0.29, consoleTop + 0.27, quadrantZ);
+  throttleLever.name = "throttle-lever";
+  group.add(throttleLever);
+
+  const throttleKnob = mesh(new THREE.SphereGeometry(0.045, 10, 8), panel);
+  throttleKnob.position.set(-0.29, consoleTop + 0.41, quadrantZ - 0.04);
+  group.add(throttleKnob);
 
   // The brake handle, for weight rather than function.
   const lever = mesh(new THREE.CylinderGeometry(0.035, 0.045, 0.5, 8), trim);
@@ -334,25 +384,84 @@ export function buildLocomotiveCab(size) {
   leverKnob.position.set(0.7, consoleTop + 0.52, consoleZ - 0.08);
   group.add(leverKnob);
 
-  // Gauges.
-  for (let i = 0; i < 3; i += 1) {
-    const gauge = mesh(new THREE.CylinderGeometry(0.11, 0.11, 0.05, 14), trim);
-    gauge.rotation.x = Math.PI / 2 - 0.25;
-    gauge.position.set(-0.95 + i * 0.3, consoleTop + 0.3, consoleZ - 0.28);
-    group.add(gauge);
+  /*
+   * The instrument cluster, angled toward the driver on a raised binnacle.
+   * The large dial on the left is the speedometer; its needle is driven by the
+   * simulation, so the cab reports the same speed the HUD does.
+   */
+  // The binnacle is kept low and set back so it frames the windscreen rather
+  // than blocking it.
+  const binnacle = mesh(new THREE.BoxGeometry(1.05, 0.26, 0.2), panel);
+  binnacle.rotation.x = -0.3;
+  binnacle.position.set(-0.62, consoleTop + 0.17, consoleZ - 0.28);
+  group.add(binnacle);
 
-    const face = mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.01, 14), lampMaterial(0xd8cfae, 0.35));
-    face.rotation.x = Math.PI / 2 - 0.25;
-    face.position.set(-0.95 + i * 0.3, consoleTop + 0.305, consoleZ - 0.255);
+  /*
+   * The driver stands behind the console at more negative z and looks along
+   * +z, so the dials have to face -z. A CircleGeometry faces +z by default,
+   * which pointed every instrument at the front wall instead of at the driver.
+   */
+  const gaugeAngle = Math.PI / 2 + 0.3;
+  const gaugeSpecs = [
+    { x: -0.95, radius: 0.13, label: "km/h", name: "gauge-speed" },
+    { x: -0.62, radius: 0.085, label: "BAR", name: "gauge-pressure" },
+    { x: -0.38, radius: 0.085, label: "TEMP", name: "gauge-temperature" },
+  ];
+
+  for (const spec of gaugeSpecs) {
+    const bezel = mesh(
+      new THREE.CylinderGeometry(spec.radius + 0.018, spec.radius + 0.018, 0.05, 18),
+      handworn,
+    );
+    bezel.rotation.x = gaugeAngle;
+    bezel.position.set(spec.x, consoleTop + 0.33, consoleZ - 0.12);
+    group.add(bezel);
+
+    const face = mesh(
+      new THREE.CircleGeometry(spec.radius, 20),
+      labelMaterial(spec.label, {
+        colour: "#d9d2bd",
+        background: "#15181a",
+        width: 160,
+        height: 160,
+        fontSize: 34,
+        emissive: 0.5,
+      }),
+      { castShadow: false },
+    );
+    face.rotation.set(0.3, Math.PI, 0);
+    face.position.set(spec.x, consoleTop + 0.33, consoleZ - 0.085);
     group.add(face);
+
+    // The needle. Pivots at the centre of the dial.
+    const needlePivot = new THREE.Group();
+    needlePivot.rotation.set(0.3, Math.PI, 0);
+    needlePivot.position.set(spec.x, consoleTop + 0.33, consoleZ - 0.08);
+
+    const needle = mesh(
+      new THREE.BoxGeometry(0.008, spec.radius * 0.82, 0.006),
+      new THREE.MeshStandardMaterial({
+        color: 0xd8503a,
+        emissive: 0xd8503a,
+        emissiveIntensity: 0.5,
+        roughness: 0.5,
+      }),
+      { castShadow: false },
+    );
+    needle.position.y = spec.radius * 0.36;
+    needlePivot.add(needle);
+    needlePivot.name = spec.name;
+    group.add(needlePivot);
   }
 
   interactables.push({
     id: "throttle",
     promptKey: "PROMPT_DRIVE",
+    // Generous on purpose: standing anywhere a driver would stand counts as
+    // being at the controls.
     box: Box.fromCentre(
-      { x: -0.4, y: consoleTop + 0.2, z: consoleZ + 0.35 },
-      { x: 1.8, y: 1.4, z: 1.0 },
+      { x: -0.35, y: consoleTop + 0.2, z: consoleZ + 0.85 },
+      { x: 2.2, y: 2.0, z: 2.0 },
     ),
   });
 
@@ -445,18 +554,25 @@ export function buildLocomotiveCab(size) {
     housing.position.set(0, cab.ceilingY - 0.09, z);
     group.add(housing);
 
-    const bulb = mesh(new THREE.BoxGeometry(0.22, 0.03, 0.22), lampMaterial(0xffe9c8, 2.0), {
+    const bulb = mesh(new THREE.BoxGeometry(0.22, 0.03, 0.22), lampMaterial(0xffe9c8, 2.6), {
       castShadow: false,
     });
     bulb.position.set(0, cab.ceilingY - 0.15, z);
     bulb.name = "cab-lamp";
     group.add(bulb);
 
-    const light = new THREE.PointLight(0xffe2b8, 14, 8, 2);
+    const light = new THREE.PointLight(0xffe2b8, 26, 11, 2);
     light.position.set(0, cab.ceilingY - 0.25, z);
     light.name = "cab-light";
     group.add(light);
   }
+
+  // A very dim fill from the middle of the room. It has no fixture because it
+  // is not a lamp - it stands in for light bouncing around a small steel box,
+  // and it is what stops the corners going to pure black at night.
+  const fill = new THREE.PointLight(0xbfd0e0, 6, 9, 1.4);
+  fill.position.set(0, cab.floorY + 1.6, cab.centreZ);
+  group.add(fill);
 
   group.name = "cab-interior";
 
@@ -464,6 +580,85 @@ export function buildLocomotiveCab(size) {
    * Where the player stands when a run begins: on the floor, in the middle of
    * the cab, behind the console with room to turn round.
    */
+  /* -------------------------------------------------- structural framing */
+
+  // Vertical ribs down the side walls, and a kick plate at boot height. Both
+  // are what stops a wall reading as a flat painted rectangle.
+  for (const side of [-1, 1]) {
+    const x = side * (cab.innerHalfWidth - 0.04);
+
+    for (let i = 0; i < 5; i += 1) {
+      const rib = mesh(
+        new THREE.BoxGeometry(0.05, innerHeight - 0.2, 0.09),
+        trim,
+        { castShadow: false },
+      );
+      rib.position.set(x, cab.floorY + innerHeight / 2, cab.backZ + 0.55 + i * 0.95);
+      group.add(rib);
+    }
+
+    const kickPlate = mesh(
+      new THREE.BoxGeometry(0.05, 0.28, cab.length - 0.2),
+      grimy,
+      { castShadow: false },
+    );
+    kickPlate.position.set(x, cab.floorY + 0.14, cab.centreZ);
+    group.add(kickPlate);
+
+    // Bolt heads along the rib line.
+    for (let i = 0; i < 7; i += 1) {
+      const bolt = mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.03, 6), handworn, {
+        castShadow: false,
+      });
+      bolt.rotation.z = Math.PI / 2;
+      bolt.position.set(x - side * 0.03, cab.floorY + 1.95, cab.backZ + 0.4 + i * 0.65);
+      group.add(bolt);
+    }
+  }
+
+  // Conduit and pipework running the length of the cab at shoulder height.
+  for (const [offset, radius] of [[0.05, 0.045], [-0.05, 0.03]]) {
+    const conduit = mesh(
+      new THREE.CylinderGeometry(radius, radius, cab.length - 0.25, 8),
+      trim,
+      { castShadow: false },
+    );
+    conduit.rotation.x = Math.PI / 2;
+    conduit.position.set(cab.innerHalfWidth - 0.14 + offset, cab.floorY + 2.15, cab.centreZ);
+    group.add(conduit);
+  }
+
+  /* --------------------------------------------------- switches and dials */
+
+  // A small switch bank on the side wall by the driver.
+  const switchPlate = mesh(new THREE.BoxGeometry(0.05, 0.34, 0.55), panel);
+  switchPlate.position.set(-cab.innerHalfWidth + 0.05, cab.floorY + 1.42, consoleZ + 0.5);
+  group.add(switchPlate);
+
+  for (let i = 0; i < 4; i += 1) {
+    const toggle = mesh(new THREE.CylinderGeometry(0.012, 0.016, 0.07, 6), handworn);
+    toggle.rotation.z = Math.PI / 2 + (i % 2 ? 0.4 : -0.4);
+    toggle.position.set(
+      -cab.innerHalfWidth + 0.1,
+      cab.floorY + 1.5,
+      consoleZ + 0.68 - i * 0.12,
+    );
+    group.add(toggle);
+  }
+
+  // Two warning lamps above the switch bank: one amber, one red.
+  for (const [i, colour] of [[0, 0xd08a2a], [1, 0xa33228]]) {
+    const lens = mesh(
+      new THREE.CylinderGeometry(0.035, 0.035, 0.03, 10),
+      lampMaterial(colour, 0.35),
+      { castShadow: false },
+    );
+    lens.rotation.z = Math.PI / 2;
+    lens.position.set(-cab.innerHalfWidth + 0.09, cab.floorY + 1.68, consoleZ + 0.6 - i * 0.14);
+    lens.name = `warning-lamp-${i}`;
+    group.add(lens);
+  }
+
   const spawn = { x: 0.35, y: cab.floorY, z: cab.centreZ - 0.2 };
 
   return { group, colliders, spawn, interactables, dimensions: cab };

@@ -11,7 +11,7 @@
  * the cutscene whether it was watched or skipped.
  */
 
-import { el, clear as clearNode } from "./dom.js";
+import { el } from "./dom.js";
 
 export class CinematicOverlay {
   #root;
@@ -24,8 +24,14 @@ export class CinematicOverlay {
     this.#build();
   }
 
+  /**
+   * Builds into a container of its own and appends it.
+   *
+   * Deliberately does not clear the root: the HUD lives in the same element,
+   * and clearing here deleted it.
+   */
   #build() {
-    clearNode(this.#root);
+    this.#nodes.layer?.remove();
 
     this.#nodes.top = el("div", { class: "cinematic__bar cinematic__bar--top" });
     this.#nodes.bottom = el("div", { class: "cinematic__bar cinematic__bar--bottom" });

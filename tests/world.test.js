@@ -86,9 +86,25 @@ test("the sun rises and sets, and the moon takes over", () => {
 
 test("night is dark but never unlit", () => {
   const midnight = new DayNightCycle({ startTimeOfDay: 0 });
-  // A pitch-black screen is not atmosphere, it is a bug report.
-  assert.ok(midnight.ambientIntensity > 0.2, "there is something to see");
-  assert.ok(midnight.ambientIntensity < 0.4, "but it still reads as night");
+  const midday = new DayNightCycle({ startTimeOfDay: 0.5 });
+
+  // A pitch-black screen is not atmosphere, it is a bug report. The player has
+  // to be able to read the cab and the shape of the land at three in the
+  // morning, so ambient never falls to nothing.
+  assert.ok(midnight.ambientIntensity > 0.35, "there is something to see");
+
+  // It still has to be unmistakably night: no sun at all, and well under half
+  // the light of midday once the directional contribution is counted.
+  assert.equal(midnight.sunIntensity, 0);
+  assert.ok(
+    midnight.ambientIntensity < midday.ambientIntensity * 0.7,
+    "but it still reads as night",
+  );
+  assert.ok(
+    midnight.ambientIntensity + midnight.moonIntensity <
+      midday.ambientIntensity + midday.sunIntensity,
+    "and daylight is far brighter overall",
+  );
 });
 
 test("shadows swing round over the day", () => {

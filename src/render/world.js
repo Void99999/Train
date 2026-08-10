@@ -16,12 +16,12 @@ import * as THREE from "../../vendor/three/three.module.js";
 import { buildVehicleMesh, disposeMesh } from "./trainMeshes.js";
 import { ballastMaterial, railMaterial, groundMaterial, metalMaterial, lampMaterial } from "./materials.js";
 import { Box, ColliderSet } from "../systems/world/collision.js";
-import { TRAIN } from "../data/balance.js";
+import { Rng } from "../core/rng.js";
+import { TRAIN, UNITS } from "../data/balance.js";
 
 /** How far ahead and behind the track and scenery are built, in metres. */
 const WORLD_LENGTH = 900;
-/** Spacing of recycled scenery props. */
-const POLE_SPACING = 42;
+/** Spacing of the sleepers under the track. */
 const SLEEPER_SPACING = 0.65;
 
 export class World {
@@ -49,6 +49,10 @@ export class World {
   /** Things the player can look at and press E on. */
   interactables = [];
   #throttleLights = [];
+  #speedNeedle = null;
+  #scrollingProps = [];
+  #wheels = [];
+  #wheelAngle = 0;
 
   constructor({ quality }) {
     this.quality = quality;
@@ -294,11 +298,68 @@ export class World {
 
   /* --------------------------------------------------------------- scenery */
 
+  /**
+   * Scenery, in four depth layers.
+   *
+   * This is what actually sells forward motion. One layer of poles at forty
+   * metre spacing gives the eye almost nothing to measure speed against; near
+   * clutter streaking past the window while distant hills barely shift is what
+   * makes the train feel like it is travelling rather than idling inside a
+   * moving skybox.
+   *
+   * Each layer scrolls at the same world speed but sits at a different
+   * distance, so perspective produces the parallax for free.
+   */
   #buildScenery() {
-    const poleMaterial = metalMaterial({ colour: 0x36302a, wear: 0.8, seed: 410, repeat: 1 });
-    const count = Math.floor((WORLD_LENGTH * 2) / POLE_SPACING);
+    const rng = new Rng(90210);
 
-    for (let i = 0; i < count; i += 1) {
+    const poleMaterial = metalMaterial({ colour: 0x36302a, wear: 0.8, seed: 410, repeat: 1 });
+    const scrubMaterial = new THREE.MeshStandardMaterial({ color: 0x3d4230, roughness: 1 });
+    const trunkMaterial = new THREE.MeshStandardMaterial({ color: 0x2e2721, roughness: 1 });
+    const foliageMaterial = new THREE.MeshStandardMaterial({ color: 0x2f3a26, roughness: 1 });
+    const concreteMaterial = new THREE.MeshStandardMaterial({ color: 0x4a463f, roughness: 0.95 });
+    const hillMaterial = new THREE.MeshStandardMaterial({ color: 0x2b3128, roughness: 1 });
+
+    /** Adds one prop and registers it for scrolling. */
+    const place = (object, x, z, spacing) => {
+      object.position.set(x, 0, z);
+      object.userData.baseZ = z;
+      object.userData.spacing = spacing;
+      this.#sceneryGroup.add(object);
+      this.#scrollingProps.push(object);
+    };
+
+    /* Layer 1: lineside clutter, close enough to streak past the windows. */
+    const nearSpacing = 9;
+    for (let i = 0; i < Math.floor((WORLD_LENGTH * 2) / nearSpacing); i += 1) {
+      const z = -WORLD_LENGTH + i * nearSpacing;
+      const side = rng.chance(0.5) ? 1 : -1;
+
+      const bush = new THREE.Mesh(
+        new THREE.IcosahedronGeometry(rng.range(0.5, 1.3), 0),
+        scrubMaterial,
+      );
+      bush.scale.y = rng.range(0.5, 0.9);
+      bush.castShadow = true;
+      bush.receiveShadow = true;
+      place(bush, side * rng.range(6.5, 13), z + rng.range(-3, 3), nearSpacing);
+
+      // Occasional marker post, ballast pile or sleeper stack.
+      if (rng.chance(0.4)) {
+        const marker = new THREE.Mesh(
+          new THREE.BoxGeometry(0.22, rng.range(0.7, 1.2), 0.22),
+          poleMaterial,
+        );
+        marker.position.y = 0.5;
+        const holder = new THREE.Group();
+        holder.add(marker);
+        place(holder, side * rng.range(5.2, 6.2), z + rng.range(-4, 4), nearSpacing);
+      }
+    }
+
+    /* Layer 2: telegraph poles, the classic speed reference. */
+    const poleSpacing = 34;
+    for (let i = 0; i < Math.floor((WORLD_LENGTH * 2) / poleSpacing); i += 1) {
       const pole = new THREE.Group();
       const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.19, 8.5, 6), poleMaterial);
       mast.position.y = 4.25;
@@ -310,10 +371,91 @@ export class World {
         arm.position.set(0, height, 0);
         pole.add(arm);
       }
+      place(pole, 9.5, -WORLD_LENGTH + i * poleSpacing, poleSpacing);
+    }
 
-      pole.position.set(9.5, 0, -WORLD_LENGTH + i * POLE_SPACING);
-      pole.userData.baseZ = pole.position.z;
-      this.#sceneryGroup.add(pole);
+    /* Layer 3: middle distance - trees, ruins, fences, abandoned structures. */
+    const midSpacing = 46;
+    for (let i = 0; i < Math.floor((WORLD_LENGTH * 2) / midSpacing); i += 1) {
+      const z = -WORLD_LENGTH + i * midSpacing;
+      const side = rng.chance(0.5) ? 1 : -1;
+      const roll = rng.next();
+
+      let prop;
+      if (roll < 0.45) {
+        // A dead tree. Nothing here has leaves worth speaking of.
+        prop = new THREE.Group();
+        const trunk = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.18, 0.34, rng.range(5, 9), 6),
+          trunkMaterial,
+        );
+        trunk.position.y = 3.5;
+        trunk.castShadow = true;
+        prop.add(trunk);
+        if (rng.chance(0.6)) {
+          const crown = new THREE.Mesh(
+            new THREE.IcosahedronGeometry(rng.range(1.6, 2.8), 0),
+            foliageMaterial,
+          );
+          crown.position.y = rng.range(6, 8);
+          crown.scale.y = 0.7;
+          crown.castShadow = true;
+          prop.add(crown);
+        }
+      } else if (roll < 0.75) {
+        // A shell of a building: walls standing, roof long gone.
+        prop = new THREE.Group();
+        const w = rng.range(5, 11);
+        const h = rng.range(3, 7);
+        const d = rng.range(4, 9);
+        for (const [dx, dz, sw, sd] of [
+          [-w / 2, 0, 0.4, d],
+          [w / 2, 0, 0.4, d],
+          [0, -d / 2, w, 0.4],
+        ]) {
+          const wall = new THREE.Mesh(
+            new THREE.BoxGeometry(sw, h * rng.range(0.6, 1), sd),
+            concreteMaterial,
+          );
+          wall.position.set(dx, (h * 0.8) / 2, dz);
+          wall.castShadow = true;
+          wall.receiveShadow = true;
+          prop.add(wall);
+        }
+      } else {
+        // A fence line running away from the track.
+        prop = new THREE.Group();
+        for (let post = 0; post < 8; post += 1) {
+          const stake = new THREE.Mesh(
+            new THREE.BoxGeometry(0.12, 1.4, 0.12),
+            poleMaterial,
+          );
+          stake.position.set(post * 2.4, 0.7, 0);
+          prop.add(stake);
+        }
+      }
+
+      place(prop, side * rng.range(22, 48), z, midSpacing);
+    }
+
+    /* Layer 4: the horizon. Barely moves, which is exactly the point. */
+    const hillSpacing = 150;
+    for (let i = 0; i < Math.floor((WORLD_LENGTH * 2) / hillSpacing); i += 1) {
+      for (const side of [-1, 1]) {
+        const hill = new THREE.Mesh(
+          new THREE.ConeGeometry(rng.range(40, 90), rng.range(14, 34), 6),
+          hillMaterial,
+        );
+        hill.position.y = -2;
+        const holder = new THREE.Group();
+        holder.add(hill);
+        place(
+          holder,
+          side * rng.range(140, 260),
+          -WORLD_LENGTH + i * hillSpacing + rng.range(-40, 40),
+          hillSpacing,
+        );
+      }
     }
   }
 
@@ -367,8 +509,10 @@ export class World {
     }
 
     this.#headlights = [];
+    this.#wheels = [];
     this.#trainGroup.traverse((node) => {
       if (node.name === "headlight") this.#headlights.push(node);
+      if (node.name === "wheel") this.#wheels.push(node);
     });
 
     this.#rebuildColliders();
@@ -376,6 +520,21 @@ export class World {
     // Cache the cab's throttle notch lamps so the indicator can be driven from
     // the simulation every frame rather than set once and hoped about.
     this.#throttleLights = [1, 2, 3, 4].map((index) => this.findInTrain(`throttle-light-${index}`));
+    this.#speedNeedle = this.findInTrain("gauge-speed");
+  }
+
+  /**
+   * Swings the cab speedometer.
+   *
+   * The dial reads the same number the HUD does, because both come from the
+   * train. An instrument that disagrees with the interface is worse than no
+   * instrument at all.
+   */
+  setSpeedIndicator(fraction) {
+    if (!this.#speedNeedle) return;
+    const clamped = Math.max(0, Math.min(1, fraction));
+    // Sweeps from about eight o'clock round to four o'clock.
+    this.#speedNeedle.rotation.z = 2.35 - clamped * 4.7;
   }
 
   /**
@@ -469,27 +628,80 @@ export class World {
    * @param {number} speedMetresPerSecond how fast the train is moving
    * @param {object} sky day/night snapshot
    */
-  update(deltaSeconds, speedMetresPerSecond, sky) {
+  update(deltaSeconds, speedMetresPerSecond, sky, elapsed = 0) {
     this.#scrollWorld(deltaSeconds * speedMetresPerSecond);
+    this.#rotateWheels(deltaSeconds, speedMetresPerSecond);
+
+    const topSpeed = TRAIN.baseMaxSpeedKmh * UNITS.kmhToMetresPerSecond;
+    this.#vibrate(elapsed, Math.min(1, speedMetresPerSecond / topSpeed));
+
     this.#applySky(sky);
   }
 
   /**
-   * Slides the recycled scenery backwards and wraps it round, which is what
-   * makes an endless line out of nine hundred metres of geometry.
+   * Slides the scenery backwards and wraps it round, which is what makes an
+   * endless line out of nine hundred metres of geometry.
+   *
+   * Each prop wraps on its own layer spacing, so the near clutter recycles
+   * every few metres while the hills recycle every hundred and fifty - and the
+   * eye reads the difference as depth.
    */
   #scrollWorld(distance) {
     if (distance === 0) return;
-    this.#scrollOffset = (this.#scrollOffset + distance) % POLE_SPACING;
+    this.#scrollOffset += distance;
 
-    for (const pole of this.#sceneryGroup.children) {
-      let z = pole.userData.baseZ - this.#scrollOffset;
+    for (const prop of this.#scrollingProps) {
+      const spacing = prop.userData.spacing;
+      let z = prop.userData.baseZ - (this.#scrollOffset % (WORLD_LENGTH * 2));
       if (z < -WORLD_LENGTH) z += WORLD_LENGTH * 2;
-      pole.position.z = z;
+      if (z > WORLD_LENGTH) z -= WORLD_LENGTH * 2;
+      prop.position.z = z;
     }
 
-    // Sleepers scroll on their own, shorter cycle.
-    this.#trackGroup.position.z = -((this.#scrollOffset % SLEEPER_SPACING) + SLEEPER_SPACING) % SLEEPER_SPACING;
+    // Sleepers scroll on their own, much shorter cycle. Directly under the
+    // window, they are the fastest-moving thing in view and the clearest
+    // reading of raw speed.
+    const sleeperPhase = this.#scrollOffset % SLEEPER_SPACING;
+    this.#trackGroup.position.z = -sleeperPhase;
+  }
+
+  /**
+   * Turns the wheels at the speed the train is actually doing.
+   *
+   * Rolling without slipping: angular velocity is ground speed over wheel
+   * radius. Getting this right matters more than it sounds - wheels that turn
+   * at the wrong rate are one of the few things almost everyone notices.
+   */
+  #rotateWheels(deltaSeconds, speed) {
+    if (this.#wheels.length === 0 || speed === 0) return;
+    for (const wheel of this.#wheels) {
+      const radius = wheel.userData.radius ?? 0.52;
+      wheel.rotation.x -= (speed / radius) * deltaSeconds;
+    }
+  }
+
+  /**
+   * Rocks the train on its springs.
+   *
+   * Small: a couple of centimetres of sway and bounce, plus a slow roll. The
+   * point is that the cab is never perfectly still while the train is running,
+   * because a perfectly still interior is what makes a moving train feel like
+   * a stationary room.
+   */
+  #vibrate(elapsed, speedFraction) {
+    if (speedFraction <= 0.001) {
+      this.#trainGroup.position.set(0, 0, 0);
+      this.#trainGroup.rotation.set(0, 0, 0);
+      return;
+    }
+
+    const intensity = 0.4 + speedFraction * 0.6;
+    this.#trainGroup.position.y =
+      (Math.sin(elapsed * 11.3) * 0.006 + Math.sin(elapsed * 27.7) * 0.003) * intensity;
+    this.#trainGroup.position.x =
+      (Math.sin(elapsed * 7.9 + 1.4) * 0.008 + Math.sin(elapsed * 19.1) * 0.004) * intensity;
+    this.#trainGroup.rotation.z = Math.sin(elapsed * 5.3) * 0.0016 * intensity;
+    this.#trainGroup.rotation.x = Math.sin(elapsed * 8.7 + 0.6) * 0.0011 * intensity;
   }
 
   #applySky(sky) {
@@ -514,23 +726,29 @@ export class World {
     this.#sun.target.position.set(0, 0, 0);
 
     this.#moon.intensity = sky.moonIntensity;
-    this.#ambient.intensity = sky.ambientIntensity * 0.8;
+    this.#ambient.intensity = sky.ambientIntensity;
     this.#hemisphere.intensity = sky.ambientIntensity;
     // At night the sky is nearly black, and tinting the bounce light with it
     // would remove the only fill the scene has. Keep a cold blue instead.
     this.#hemisphere.color.setHex(sky.darkness > 0.5 ? 0x39506e : sky.skyColour);
 
     // Artificial light comes on as it gets dark, not at a fixed clock time.
-    const headlightIntensity = sky.needsArtificialLight ? 220 : 20;
+    const headlightIntensity = sky.needsArtificialLight ? 420 : 40;
     for (const light of this.#headlights) light.intensity = headlightIntensity;
 
     if (this.yardLight) {
-      this.yardLight.intensity = sky.needsArtificialLight ? 240 : 0;
+      this.yardLight.intensity = sky.needsArtificialLight ? 300 : 0;
       this.yardBulb.material.emissiveIntensity = sky.needsArtificialLight ? 3.5 : 0;
       this.#fill.intensity = 30 + sky.darkness * 70;
     }
 
-    this.scene.fog = new THREE.Fog(sky.skyColour, 40, sky.isNight ? 220 : 420);
+    // Reuse one Fog object rather than allocating a new one every frame, and
+    // keep the far plane well out: fog that closes to 220 m at night hides the
+    // scenery the player needs in order to feel the train moving at all.
+    if (!this.scene.fog) this.scene.fog = new THREE.Fog(sky.skyColour, 60, 700);
+    this.scene.fog.color.setHex(sky.skyColour);
+    this.scene.fog.near = sky.isNight ? 90 : 120;
+    this.scene.fog.far = sky.isNight ? 620 : 900;
   }
 
   dispose() {

@@ -137,13 +137,47 @@ test("the player moves in all four directions", () => {
   walk(back, { forward: -1 }, 0.8);
   assert.ok(back.position.z < -0.5, "S moves back");
 
+  // Facing +Z with the camera looking along +Z, the player's right hand points
+  // at -X. This is the assertion that was encoding the A/D swap.
   const right = start();
   walk(right, { right: 1 }, 0.8);
-  assert.ok(right.position.x > 0.5, "D moves right");
+  assert.ok(right.position.x < -0.5, "D moves right");
 
   const left = start();
   walk(left, { right: -1 }, 0.8);
-  assert.ok(left.position.x < -0.5, "A moves left");
+  assert.ok(left.position.x > 0.5, "A moves left");
+});
+
+test("strafing right is the same direction as facing right and walking on", () => {
+  // States the rule without depending on which way the axes point: the
+  // player's right is their forward turned a quarter turn clockwise.
+  const strafing = new PlayerController({ colliders: room({ size: 40 }) });
+  strafing.spawnAt({ x: 0, y: 0.1, z: 0 });
+  walk(strafing, {}, 0.4);
+  walk(strafing, { right: 1 }, 1.2);
+
+  const turning = new PlayerController({ colliders: room({ size: 40 }) });
+  turning.spawnAt({ x: 0, y: 0.1, z: 0 });
+  walk(turning, {}, 0.4);
+  turning.look(-Math.PI / 2, 0);
+  walk(turning, { forward: 1 }, 1.2);
+
+  assert.ok(Math.abs(strafing.position.x - turning.position.x) < 0.1, "same x");
+  assert.ok(Math.abs(strafing.position.z - turning.position.z) < 0.1, "same z");
+});
+
+test("A and D are exact opposites", () => {
+  const go = (right) => {
+    const player = new PlayerController({ colliders: room({ size: 40 }) });
+    player.spawnAt({ x: 0, y: 0.1, z: 0 });
+    walk(player, {}, 0.4);
+    walk(player, { right }, 1);
+    return player.position;
+  };
+
+  const d = go(1);
+  const a = go(-1);
+  assert.ok(Math.abs(d.x + a.x) < 0.05 && Math.abs(d.z + a.z) < 0.05);
 });
 
 test("movement follows where the player is looking", () => {
