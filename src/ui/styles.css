@@ -823,3 +823,109 @@ input[type="range"]:focus-visible {
   position: absolute;
   inset: 0;
 }
+
+/* ---------------------------------------------------------- blueprint */
+
+.blueprint {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  background: rgb(4 6 7 / 0.7);
+}
+
+.blueprint__sheet {
+  width: min(52rem, 92vw);
+  padding: clamp(1.25rem, 3vw, 2rem);
+  border: 1px solid #2c4a72;
+  background: linear-gradient(160deg, #16304f 0%, #10233b 100%);
+  box-shadow: 0 1.5rem 4rem rgb(0 0 0 / 0.7);
+}
+
+.blueprint__title {
+  margin: 0 0 1.25rem;
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: #cfe0f5;
+}
+
+/* The consist, front to back. Only what is actually still coupled. */
+.blueprint__train {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+}
+
+.blueprint__car {
+  flex: 0 0 9rem;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid #35608f;
+  background: rgb(9 24 41 / 0.6);
+}
+
+.blueprint__car[data-kind="locomotive"] {
+  border-color: var(--signal-green);
+}
+
+.blueprint__car-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #b9d2ec;
+}
+
+.blueprint__car-level {
+  color: #6f93b8;
+}
+
+.blueprint__bar {
+  height: 4px;
+  margin: 0.45rem 0;
+  background: rgb(0 0 0 / 0.5);
+  overflow: hidden;
+}
+
+.blueprint__bar-fill {
+  height: 100%;
+  transform-origin: left center;
+  background: #7fb2e0;
+}
+
+.blueprint__bar-fill[data-state="heavy"] { background: var(--warning); }
+.blueprint__bar-fill[data-state="critical"] { background: var(--danger); }
+
+.blueprint__car-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.66rem;
+  letter-spacing: 0.06em;
+  color: #7fa0c2;
+}
+
+.blueprint__stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.75rem;
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid #2c4a72;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  color: #a8c4e0;
+}
+
+.blueprint__hint {
+  margin-top: 1rem;
+  font-size: 0.68rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #5f7f9f;
+}

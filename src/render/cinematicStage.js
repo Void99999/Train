@@ -194,13 +194,29 @@ export class CinematicStage {
 
   /* ------------------------------------------------------------ battlefield */
 
+  /**
+   * The battlefield.
+   *
+   * Still a blockout - these are placeholder shapes, not final art - but the
+   * shapes now describe something. Ruined buildings have standing walls with
+   * window openings and collapsed corners rather than being single boxes;
+   * there are trenches, revetments, wrecked vehicles, craters with raised
+   * lips, and scattered structural debris.
+   *
+   * Two rules the previous version broke:
+   *
+   *  - Nothing is placed in the corridor the protagonist crawls along. He
+   *    used to drag himself straight through solid blocks.
+   *  - Fire is not a glowing ball. Each fire is a cluster of flickering
+   *    tapered flames over a charred patch, lighting what is around it.
+   */
   #buildBattlefield() {
     const group = new THREE.Group();
     group.visible = false;
 
     const ground = mesh(
       new THREE.PlaneGeometry(400, 400),
-      new THREE.MeshStandardMaterial({ color: 0x241f18, roughness: 1, metalness: 0 }),
+      new THREE.MeshStandardMaterial({ color: 0x2a251d, roughness: 1, metalness: 0 }),
       { cast: false },
     );
     ground.rotation.x = -Math.PI / 2;
@@ -208,74 +224,304 @@ export class CinematicStage {
     group.add(ground);
 
     const rubbleMaterial = metalMaterial({ colour: 0x3a352e, wear: 0.9, seed: 700, repeat: 1 });
-    const concrete = new THREE.MeshStandardMaterial({ color: 0x4a463f, roughness: 0.95 });
+    const concrete = new THREE.MeshStandardMaterial({ color: 0x55504a, roughness: 0.95 });
+    const darkConcrete = new THREE.MeshStandardMaterial({ color: 0x3c3833, roughness: 0.98 });
+    const earth = new THREE.MeshStandardMaterial({ color: 0x231e17, roughness: 1 });
 
-    // Broken structures and rubble, thinning out towards the far end so the
-    // player crawls out of the fighting rather than through it.
-    for (let i = 0; i < 90; i += 1) {
-      const z = this.#rng.range(-90, 70);
-      const density = 1 - (z + 90) / 170;
-      if (this.#rng.next() > density * 0.9 + 0.15) continue;
+    /**
+     * The crawl corridor. Nothing may be placed inside it.
+     * The protagonist drags himself up the line of the track from far behind
+     * the shelter, so the corridor is a lane either side of x = 0.
+     */
+    const inCrawlCorridor = (x, z, radius = 0) =>
+      Math.abs(x) < 5.5 + radius && z > -70 && z < 30;
 
-      const width = this.#rng.range(0.6, 3.4);
-      const height = this.#rng.range(0.4, 4.5);
-      const block = mesh(
-        new THREE.BoxGeometry(width, height, this.#rng.range(0.6, 3)),
-        this.#rng.chance(0.5) ? rubbleMaterial : concrete,
-      );
-      block.position.set(this.#rng.range(-45, 45), height / 2, z);
-      block.rotation.y = this.#rng.range(0, Math.PI);
-      block.rotation.z = this.#rng.range(-0.25, 0.25);
-      group.add(block);
+    /** Places a prop only if it stays out of the corridor. */
+    const place = (object, x, z, radius = 1.5) => {
+      if (inCrawlCorridor(x, z, radius)) return false;
+      object.position.set(x, object.position.y, z);
+      group.add(object);
+      return true;
+    };
+
+    /* ------------------------------------------------------- ruined buildings */
+
+    for (let i = 0; i < 26; i += 1) {
+      const x = this.#rng.range(-70, 70);
+      const z = this.#rng.range(-95, 55);
+      if (inCrawlCorridor(x, z, 8)) continue;
+
+      const ruin = new THREE.Group();
+      const width = this.#rng.range(7, 18);
+      const depth = this.#rng.range(6, 14);
+      const height = this.#rng.range(3.5, 9);
+
+      // Three standing walls and a collapsed fourth: the classic shell.
+      const wallSpecs = [
+        [-width / 2, 0, 0.5, depth, 1],
+        [width / 2, 0, 0.5, depth, this.#rng.range(0.35, 1)],
+        [0, -depth / 2, width, 0.5, this.#rng.range(0.5, 1)],
+      ];
+
+      for (const [dx, dz, sw, sd, heightScale] of wallSpecs) {
+        const wallHeight = height * heightScale;
+        const wall = mesh(
+          new THREE.BoxGeometry(sw, wallHeight, sd),
+          this.#rng.chance(0.5) ? concrete : darkConcrete,
+        );
+        wall.position.set(dx, wallHeight / 2, dz);
+        ruin.add(wall);
+
+        // Window openings, suggested by dark recesses in the wall face.
+        const openings = Math.floor(Math.max(sw, sd) / 3);
+        for (let w = 0; w < openings; w += 1) {
+          if (wallHeight < 2.4) break;
+          const hole = mesh(
+            new THREE.BoxGeometry(
+              sw > sd ? 1.1 : 0.6,
+              1.1,
+              sd > sw ? 1.1 : 0.6,
+            ),
+            earth,
+            { cast: false },
+          );
+          hole.position.set(
+            dx + (sw > sd ? -sw / 2 + 1.5 + w * 3 : 0),
+            1.6,
+            dz + (sd > sw ? -sd / 2 + 1.5 + w * 3 : 0),
+          );
+          ruin.add(hole);
+        }
+      }
+
+      // The collapsed corner: a heap of slabs where the fourth wall was.
+      for (let piece = 0; piece < 6; piece += 1) {
+        const slab = mesh(
+          new THREE.BoxGeometry(
+            this.#rng.range(1.5, 3.5),
+            this.#rng.range(0.2, 0.5),
+            this.#rng.range(1.5, 3),
+          ),
+          darkConcrete,
+        );
+        slab.position.set(
+          width / 2 - this.#rng.range(0, 4),
+          this.#rng.range(0.2, 1.6),
+          depth / 2 - this.#rng.range(0, 4),
+        );
+        slab.rotation.set(
+          this.#rng.range(-0.5, 0.5),
+          this.#rng.range(0, Math.PI),
+          this.#rng.range(-0.5, 0.5),
+        );
+        ruin.add(slab);
+      }
+
+      ruin.rotation.y = this.#rng.range(0, Math.PI * 2);
+      place(ruin, x, z, 10);
     }
 
-    // Shell craters.
-    for (let i = 0; i < 22; i += 1) {
-      const crater = mesh(
-        new THREE.CircleGeometry(this.#rng.range(1.2, 4), 12),
-        new THREE.MeshStandardMaterial({ color: 0x15120e, roughness: 1 }),
+    /* --------------------------------------------------------------- trenches */
+
+    for (let i = 0; i < 8; i += 1) {
+      const x = this.#rng.range(-60, 60);
+      const z = this.#rng.range(-90, 40);
+      if (inCrawlCorridor(x, z, 6)) continue;
+
+      const trench = new THREE.Group();
+      const length = this.#rng.range(10, 26);
+
+      // The cut itself, and the spoil piled along its lip.
+      const cut = mesh(new THREE.BoxGeometry(2.4, 1.6, length), earth, { cast: false });
+      cut.position.y = -0.7;
+      trench.add(cut);
+
+      for (const side of [-1, 1]) {
+        const parapet = mesh(new THREE.BoxGeometry(1.1, 0.7, length), earth);
+        parapet.position.set(side * 1.7, 0.3, 0);
+        trench.add(parapet);
+      }
+
+      // Revetment boards holding the walls up.
+      for (let post = 0; post < Math.floor(length / 2.5); post += 1) {
+        const board = mesh(
+          new THREE.BoxGeometry(0.12, 1.2, 0.3),
+          rubbleMaterial,
+        );
+        board.position.set(-1.2, 0.1, -length / 2 + 1 + post * 2.5);
+        trench.add(board);
+      }
+
+      trench.rotation.y = this.#rng.range(-0.5, 0.5);
+      place(trench, x, z, 8);
+    }
+
+    /* ---------------------------------------------------------------- craters */
+
+    for (let i = 0; i < 30; i += 1) {
+      const x = this.#rng.range(-75, 75);
+      const z = this.#rng.range(-95, 50);
+      const radius = this.#rng.range(1.6, 5);
+
+      const crater = new THREE.Group();
+      const hole = mesh(new THREE.CircleGeometry(radius, 14), earth, { cast: false });
+      hole.rotation.x = -Math.PI / 2;
+      hole.position.y = 0.015;
+      crater.add(hole);
+
+      // A raised lip of thrown earth, which is what makes it read as a crater
+      // rather than a stain on the ground.
+      const lip = mesh(
+        new THREE.TorusGeometry(radius, radius * 0.16, 5, 14),
+        earth,
         { cast: false },
       );
-      crater.rotation.x = -Math.PI / 2;
-      crater.position.set(this.#rng.range(-50, 50), 0.01, this.#rng.range(-90, 60));
+      lip.rotation.x = -Math.PI / 2;
+      lip.position.y = 0.05;
+      crater.add(lip);
+
+      // Craters are allowed in the corridor - they are flat and he crawls
+      // through them, which is the right image.
+      crater.position.set(x, 0, z);
       group.add(crater);
     }
 
-    // Burnt-out vehicles: suggestions, not models.
-    for (let i = 0; i < 7; i += 1) {
+    /* --------------------------------------------------------------- wreckage */
+
+    for (let i = 0; i < 10; i += 1) {
+      const x = this.#rng.range(-55, 55);
+      const z = this.#rng.range(-85, 35);
+      if (inCrawlCorridor(x, z, 5)) continue;
+
       const wreck = new THREE.Group();
-      const hull = mesh(new THREE.BoxGeometry(4.6, 1.5, 2.3), rubbleMaterial);
+      const hull = mesh(new THREE.BoxGeometry(5.2, 1.3, 2.4), rubbleMaterial);
       hull.position.y = 0.9;
       wreck.add(hull);
-      const turret = mesh(new THREE.BoxGeometry(2, 0.9, 1.8), rubbleMaterial);
-      turret.position.y = 2;
-      wreck.add(turret);
-      wreck.position.set(this.#rng.range(-40, 40), 0, this.#rng.range(-80, 30));
+
+      const glacis = mesh(new THREE.BoxGeometry(2.2, 1.0, 2.3), rubbleMaterial);
+      glacis.rotation.x = 0.5;
+      glacis.position.set(2.0, 0.9, 0);
+      wreck.add(glacis);
+
+      if (this.#rng.chance(0.6)) {
+        const turret = mesh(new THREE.CylinderGeometry(1.0, 1.2, 0.8, 6), rubbleMaterial);
+        turret.position.set(-0.4, 1.9, 0);
+        turret.rotation.y = this.#rng.range(0, Math.PI);
+        wreck.add(turret);
+
+        const barrel = mesh(new THREE.CylinderGeometry(0.11, 0.13, 3.4, 8), rubbleMaterial);
+        barrel.rotation.z = Math.PI / 2 - 0.25;
+        barrel.position.set(1.2, 2.4, 0);
+        wreck.add(barrel);
+      }
+
+      // Road wheels, some off their mounts.
+      for (let w = 0; w < 5; w += 1) {
+        const wheel = mesh(new THREE.CylinderGeometry(0.45, 0.45, 0.28, 10), rubbleMaterial);
+        wheel.rotation.z = Math.PI / 2;
+        wheel.position.set(-2.2 + w * 1.1, 0.45, this.#rng.chance(0.85) ? 1.2 : 2.6);
+        wreck.add(wheel);
+      }
+
       wreck.rotation.y = this.#rng.range(0, Math.PI * 2);
-      group.add(wreck);
+      wreck.rotation.z = this.#rng.range(-0.12, 0.12);
+      place(wreck, x, z, 5);
     }
 
-    // Fires. Each is an emissive core with a light, and each flickers on its
-    // own rhythm so the field does not pulse in unison.
-    for (let i = 0; i < 16; i += 1) {
+    /* ------------------------------------------------------ scattered debris */
+
+    for (let i = 0; i < 160; i += 1) {
+      const x = this.#rng.range(-80, 80);
+      const z = this.#rng.range(-95, 55);
+
+      // Small debris is allowed close to the corridor but not in the lane
+      // itself, so the crawl has texture beside it without obstruction.
+      if (inCrawlCorridor(x, z, -2.5)) continue;
+
+      const size = this.#rng.range(0.15, 0.8);
+      const piece = mesh(
+        new THREE.BoxGeometry(size, size * this.#rng.range(0.15, 0.5), size * this.#rng.range(0.6, 2)),
+        this.#rng.chance(0.5) ? darkConcrete : rubbleMaterial,
+      );
+      piece.position.set(x, size * 0.15, z);
+      piece.rotation.set(
+        this.#rng.range(-0.3, 0.3),
+        this.#rng.range(0, Math.PI),
+        this.#rng.range(-0.3, 0.3),
+      );
+      group.add(piece);
+    }
+
+    // Bent reinforcing bar and structural steel sticking out of the ground.
+    for (let i = 0; i < 40; i += 1) {
+      const x = this.#rng.range(-70, 70);
+      const z = this.#rng.range(-90, 45);
+      if (inCrawlCorridor(x, z, 1)) continue;
+
+      const bar = mesh(
+        new THREE.CylinderGeometry(0.05, 0.05, this.#rng.range(1.2, 3.5), 5),
+        rubbleMaterial,
+      );
+      bar.position.set(x, 0.8, z);
+      bar.rotation.set(this.#rng.range(-0.8, 0.8), 0, this.#rng.range(-0.8, 0.8));
+      group.add(bar);
+    }
+
+    /* ------------------------------------------------------------------ fire */
+
+    // Each fire is a cluster of tapered flames over a scorched patch, not a
+    // glowing sphere. The cones flicker independently in height and tilt.
+    for (let i = 0; i < 18; i += 1) {
+      const x = this.#rng.range(-60, 60);
+      const z = this.#rng.range(-90, 45);
+      if (inCrawlCorridor(x, z, 3)) continue;
+
       const fire = new THREE.Group();
-      const core = mesh(
-        new THREE.SphereGeometry(this.#rng.range(0.4, 1.1), 8, 6),
-        lampMaterial(0xff7a2a, 3),
+
+      const scorch = mesh(
+        new THREE.CircleGeometry(this.#rng.range(1.2, 2.6), 10),
+        new THREE.MeshStandardMaterial({ color: 0x0e0b08, roughness: 1 }),
         { cast: false },
       );
-      core.position.y = 0.5;
-      fire.add(core);
+      scorch.rotation.x = -Math.PI / 2;
+      scorch.position.y = 0.02;
+      fire.add(scorch);
 
-      const light = new THREE.PointLight(0xff8330, 60, 26, 2);
-      light.position.y = 1.2;
+      const flames = [];
+      const flameCount = this.#rng.integer(3, 5);
+      for (let f = 0; f < flameCount; f += 1) {
+        const height = this.#rng.range(0.8, 2.2);
+        const flame = mesh(
+          new THREE.ConeGeometry(this.#rng.range(0.22, 0.5), height, 6),
+          new THREE.MeshStandardMaterial({
+            color: 0xff8a2a,
+            emissive: 0xff6a10,
+            emissiveIntensity: 2.6,
+            transparent: true,
+            opacity: 0.82,
+          }),
+          { cast: false },
+        );
+        flame.position.set(
+          this.#rng.range(-0.7, 0.7),
+          height / 2,
+          this.#rng.range(-0.7, 0.7),
+        );
+        flame.userData.baseHeight = height;
+        flame.userData.phase = this.#rng.range(0, Math.PI * 2);
+        fire.add(flame);
+        flames.push(flame);
+      }
+
+      const light = new THREE.PointLight(0xff7a28, 90, 30, 2);
+      light.position.y = 1.4;
       fire.add(light);
 
-      fire.position.set(this.#rng.range(-48, 48), 0, this.#rng.range(-90, 55));
+      fire.position.set(x, 0, z);
       fire.userData.phase = this.#rng.range(0, Math.PI * 2);
-      fire.userData.baseIntensity = this.#rng.range(35, 75);
+      fire.userData.baseIntensity = this.#rng.range(60, 120);
       fire.userData.light = light;
-      fire.userData.core = core;
+      fire.userData.flames = flames;
       group.add(fire);
       this.#fires.push(fire);
     }
@@ -468,41 +714,116 @@ export class CinematicStage {
 
     const brick = new THREE.MeshStandardMaterial({ color: 0x4a423a, roughness: 0.95 });
     const trim = metalMaterial({ colour: 0x3b3630, wear: 0.8, seed: 730, repeat: 1 });
+    const sleeperMaterial = metalMaterial({ colour: 0x3b3128, wear: 0.85, seed: 731, repeat: 1 });
+    const railSteel = new THREE.MeshStandardMaterial({
+      color: 0x9aa2a6, metalness: 1, roughness: 0.25,
+    });
+    const ballast = new THREE.MeshStandardMaterial({ color: 0x54524d, roughness: 1 });
 
-    const walls = mesh(new THREE.BoxGeometry(9, 4.2, 6), brick);
+    /*
+     * The railway comes first.
+     *
+     * A locomotive parked beside a building with no track under it is the
+     * single least believable thing in the sequence. The line runs through the
+     * whole scene, and the train stands on it.
+     *
+     * The group sits at the origin so the world's locomotive - which never
+     * moves - is already standing on these rails.
+     */
+    const TRACK_LENGTH = 220;
+
+    const bed = mesh(new THREE.BoxGeometry(7.4, 0.5, TRACK_LENGTH), ballast, { cast: false });
+    bed.position.y = 0.05;
+    group.add(bed);
+
+    for (const side of [-0.7175, 0.7175]) {
+      const head = mesh(new THREE.BoxGeometry(0.075, 0.16, TRACK_LENGTH), railSteel, { cast: false });
+      head.position.set(side, 0.42, 0);
+      group.add(head);
+
+      const web = mesh(new THREE.BoxGeometry(0.04, 0.1, TRACK_LENGTH), railSteel, { cast: false });
+      web.position.set(side, 0.3, 0);
+      group.add(web);
+    }
+
+    // Sleepers, instanced - there are a few hundred of them.
+    const sleeperCount = Math.floor(TRACK_LENGTH / 0.65);
+    const sleepers = new THREE.InstancedMesh(
+      new THREE.BoxGeometry(2.6, 0.16, 0.26),
+      sleeperMaterial,
+      sleeperCount,
+    );
+    sleepers.receiveShadow = true;
+    const matrix = new THREE.Matrix4();
+    for (let i = 0; i < sleeperCount; i += 1) {
+      matrix.makeTranslation(0, 0.24, -TRACK_LENGTH / 2 + i * 0.65);
+      sleepers.setMatrixAt(i, matrix);
+    }
+    sleepers.instanceMatrix.needsUpdate = true;
+    group.add(sleepers);
+
+    // A short loading platform along the near side of the track.
+    const platform = mesh(new THREE.BoxGeometry(4, 0.8, 26), brick, { cast: false });
+    platform.position.set(-6.2, 0.4, 2);
+    group.add(platform);
+
+    /* --------------------------------------------------------- the building */
+
+    const building = new THREE.Group();
+
+    const walls = mesh(new THREE.BoxGeometry(9, 4.2, 7), brick);
     walls.position.y = 2.1;
-    group.add(walls);
+    building.add(walls);
 
-    const roof = mesh(new THREE.BoxGeometry(9.8, 0.35, 6.8), trim);
+    const roof = mesh(new THREE.BoxGeometry(9.8, 0.35, 7.8), trim);
     roof.position.y = 4.3;
-    group.add(roof);
+    building.add(roof);
 
-    // A lit doorway - the one warm thing in the whole act.
-    const doorway = mesh(new THREE.BoxGeometry(1.4, 2.4, 0.2), lampMaterial(0xffc880, 1.4), {
+    // A lit doorway facing the track - the one warm thing in the whole act.
+    const doorway = mesh(new THREE.BoxGeometry(1.4, 2.4, 0.2), lampMaterial(0xffc880, 1.6), {
       cast: false,
     });
-    doorway.position.set(-1.2, 1.2, 3.05);
-    group.add(doorway);
+    doorway.position.set(-1.2, 1.2, 3.55);
+    building.add(doorway);
 
-    const doorLight = new THREE.PointLight(0xffb765, 55, 22, 2);
-    doorLight.position.set(-1.2, 2.2, 4);
-    group.add(doorLight);
+    const doorLight = new THREE.PointLight(0xffb765, 90, 26, 2);
+    doorLight.position.set(-1.2, 2.2, 4.6);
+    building.add(doorLight);
 
     for (const x of [1.8, 3.2]) {
       const window = mesh(new THREE.BoxGeometry(0.9, 1.0, 0.15), glassMaterial(), { cast: false });
-      window.position.set(x, 2.4, 3.02);
-      group.add(window);
+      window.position.set(x, 2.4, 3.52);
+      building.add(window);
     }
 
-    // A water tower and a couple of posts, so it reads as a railway facility.
-    const tower = mesh(new THREE.CylinderGeometry(1.3, 1.5, 2.6, 10), trim);
-    tower.position.set(7, 5.4, -2);
-    group.add(tower);
+    building.position.set(-13, 0, 6);
+    group.add(building);
 
-    for (const side of [-1, 1]) {
-      const leg = mesh(new THREE.CylinderGeometry(0.16, 0.16, 4.2, 6), trim);
-      leg.position.set(7 + side * 0.9, 2.1, -2);
+    // A water tower, so it reads as a railway facility rather than a shed.
+    const tower = mesh(new THREE.CylinderGeometry(1.5, 1.7, 3.0, 10), trim);
+    tower.position.set(-11, 6.0, -14);
+    group.add(tower);
+    for (const [dx, dz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) {
+      const leg = mesh(new THREE.CylinderGeometry(0.16, 0.16, 4.6, 6), trim);
+      leg.position.set(-11 + dx * 1.1, 2.3, -14 + dz * 1.1);
       group.add(leg);
+    }
+
+    // Yard lamps down the line, so the approach is readable at night.
+    for (const z of [-26, 4, 30]) {
+      const mast = mesh(new THREE.CylinderGeometry(0.11, 0.16, 8, 8), trim);
+      mast.position.set(-5.5, 4, z);
+      group.add(mast);
+
+      const bulb = mesh(new THREE.SphereGeometry(0.18, 8, 6), lampMaterial(0xffd9a0, 3), {
+        cast: false,
+      });
+      bulb.position.set(-5.5, 7.9, z);
+      group.add(bulb);
+
+      const lamp = new THREE.PointLight(0xffcf94, 140, 34, 2);
+      lamp.position.set(-5.5, 7.7, z);
+      group.add(lamp);
     }
 
     this.shelter = group;
@@ -571,12 +892,23 @@ export class CinematicStage {
     if (this.#rotorDisc) this.#rotorDisc.rotation.y += delta * 28 * speed;
     if (this.#tailRotor) this.#tailRotor.rotation.z += delta * 40 * speed;
 
-    // Fires flicker independently.
+    // Fires flicker independently, and each flame within a fire moves on its
+    // own rhythm - a fire where every tongue pulses together reads as a lamp.
     for (const fire of this.#fires) {
-      const flicker = 0.75 + Math.sin(elapsed * 9 + fire.userData.phase) * 0.15 +
-        Math.sin(elapsed * 23 + fire.userData.phase * 2) * 0.1;
+      const phase = fire.userData.phase;
+      const flicker =
+        0.75 + Math.sin(elapsed * 9 + phase) * 0.15 + Math.sin(elapsed * 23 + phase * 2) * 0.1;
       fire.userData.light.intensity = fire.userData.baseIntensity * flicker;
-      fire.userData.core.material.emissiveIntensity = 2.4 * flicker;
+
+      for (const flame of fire.userData.flames ?? []) {
+        const own = Math.sin(elapsed * 13 + flame.userData.phase);
+        const lick = Math.sin(elapsed * 31 + flame.userData.phase * 3);
+        flame.scale.y = 1 + own * 0.22 + lick * 0.08;
+        flame.position.y = (flame.userData.baseHeight * flame.scale.y) / 2;
+        flame.rotation.z = own * 0.14;
+        flame.rotation.x = lick * 0.09;
+        flame.material.emissiveIntensity = 2.2 + flicker * 0.9;
+      }
     }
   }
 

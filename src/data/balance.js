@@ -125,6 +125,12 @@ export const PLAYER = {
 export const ECONOMY = {
   /** Money the player starts a fresh run with. */
   startingMoney: 120,
+  /**
+   * Ammunition already aboard when the run begins, as cargo ids and unit
+   * counts. Without this the protagonist starts with one magazine and no
+   * reserve, and the starting weapon becomes unusable the moment it runs dry.
+   */
+  startingCargo: { pistol_ammo: 4 },
   /** Repair conversion: one unit of currency restores this many hit points. */
   healthPointsPerCurrencyUnit: 5,
   /** Flat price of a full heal at an outpost medical service. */

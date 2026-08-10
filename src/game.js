@@ -21,6 +21,7 @@ import { World } from "./render/world.js";
 import { CinematicStage } from "./render/cinematicStage.js";
 
 import { createIntroSequence } from "./cinematics/introSequence.js";
+import { cabDimensions } from "./render/interiors.js";
 
 import { Train } from "./systems/train/train.js";
 import { MountRegistry } from "./systems/train/mounts.js";
@@ -35,6 +36,7 @@ import { Stamina } from "./systems/player/stamina.js";
 import { Inventory } from "./systems/player/inventory.js";
 import { Statistics } from "./systems/run/statistics.js";
 import { PlayerController } from "./systems/player/playerController.js";
+import { InteractionSystem } from "./systems/player/interaction.js";
 import { RunManager, RUN_FAILURE } from "./systems/run/runManager.js";
 import { Crew } from "./systems/ai/loader.js";
 
@@ -42,12 +44,13 @@ import { MenuSystem } from "./ui/menus.js";
 import { Hud } from "./ui/hud.js";
 import { CinematicOverlay } from "./ui/cinematicOverlay.js";
 import { WeaponWheel } from "./ui/weaponWheel.js";
+import { BlueprintPanel } from "./ui/blueprintPanel.js";
 import { el } from "./ui/dom.js";
 
 import { AudioDirector } from "./audio/audioDirector.js";
 
 import { weaponSpec } from "./data/weapons.js";
-import { TRAIN } from "./data/balance.js";
+import { TRAIN, ECONOMY } from "./data/balance.js";
 
 import en from "./data/locales/en.js";
 import de from "./data/locales/de.js";
@@ -131,6 +134,9 @@ export class Game {
 
     this.audio = new AudioDirector({ events: this.events, settings: this.settings });
     this.weaponWheel = new WeaponWheel({ root: overlay, localization: this.localization });
+    this.blueprint = new BlueprintPanel({ root: overlay, localization: this.localization });
+    this.interaction = new InteractionSystem();
+    this.#registerInteractions();
 
     this.#overlayRoot = overlay;
     this.cinematic = new CinematicOverlay({ root: hudRoot, localization: this.localization });
@@ -149,6 +155,40 @@ export class Game {
     // simulation - it is there to be looked at.
     this.#menuTrain = new Train();
     this.#world.syncTrain(this.#menuTrain);
+  }
+
+  /**
+   * What each interactable actually does.
+   *
+   * Registered once, by id. Previously the prompts existed but nothing was
+   * bound to them, so E played a sound and did nothing else - which is what
+   * "press E does nothing" was.
+   */
+  #registerInteractions() {
+    this.interaction.register("throttle", () => {
+      if (!this.#run) return;
+      const train = this.#run.train;
+      // Cycle up through the notches and wrap back to a stand at the top, so
+      // one key can drive the whole quadrant.
+      const next = train.throttleIndex >= TRAIN.throttleSteps.length - 1 ? 0 : train.throttleIndex + 1;
+      train.setThrottleIndex(next);
+      this.hud.toast(
+        `${this.localization.t("HUD_THROTTLE")} ${Math.round(train.throttleFraction * 100)}%`,
+      );
+    });
+
+    this.interaction.register("blueprint", () => {
+      if (!this.#run) return;
+      const opened = this.blueprint.toggle(this.#run.train, this.#run.crew);
+      this.audio.play(opened ? "ui_confirm" : "ui_move");
+    });
+
+    this.interaction.register("rear-door", () => {
+      this.audio.play("door");
+      // There is nothing coupled behind the locomotive yet, so the door opens
+      // onto the end of the train. Saying so is better than silence.
+      this.hud.toast(this.localization.t("VEHICLE_DETACHED"), { variant: "warning" });
+    });
   }
 
   #wireRunEvents() {
@@ -234,6 +274,12 @@ export class Game {
       mode: this.settings.mode,
     });
 
+    // The run begins with ammunition aboard. A starting weapon that runs dry
+    // and cannot be reloaded is not a starting weapon.
+    for (const [cargoId, quantity] of Object.entries(ECONOMY.startingCargo)) {
+      train.addCargo(cargoId, quantity);
+    }
+
     this.#run = context;
     this.#world.syncTrain(train);
     this.#player.setColliders(this.#world.colliders);
@@ -279,6 +325,9 @@ export class Game {
       overlay: this.cinematic,
       dayNight: this.dayNight,
       locomotiveSize: this.#run.train.locomotive.spec.size,
+      // Resolved once, because several shots need to know where the cab is
+      // before the shot that used to compute it has run.
+      cabDimensions: cabDimensions(this.#run.train.locomotive.spec.size),
       scrollSpeed: 0,
     };
 
@@ -406,6 +455,8 @@ export class Game {
     this.#player.setEnabled(false);
     this.input.releaseAll();
     this.audio.setMuted(true);
+    this.interaction.clear();
+    this.blueprint.close();
     this.#closeWeaponWheel(false);
     this.menus.show("pause");
     this.#hidePointerPrompt();
@@ -425,6 +476,8 @@ export class Game {
 
     this.#run = null;
     this.#player.setEnabled(false);
+    this.interaction.clear();
+    this.blueprint.close();
     this.#closeWeaponWheel(false);
     this.audio.setMuted(false);
     this.state.transitionTo(STATE.mainMenu);
@@ -622,27 +675,18 @@ export class Game {
     if (weapon.isEmpty && !weapon.isReloading) inventory.reloadEquipped(train);
   }
 
-  /** Acts on whatever the player is standing in front of. */
+  /** Acts on whatever the player is looking at. */
   #interact() {
-    const nearby = this.#nearbyInteractable();
-    if (!nearby) return;
+    // The blueprint is a full-screen panel; E closes it again rather than
+    // trying to interact with the world through it.
+    if (this.blueprint.isOpen) {
+      this.blueprint.close();
+      this.audio.play("ui_move");
+      return;
+    }
 
-    if (nearby.id === "rear-door") this.audio.play("door");
-    else this.audio.play("mechanical_clunk");
-  }
-
-  #nearbyInteractable() {
-    const position = this.#player.position;
-    const reach = 0.6;
-
-    return this.#world.interactables.find((item) => {
-      const box = item.box;
-      return (
-        position.x - reach < box.maxX && position.x + reach > box.minX &&
-        position.y < box.maxY && position.y + this.#player.bodyHeight > box.minY &&
-        position.z - reach < box.maxZ && position.z + reach > box.minZ
-      );
-    });
+    const acted = this.interaction.activate({ game: this });
+    if (!acted) this.audio.play("ui_deny");
   }
 
   /** Translates held keys into the controller's movement intent. */
@@ -742,13 +786,19 @@ export class Game {
    * a better description of "at the controls" than a line from the eye.
    */
   #updateInteractionPrompt() {
-    const nearby = this.#nearbyInteractable();
+    // Focus needs where the eye is and which way it points, because being near
+    // a thing is not the same as looking at it.
+    const focused = this.interaction.update({
+      eye: this.#player.eyePosition,
+      forward: this.#player.forwardVector,
+      interactables: this.#world.interactables,
+    });
 
     this.hud.setPrompt(
-      nearby
+      focused
         ? `${this.localization.t("PROMPT_INTERACT", {
             key: this.input.primaryLabel(ACTION.interact),
-          })}  ${this.localization.t(nearby.promptKey)}`
+          })}  ${this.localization.t(focused.promptKey)}`
         : null,
     );
   }
@@ -864,6 +914,10 @@ export class Game {
       colliderCount: this.#world.colliders.size,
       ownedWeapons: this.#run?.inventory.wheelOrder ?? [],
       magazine: this.#run?.inventory.equippedWeapon?.roundsInMagazine ?? 0,
+      reserve: this.#run
+        ? this.#run.inventory.reserveRoundsFor(this.#run.inventory.equippedWeaponId, this.#run.train)
+        : 0,
+      throttleIndex: this.#run?.train.throttleIndex ?? 0,
       interactableCount: this.#world.interactables.length,
       pointerLocked: Boolean(document.pointerLockElement),
       cinematicActive: this.cinematic.isActive,
@@ -878,6 +932,12 @@ export class Game {
    * twenty beats on a machine without a GPU. It changes nothing about how the
    * cutscene behaves - it is the same update call the loop makes.
    */
+  /** Diagnostic: points the camera at an absolute yaw and pitch. */
+  debugSetLook(yaw, pitch) {
+    this.#player.yaw = yaw;
+    this.#player.pitch = pitch;
+  }
+
   /** Diagnostic: sets the throttle notch directly. */
   debugSetThrottle(index) {
     this.#run?.train.setThrottleIndex(index);

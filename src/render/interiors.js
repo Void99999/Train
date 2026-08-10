@@ -246,8 +246,8 @@ export function buildLocomotiveCab(size) {
     id: "rear-door",
     promptKey: "PROMPT_OPEN_DOOR",
     box: Box.fromCentre(
-      { x: 0, y: cab.floorY + 1.0, z: cab.backZ + 0.3 },
-      { x: 1.0, y: 2.0, z: 0.6 },
+      { x: 0, y: cab.floorY + 1.0, z: cab.backZ + 0.12 },
+      { x: 0.95, y: 2.0, z: 0.25 },
     ),
   });
 
@@ -315,7 +315,9 @@ export function buildLocomotiveCab(size) {
    * The throttle quadrant. Four detents in a machined slot with the settings
    * stencilled beside them, rather than four cubes sitting on a table.
    */
-  const quadrantZ = consoleZ - 0.14;
+  // Right at the driver's edge of the desk, with clear air between the eye and
+  // the markings.
+  const quadrantZ = consoleZ + 0.16;
   const quadrant = mesh(new THREE.BoxGeometry(1.22, 0.1, 0.34), panel);
   quadrant.position.set(-0.42, consoleTop + 0.09, quadrantZ);
   group.add(quadrant);
@@ -401,7 +403,7 @@ export function buildLocomotiveCab(size) {
    * +z, so the dials have to face -z. A CircleGeometry faces +z by default,
    * which pointed every instrument at the front wall instead of at the driver.
    */
-  const gaugeAngle = Math.PI / 2 + 0.3;
+  const gaugeAngle = Math.PI / 2 + 0.55;
   const gaugeSpecs = [
     { x: -0.95, radius: 0.13, label: "km/h", name: "gauge-speed" },
     { x: -0.62, radius: 0.085, label: "BAR", name: "gauge-pressure" },
@@ -414,7 +416,7 @@ export function buildLocomotiveCab(size) {
       handworn,
     );
     bezel.rotation.x = gaugeAngle;
-    bezel.position.set(spec.x, consoleTop + 0.33, consoleZ - 0.12);
+    bezel.position.set(spec.x, consoleTop + 0.20, consoleZ - 0.275);
     group.add(bezel);
 
     const face = mesh(
@@ -429,14 +431,14 @@ export function buildLocomotiveCab(size) {
       }),
       { castShadow: false },
     );
-    face.rotation.set(0.3, Math.PI, 0);
-    face.position.set(spec.x, consoleTop + 0.33, consoleZ - 0.085);
+    face.rotation.set(0.55, Math.PI, 0);
+    face.position.set(spec.x, consoleTop + 0.215, consoleZ - 0.245);
     group.add(face);
 
     // The needle. Pivots at the centre of the dial.
     const needlePivot = new THREE.Group();
-    needlePivot.rotation.set(0.3, Math.PI, 0);
-    needlePivot.position.set(spec.x, consoleTop + 0.33, consoleZ - 0.08);
+    needlePivot.rotation.set(0.55, Math.PI, 0);
+    needlePivot.position.set(spec.x, consoleTop + 0.218, consoleZ - 0.24);
 
     const needle = mesh(
       new THREE.BoxGeometry(0.008, spec.radius * 0.82, 0.006),
@@ -454,14 +456,15 @@ export function buildLocomotiveCab(size) {
     group.add(needlePivot);
   }
 
+  // The volume is the throttle quadrant itself, not a room-sized bubble.
+  // Interaction is decided by looking at the object; the volume only says
+  // where the object is.
   interactables.push({
     id: "throttle",
     promptKey: "PROMPT_DRIVE",
-    // Generous on purpose: standing anywhere a driver would stand counts as
-    // being at the controls.
     box: Box.fromCentre(
-      { x: -0.35, y: consoleTop + 0.2, z: consoleZ + 0.85 },
-      { x: 2.2, y: 2.0, z: 2.0 },
+      { x: -0.42, y: consoleTop + 0.18, z: quadrantZ },
+      { x: 1.25, y: 0.4, z: 0.4 },
     ),
   });
 
@@ -489,9 +492,10 @@ export function buildLocomotiveCab(size) {
   interactables.push({
     id: "blueprint",
     promptKey: "PROMPT_BLUEPRINT",
+    // The panel on the wall, and nothing else.
     box: Box.fromCentre(
-      { x: cab.innerHalfWidth - 0.5, y: cab.floorY + 1.4, z: cab.backZ + 1.9 },
-      { x: 1.0, y: 1.6, z: 1.4 },
+      { x: cab.innerHalfWidth - 0.09, y: cab.floorY + 1.5, z: cab.backZ + 1.9 },
+      { x: 0.2, y: 0.9, z: 1.2 },
     ),
   });
 

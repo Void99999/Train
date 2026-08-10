@@ -221,8 +221,17 @@ export class World {
 
     // Set back and behind the locomotive, so it lights the machine without
     // standing in front of the camera.
+    //
+    // Registered as a scrolling prop like every other piece of lineside
+    // furniture. It was previously added to the railway group but never
+    // registered, so while the rest of the world slid past it stayed put -
+    // which reads exactly as a lamp bolted to the moving train, and it drove
+    // straight through the poles that were scrolling correctly.
     group.position.set(9.5, 0, -12);
+    group.userData.baseZ = -12;
+    group.userData.spacing = 34;
     this.#railwayGroup.add(group);
+    this.#scrollingProps.push(group);
     this.yardLight = lamp;
     this.yardBulb = bulb;
 

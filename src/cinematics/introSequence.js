@@ -139,6 +139,7 @@ export function createIntroSequence({ onFinished }) {
       // are swapped rather than kept apart.
       context.world.setRailwayVisible(false);
       context.world.setTrainVisible(false);
+      context.stage.setVisible("shelter", false);
       context.stage.setVisible("battlefield", true);
       context.stage.setVisible("helicopter", true);
       context.stage.setVisible("doorGun", true);
@@ -255,23 +256,36 @@ export function createIntroSequence({ onFinished }) {
 
   /* ================================================ act three: the crawl */
 
-  /** Where the crawl starts and ends, in battlefield space. */
-  const CRAWL_START = { x: 2, y: 0.42, z: -52 };
-  const CRAWL_END = { x: -1, y: 0.42, z: 26 };
+  /*
+   * The crawl runs up the line of the track, so the shelter and the locomotive
+   * are ahead of him the whole way rather than appearing at the end. Nothing
+   * is placed in this lane - see the corridor rule in cinematicStage.js.
+   */
+  const CRAWL_START = { x: 2.6, y: 0.42, z: -56 };
+  const CRAWL_END = { x: 3.2, y: 0.42, z: -18 };
+  /** Where he stands up, and where the walk to the cab begins. */
+  const STAND_AT = { x: 3.2, z: -18 };
+  /** The cab's side door, which is the thing he actually walks to. */
+  const CAB_DOOR = { x: 2.6, z: -4.6 };
 
   shots.push({
     name: "wake-on-the-ground",
     duration: 2.2,
     onEnter(context) {
+      // The shelter carries its own railway - track, ballast, sleepers,
+      // platform and yard lamps - and it sits at the origin, so the world's
+      // locomotive is standing on those rails from this moment on.
       context.stage.setVisible("shelter", true);
-      context.stage.shelter.position.set(-2, 0, 46);
-      context.stage.shelter.rotation.y = 0.1;
+      context.stage.shelter.position.set(0, 0, 0);
+      context.stage.shelter.rotation.y = 0;
+      // The train is visible from here to the end of the intro: he can see
+      // where he is crawling to.
+      context.world.setTrainVisible(true);
     },
     onUpdate(t, elapsed, context) {
       context.overlay.setFade(1 - ease(t));
-      // Low to the ground, and not quite steady. He has just been in a crash.
       const eye = offset(CRAWL_START, shake(0.05 * (1 - t * 0.5), elapsed, 9));
-      place(context, eye, { x: -2, y: 3, z: 46 });
+      place(context, eye, { x: 0, y: 2.4, z: 0 });
     },
   });
 
@@ -279,7 +293,7 @@ export function createIntroSequence({ onFinished }) {
     name: "crawling",
     duration: 6.5,
     onUpdate(t, elapsed, context) {
-      const position = lerpPoint(CRAWL_START, lerpPoint(CRAWL_START, CRAWL_END, 0.55), t);
+      const position = lerpPoint(CRAWL_START, lerpPoint(CRAWL_START, CRAWL_END, 0.6), t);
 
       // Each drag forward: the body rocks, and the head dips with the effort.
       const stroke = Math.sin(elapsed * 2.1);
@@ -290,9 +304,9 @@ export function createIntroSequence({ onFinished }) {
       });
 
       place(context, eye, {
-        x: -2 + stroke * 0.8,
-        y: 2.2 + Math.sin(elapsed * 1.3) * 0.4,
-        z: 46,
+        x: stroke * 0.9,
+        y: 2.0 + Math.sin(elapsed * 1.3) * 0.4,
+        z: 0,
       });
     },
   });
@@ -301,7 +315,7 @@ export function createIntroSequence({ onFinished }) {
     name: "reaching-the-shelter",
     duration: 4.5,
     onUpdate(t, elapsed, context) {
-      const from = lerpPoint(CRAWL_START, CRAWL_END, 0.55);
+      const from = lerpPoint(CRAWL_START, CRAWL_END, 0.6);
       const position = lerpPoint(from, CRAWL_END, ease(t));
 
       const stroke = Math.sin(elapsed * 1.7);
@@ -310,7 +324,7 @@ export function createIntroSequence({ onFinished }) {
         y: Math.abs(Math.sin(elapsed * 1.7)) * 0.05,
         z: 0,
       });
-      place(context, eye, { x: -2 + stroke * 0.4, y: 2.4, z: 46 });
+      place(context, eye, { x: stroke * 0.4, y: 2.2, z: -2 });
     },
   });
 
@@ -323,39 +337,82 @@ export function createIntroSequence({ onFinished }) {
       const height = 0.42 + rise * 1.26;
       const unsteady = (1 - rise) * 0.09 + 0.02;
 
-      const eye = offset({ x: CRAWL_END.x, y: height, z: CRAWL_END.z }, shake(unsteady, elapsed, 11));
-      place(context, eye, { x: -2, y: 1.6 + rise * 0.6, z: 46 });
+      const eye = offset({ x: STAND_AT.x, y: height, z: STAND_AT.z }, shake(unsteady, elapsed, 11));
+      place(context, eye, { x: 0.4, y: 1.4 + rise * 1.2, z: -6 });
+    },
+  });
+
+  /*
+   * He walks to the locomotive and climbs in.
+   *
+   * These two shots exist because he used to stand up outside and then simply
+   * be inside the cab. Nothing hid that cut, so it read as a teleport. He now
+   * covers the ground on foot, on camera.
+   */
+  shots.push({
+    name: "walking-to-the-train",
+    duration: 5.0,
+    onUpdate(t, elapsed, context) {
+      const walk = ease(t);
+      const position = {
+        x: STAND_AT.x + (CAB_DOOR.x - STAND_AT.x) * walk,
+        y: 1.68,
+        z: STAND_AT.z + (CAB_DOOR.z - STAND_AT.z) * walk,
+      };
+
+      // An injured, heavy walk: a pronounced limp rather than a steady bob.
+      const step = elapsed * 3.4;
+      const limp = Math.abs(Math.sin(step)) * 0.05 + Math.max(0, Math.sin(step * 0.5)) * 0.03;
+      const eye = offset(position, {
+        x: Math.sin(step * 0.5) * 0.05,
+        y: -limp,
+        z: 0,
+      });
+
+      // He looks at the cab door he is heading for.
+      place(context, eye, { x: 1.2, y: 2.4, z: -3.4 });
     },
   });
 
   shots.push({
-    name: "fade-to-black-2",
-    duration: 1.5,
+    name: "climbing-into-the-cab",
+    duration: 3.6,
     onUpdate(t, elapsed, context) {
-      context.overlay.setFade(ease(t));
+      const climb = ease(t);
+      const cab = context.cabDimensions;
+
+      // Up the steps and in through the doorway: the eye rises as it crosses
+      // the threshold, which is what climbing into a locomotive feels like.
+      const from = { x: CAB_DOOR.x, y: 1.68, z: CAB_DOOR.z };
+      const to = { x: 0.55, y: cab.floorY + 1.62, z: cab.centreZ - 0.5 };
+      const eye = lerpPoint(from, to, climb);
+
+      // The pull on the grab handle, and the step up.
+      const effort = Math.sin(climb * Math.PI) * 0.05;
+      place(
+        context,
+        offset(eye, { x: 0, y: effort, z: 0 }),
+        { x: -0.4, y: cab.floorY + 1.3, z: cab.frontZ },
+      );
     },
     onExit(context) {
-      context.overlay.setFade(1);
+      // He is inside now, and the walls hide the swap: the battlefield goes
+      // away and the running railway comes back.
+      context.stage.hideAll();
+      context.world.setRailwayVisible(true);
+      context.world.setTrainVisible(true);
     },
   });
-
-  /* ============================================ act four: the locomotive */
 
   shots.push({
     name: "in-the-cab",
     duration: 3.2,
     onEnter(context) {
-      // Back to the railway, and the machine the whole run is built around.
-      context.stage.hideAll();
-      context.world.setRailwayVisible(true);
-      context.world.setTrainVisible(true);
       // First light. He leaves at dawn.
       context.dayNight.setTimeOfDay(0.225);
       context.scrollSpeed = 0;
-
       context.stage.setVisible("hand", true);
-      const cab = cabDimensions(context.locomotiveSize);
-      context.cab = cab;
+      context.cab = context.cabDimensions;
     },
     onUpdate(t, elapsed, context) {
       const cab = context.cab;
@@ -373,7 +430,8 @@ export function createIntroSequence({ onFinished }) {
       place(context, offset(eye, shake(0.012, elapsed, 6)), target);
 
       // The hand waits out of shot until the next beat.
-      context.stage.hand.position.set(-0.3, cab.floorY + 0.4, cab.centreZ - 0.9);
+      context.stage.hand.position.set(-0.15, cab.floorY + 0.72, cab.centreZ - 0.55);
+      context.stage.hand.rotation.set(-1.1, 0.15, 0);
     },
   });
 
@@ -386,16 +444,32 @@ export function createIntroSequence({ onFinished }) {
     onUpdate(t, elapsed, context) {
       const cab = context.cab;
       const consoleZ = cab.frontZ - 0.45;
-      const notchX = -0.75 + 3 * 0.24;
-      const notchY = cab.floorY + 1.0 + 0.14;
+      // Must match the quadrant built in interiors.js.
+      const quadrantZ = consoleZ + 0.16;
+      const notchX = -0.81 + 3 * 0.26;
+      const notchY = cab.floorY + 1.0 + 0.15;
 
-      // The hand comes up from the lap and presses the fourth notch.
+      /*
+       * The reach.
+       *
+       * A straight line from the lap to the notch passes through the desk,
+       * which is what made the arm clip through the console. The hand is moved
+       * along an arc instead: out and up first, clearing the desk edge, then
+       * forward and down onto the control - which is also how a person
+       * actually reaches for something in front of them.
+       */
       const reach = ease(Math.min(1, t * 1.9));
-      const from = { x: -0.3, y: cab.floorY + 0.4, z: cab.centreZ - 0.9 };
-      const to = { x: notchX, y: notchY, z: consoleZ - 0.12 };
-      const handPosition = lerpPoint(from, to, reach);
+      const rest = { x: -0.15, y: cab.floorY + 0.72, z: cab.centreZ - 0.55 };
+      const target = { x: notchX, y: notchY + 0.035, z: quadrantZ + 0.02 };
+
+      const handPosition = lerpPoint(rest, target, reach);
+      // The arc: lift clear of the desk in the middle of the move, and settle
+      // onto the control at the end.
+      handPosition.y += Math.sin(reach * Math.PI) * 0.16;
+
       context.stage.hand.position.set(handPosition.x, handPosition.y, handPosition.z);
-      context.stage.hand.rotation.set(-0.5 + reach * 0.35, 0.2, 0);
+      // The wrist rolls over as the hand comes down onto the notch.
+      context.stage.hand.rotation.set(-1.1 + reach * 0.75, 0.15 - reach * 0.15, 0);
 
       // Contact at 55% through the shot: full power goes in, and the notches
       // light up. From the moment gameplay starts the simulation drives them.
