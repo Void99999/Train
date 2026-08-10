@@ -1,144 +1,135 @@
-# RAIL BLAST — Startbildschirm 🚂💥
+# LAST TRAIN
 
-Startbildschirm für ein Spiel: eine Dampflok mit Tender und Personenwagen steht
-nachts auf Schienen, die über die ganze Bildbreite laufen. Ein Klick auf **Start**
-lässt den Zug mit Explosionssound in die Luft fliegen. Danach wird das Bild langsam
-schwarz, und aus der Blende heraus läuft eine Cutscene: ein Kampfhubschrauber fliegt
-heran, ein Soldat feuert aus der offenen Schiebetür, dann wird der Heli getroffen und
-stürzt brennend ab. Nach der nächsten Schwarzblende sieht man den Soldaten aus der
-Egoperspektive: er kriecht über das brennende Schlachtfeld, während Geschosse über ihn
-hinwegfliegen. Das Gefecht ebbt langsam ab, er kriecht auf ein Haus zu, an dem eine
-kleine Lok wartet, richtet sich zitternd auf, steigt ein und drückt am Pult auf 100 %.
-Die Lok fährt an — und dann steht wieder der Startbildschirm da.
+A first-person survival train game set in a fictional war zone.
 
-## Starten
+A soldier survives a helicopter crash, is separated from his unit, and finds an
+abandoned green locomotive at a railway building. He does not know where the
+line goes or whether anyone is coming for him. He takes the train and starts
+moving.
 
-Zwei Wege — beide brauchen kein Internet und keine Installation:
+Over the journey he trades cargo, buys and upgrades wagons, armours them,
+stores ammunition, mans train-mounted weapons and fights soldiers, vehicles and
+tanks. His train grows from one locomotive into a mobile survival machine — and
+every wagon he adds makes it slower, which means longer under fire.
 
-**Schnell:** `rail-blast-einzeldatei.html` doppelklicken. In dieser Datei steckt
-alles drin, sie funktioniert auch allein in einem beliebigen Ordner.
+**Keep moving. Survive. Get home.**
 
-**Zum Weiterbauen:** `index.html` öffnen. Dabei müssen die Ordner `css` und `js`
-daneben liegen bleiben, sonst erscheint die Seite ohne Gestaltung.
+## Running it
 
 ```
-rail-blast-einzeldatei.html   alles in einer Datei (erzeugt, siehe unten)
-index.html                    Struktur und die SVG-Illustration
-css/style.css                 Szene, Beleuchtung, Titel, Menü
-js/main.js                    Audio, Partikel, Parallaxe, Menülogik
-build-einzeldatei.py          baut die Einzeldatei neu
+npm start          # http://localhost:8080
 ```
 
-Die Einzeldatei wird aus den drei Quelldateien erzeugt. Bearbeite sie nicht
-direkt — ändere `index.html`, `css/style.css` oder `js/main.js` und baue sie
-danach neu:
+There is no build step and there are no dependencies to install. Editing a file
+and reloading the page is the whole development loop.
+
+> Opening `index.html` by double-clicking shows a blank page. The game is
+> delivered as native ES modules and browsers refuse to load those over
+> `file://`. Serve the folder — that is what `npm start` does.
 
 ```
-python3 build-einzeldatei.py
+npm test           # 180 unit tests, no browser needed
+npm run check      # locale consistency + the full suite
 ```
 
-## Was drin ist
+## What is in the repository
 
-**Szene**
-- Neun Ebenen mit Parallaxe: Sternenhimmel, Mond, zwei Bergketten mit Dunst,
-  Baumsilhouetten, Telegrafenmasten, Boden, Gleis, Zug, Gras im Vordergrund
-- Die Ebenen folgen dem Mauszeiger und driften auch ohne Maus langsam weiter
-- Funkelnde Sterne, gelegentliche Sternschnuppen, Glühwürmchen über dem Boden
-- Lichtkegel des Spitzenlichts, wandernder Glanz auf der Schiene, Dampf aus
-  dem Schornstein, flackerndes Führerhausfenster
-- Baumreihe, Gras und Mastenabstände werden beim Laden erzeugt — mit festem
-  Startwert, damit die Silhouette bei jedem Aufruf gleich aussieht
+```
+index.html                  the game shell
+src/data/                   every balancing value and catalogue
+src/data/locales/           English and German
+src/core/                   events, save, settings, input, localization, state
+src/systems/                the rules: train, player, economy, world, combat, AI
+src/render/                 three.js scene, materials, train meshes
+src/ui/                     menus and HUD
+tests/                      the test suite
+tools/                      dev server, locale checker
+vendor/three/               three.js r185, vendored (MIT)
+docs/ARCHITECTURE.md        decisions that are expensive to reverse
+docs/BALANCING.md           where every number lives, and why
+prototype/                  the original animated intro, still runnable
+```
 
-**Menü**
-- Start, Optionen, Steuerung — mit Maus **und** Tastatur bedienbar
-  (↑ ↓ wählen, Enter bestätigen, Esc schließen, R setzt die Szene zurück,
-  Leertaste überspringt die Cutscene)
-- Die Optionen wirken wirklich: Lautstärke, Bildschirmwackeln, Effektstärke.
-  Sie werden im Browser gespeichert und beim nächsten Start wieder geladen.
+## Controls
 
-**Ablauf beim Start** — vier Akte, zusammen etwa dreiviertel Minute.
-Leertaste oder Esc springt jederzeit zurück zum Startbildschirm.
+| | |
+| --- | --- |
+| `W A S D` | move |
+| Mouse | look |
+| `Shift` | sprint |
+| `E` | interact |
+| `R` | reload |
+| `H` | use a medkit |
+| `Tab` (hold) | weapon wheel |
+| `↑` `↓` | throttle up and down |
+| `Esc` | pause |
 
-*1. Akt — der Zug* (`startSequence()`)
-Kinobalken fahren ein, das Menü tritt zurück, der Zug explodiert. Danach
-blendet das Bild langsam auf Schwarz; dahinter wird die Szene geräumt.
+Bindings live in one place (`src/core/input.js`) and on-screen prompts read the
+key that is actually bound, so a rebind can never disagree with the interface.
 
-*2. Akt — der Hubschrauber* (`runHeliScene()`)
-1. Der Heli fliegt von rechts heran und geht in den Schwebeflug
-2. Der Soldat in der offenen Schiebetür feuert — Mündungsfeuer,
-   Leuchtspuren und Maschinengewehrsalve
-3. Treffer: Cockpit-Alarm, Funken und Rauch am Heck, die Turbine stirbt ab
-4. Der Heli trudelt brennend nach unten und schlägt mit lautem Knall auf
+## State of the project
 
-Der Aufschlag löst aus, sobald der Heli den Boden wirklich erreicht — nicht
-nach einer festen Zeit. So sitzt der Treffer unabhängig von Bildrate und
-Fenstergröße.
+The game is being built in the order the design calls for: architecture first,
+then a vertical slice, then content. Systems are written, tested and only then
+extended.
 
-*3. Akt — das Schlachtfeld* (`runFieldScene()`)
-1. Nach der Schwarzblende die Egoperspektive des Soldaten: brennendes
-   Feld, zerschossene Baumstümpfe, Krater
-2. Seine Hände kriechen abwechselnd nach vorn, die Sicht nickt im Takt mit
-3. Geschosse zischen über ihn hinweg, in der Ferne fallen Schüsse
-4. Das Gefecht ebbt ab: Feuer, Schüsse und Kopfnicken werden weniger —
-   und mit ihnen die Lautstärke der Einschläge
-5. Vor ihm wächst sein Ziel heran: ein Haus, davor eine wartende Lok
-6. Er richtet sich zitternd auf, dabei kommen seine Beine ins Bild
+**Working and covered by tests**
 
-Wie stark das Gefecht tobt, steuert `fpsState.calm` von 1 (voll) auf 0
-(ruhig); daran hängen Feuermenge, Schussfrequenz, Lautstärke und die
-Stärke des Kopfnickens. `fpsState.goal` (0 → 1) zieht das Haus heran,
-`fpsState.stand` (0 → 1) richtet die Kamera auf und blendet die Beine ein;
-das Zittern beim Aufstehen hängt ebenfalls an `stand`.
+- Data-driven balancing for weapons, wagons, cargo, enemies, shops, armour,
+  repairs, unlocks and the journey
+- Localization in English and German, switchable from the main menu and from
+  the pause menu, saved between sessions
+- Versioned save system with migrations, and settings that persist immediately
+- Train simulation: four throttle notches that really change speed, weight and
+  armour penalties with a 55% floor, per-wagon health and armour, progressive
+  damage states, and uncoupling — destroy a wagon and everything behind it is
+  cut loose, rolls to a stop and is gone
+- Cargo held per wagon and counted in slots, so space is a real decision
+- Economy: trading with sell-all and sell-half, weapon and ammunition shops,
+  medical services, and a workshop that previews what a purchase would do to
+  the train before the player commits
+- Progression: unlocks granted at outposts and never revoked; the 45-second
+  quiet stretch after leaving one
+- Player: 100 health with no regeneration, sprint stamina, medkits, weapons
+  that reload out of the train's own stores and waste no rounds doing it
+- Combat model: weapons that behave differently against armour, splash damage,
+  wagon walls that genuinely protect the player inside them, and enemy target
+  selection that spreads fire instead of locking onto the locomotive
+- The Loader: hired once, walks the train at human pace, carries exactly one
+  shell at a time, and simply cannot reach ammunition behind a break in the train
+- Normal and Hardcore modes, outpost checkpoints, death penalties, statistics
+  and personal bests
+- A continuous 40-minute day/night cycle that slides rather than switches
+- The main menu on an animated night railway, options, language, pause and HUD
+- First-person driving from the cab
 
-*4. Akt — die Lok* (`runCabScene()`)
-1. Im Führerstand: Fenster, Manometer, Rohre und das Pult
-2. Statt Fahrhebeln stehen dort vier Leistungsstufen: 25 %, 50 %, 75 %, 100 %
-3. Die Hand des Soldaten fährt hoch und drückt auf **100 %** — die Stufe
-   leuchtet auf, es klackt
-4. Die Lok fährt an: die Landschaft im Fenster zieht immer schneller vorbei
-   (`--speed` geht von 2,6 s über 1,1 s auf 0,6 s je Durchlauf)
-5. Blende auf Schwarz — und der Startbildschirm steht wieder da
+**Not built yet**
 
-Die Hand ist aufrecht gezeichnet, mit der Zeigefingerspitze im Ursprung.
-`transform-origin: 0 0` sorgt dafür, dass der Punkt hinter `translate()`
-genau die Stelle ist, an der der Finger auftrifft; die Drehung legt den
-Handrücken nach links unten, damit die Beschriftung frei bleibt.
+Walkable interiors and moving between wagons, outpost locations to walk around,
+enemy actors and projectiles, the weapon wheel, the blueprint and workshop
+interfaces, audio, the opening cinematics, and the derailment and rescue ending.
+The systems each of those needs already exist and are tested; what is missing is
+the presentation layer and the actors.
 
-**Zugexplosion**
-1. Dampfpfeife, die Lok fängt an zu beben
-2. Vorknall am Kessel mit kleinem Lichtblitz
-3. Hauptknall: Blitz, Druckwelle, Screenshake, Feuerball in drei Wellen,
-   Rauchpilz, Funken, Bodenstaub und Trümmer mit Feuerschweif
-4. Der Feuerschein beleuchtet die ganze Landschaft
-5. Lok, Tender und Wagen werden auseinandergeschleudert, Trümmer bleiben
-   am Boden liegen
-6. Das Wrack brennt und raucht mehrere Sekunden nach
-7. Der Button wechselt auf „cool"
+Nothing the player can currently see reveals how long the line is. That is
+deliberate and enforced by a test.
 
-## Ton
+## The prototype
 
-Alles wird zur Laufzeit per Web Audio API erzeugt, es gibt keine Audiodateien:
-Rauschschichten mit wanderndem Filter, Sub-Bass, berstendes Metall, Trümmerregen,
-Dampfpfeife mit Vibrato und ein synthetischer Nachhall. Browser starten Audio erst
-nach einer Nutzerinteraktion — da der Ton am Klick hängt, passt das. Fehlt die
-Web Audio API, läuft die Animation trotzdem.
+`prototype/` holds the original animated opening — the train explosion, the
+helicopter attack and crash, the crawl across the battlefield, and the cab with
+its four power settings. It still runs on its own:
 
-## Anpassen
+```
+http://localhost:8080/prototype/
+```
 
-- **Spieltitel**: in `index.html` im `<header class="brand">`
-- **Farben**: oben in `css/style.css` unter `:root`, dazu die Paletten `FIRE`,
-  `SMOKE` und `DEBRIS` in `js/main.js`
-- **Höhe von Horizont und Gleis**: `--horizon` und `--track-y` in `:root` —
-  alle Ebenen richten sich danach aus
-- **Wucht der Explosion**: Partikelzahlen und Geschwindigkeiten in `spawnBlast()`
-- **Ablauf und Timing**: die `later(...)`-Aufrufe in `startSequence()` und `explode()`
-- **Flugbahn des Helis**: `updateHeli()` — die Phasen `enter`, `hover`,
-  `hit` und `fall`
-- **Länge der Akte**: die `later(...)`-Aufrufe in `startSequence()`,
-  `heliImpact()`, `runFieldScene()` und `runCabScene()`
-- **Leistungsstufen im Führerstand**: die `.step`-Gruppen in `index.html`,
-  die Position der Hand in `css/style.css` unter `.cab-hand`
+It is kept because it is a working sketch of the opening cinematic, which is a
+late phase of the project. It is not wired into the game.
 
-Auf schmalen Bildschirmen rückt das Menü unter den Zug, das Gleis wandert nach
-oben und Zug wie Explosion werden kleiner. Die Schienen laufen immer über die
-volle Breite.
+## Credits and licensing
+
+All designs, models, materials and text are original to LAST TRAIN.
+
+three.js is vendored under `vendor/three/` and is MIT licensed; its licence is
+included alongside it.

@@ -1,0 +1,602 @@
+/* ===================================================================
+   LAST TRAIN - interface styling.
+
+   The world is the game. The interface stays out of its way: thin type,
+   desaturated steel and rust, no large panels, no glow, nothing that reads
+   as a mobile shop. Where a panel has to exist it sits on a dark, slightly
+   transparent ground so the scene behind it is still legible.
+   =================================================================== */
+
+:root {
+  --steel-950: #0a0c0d;
+  --steel-900: #101314;
+  --steel-800: #171b1d;
+  --steel-700: #23292c;
+  --steel-600: #333b3f;
+  --steel-400: #6d787d;
+  --steel-200: #b3bdc1;
+  --steel-100: #dde3e5;
+
+  /* The green of the train, used sparingly as the one accent. */
+  --signal-green: #7d9a5f;
+  --signal-green-dim: #4c5f3a;
+  --rust: #8a4a28;
+  --warning: #c8873a;
+  --danger: #a63a2c;
+
+  --font-display: "Oswald", "Bebas Neue", "Arial Narrow", system-ui, sans-serif;
+  --font-body: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  --hud-inset: clamp(1rem, 2.5vw, 2.25rem);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/*
+  The `hidden` attribute must always win. Several rules below set `display` via
+  an id or class selector, which outranks the browser's own `[hidden]` rule -
+  without this, a hidden full-screen panel keeps painting over the game in its
+  own background colour and the page looks like it failed to start.
+*/
+[hidden] {
+  display: none !important;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--steel-950);
+  color: var(--steel-100);
+  font-family: var(--font-body);
+  /* A game, not a document: text selection only gets in the way. */
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+#app {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+#scene {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+#overlay,
+#hud {
+  position: absolute;
+  inset: 0;
+}
+
+#hud {
+  pointer-events: none;
+}
+
+#overlay:empty {
+  pointer-events: none;
+}
+
+.fallback,
+#boot-error {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  padding: 2rem;
+  white-space: pre-wrap;
+  text-align: center;
+  font-family: var(--font-body);
+  color: var(--steel-200);
+  background: var(--steel-950);
+  z-index: 100;
+}
+
+/* ------------------------------------------------------------- screens */
+
+.screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  animation: screen-in 320ms ease-out both;
+}
+
+@keyframes screen-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .screen {
+    animation: none;
+  }
+}
+
+/* The main menu sits on the left third, so the night scene stays visible. */
+.screen--menu {
+  justify-content: center;
+  padding-inline: clamp(2rem, 8vw, 8rem);
+  background: linear-gradient(
+    100deg,
+    rgb(6 8 9 / 0.92) 0%,
+    rgb(6 8 9 / 0.72) 34%,
+    rgb(6 8 9 / 0.15) 62%,
+    transparent 100%
+  );
+}
+
+.screen--panel {
+  align-items: center;
+  justify-content: center;
+  background: rgb(4 6 7 / 0.86);
+  backdrop-filter: blur(2px);
+}
+
+/* ---------------------------------------------------------------- title */
+
+.title {
+  margin: 0 0 0.15em;
+  font-family: var(--font-display);
+  font-size: clamp(3rem, 8.5vw, 7rem);
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  line-height: 0.95;
+  text-transform: uppercase;
+  color: var(--steel-100);
+  text-shadow: 0 0.06em 0.5em rgb(0 0 0 / 0.8);
+}
+
+.title__rule {
+  width: clamp(6rem, 18vw, 14rem);
+  height: 2px;
+  margin-bottom: 1.1rem;
+  background: linear-gradient(90deg, var(--signal-green), transparent);
+}
+
+.subtitle {
+  margin: 0 0 2.5rem;
+  font-size: 0.9rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--steel-400);
+}
+
+.panel-title {
+  margin: 0 0 1.75rem;
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 3vw, 2.25rem);
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--steel-100);
+}
+
+/* --------------------------------------------------------------- buttons */
+
+/*
+  One vertical stack. Exit Game is simply the last button in the group - it is
+  never pushed to the bottom of the screen on its own.
+*/
+.menu-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+  min-width: min(20rem, 70vw);
+}
+
+.button {
+  --button-accent: var(--signal-green);
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  width: 100%;
+  padding: 0.7rem 1rem 0.7rem 0;
+  border: 0;
+  background: none;
+  color: var(--steel-200);
+  font-family: var(--font-display);
+  font-size: clamp(1.05rem, 1.7vw, 1.4rem);
+  font-weight: 400;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  text-align: left;
+  cursor: pointer;
+  transition: color 140ms ease, padding-left 140ms ease;
+}
+
+.button::before {
+  content: "";
+  width: 0;
+  height: 1px;
+  background: var(--button-accent);
+  transition: width 160ms ease;
+}
+
+.button:hover,
+.button:focus-visible {
+  color: var(--steel-100);
+  padding-left: 0.5rem;
+  outline: none;
+}
+
+.button:hover::before,
+.button:focus-visible::before,
+.button[aria-current="true"]::before {
+  width: 1.6rem;
+}
+
+.button[aria-current="true"] {
+  color: var(--steel-100);
+}
+
+.button[disabled] {
+  color: var(--steel-600);
+  cursor: not-allowed;
+}
+
+.button[disabled]:hover {
+  padding-left: 0;
+}
+
+.button[disabled]:hover::before {
+  width: 0;
+}
+
+.button--compact {
+  font-size: 0.95rem;
+  padding-block: 0.5rem;
+}
+
+/* ----------------------------------------------------------------- panel */
+
+.panel {
+  width: min(34rem, 90vw);
+  padding: clamp(1.5rem, 3vw, 2.5rem);
+  border: 1px solid var(--steel-700);
+  background: rgb(12 15 16 / 0.9);
+  box-shadow: 0 1.5rem 4rem rgb(0 0 0 / 0.6);
+}
+
+.panel--wide {
+  width: min(58rem, 94vw);
+}
+
+.setting {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 1rem 1.5rem;
+  padding: 0.9rem 0;
+  border-bottom: 1px solid var(--steel-800);
+}
+
+.setting:last-of-type {
+  border-bottom: 0;
+}
+
+.setting__label {
+  font-size: 0.95rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--steel-200);
+}
+
+.setting__hint {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--steel-400);
+}
+
+.setting__value {
+  min-width: 3.5rem;
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  letter-spacing: 0.1em;
+  text-align: right;
+  color: var(--signal-green);
+}
+
+.setting__control {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* Range input, restyled to look like a machined slider rather than an OS one. */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: min(14rem, 45vw);
+  height: 2px;
+  background: var(--steel-600);
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 0.75rem;
+  height: 1.4rem;
+  background: var(--steel-200);
+  border: 0;
+  border-radius: 1px;
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 0.75rem;
+  height: 1.4rem;
+  background: var(--steel-200);
+  border: 0;
+  border-radius: 1px;
+}
+
+input[type="range"]:focus-visible {
+  outline: 1px solid var(--signal-green);
+  outline-offset: 6px;
+}
+
+.toggle {
+  display: inline-flex;
+  border: 1px solid var(--steel-600);
+}
+
+.toggle__option {
+  padding: 0.35rem 1.1rem;
+  border: 0;
+  background: none;
+  color: var(--steel-400);
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.toggle__option[aria-pressed="true"] {
+  background: var(--signal-green-dim);
+  color: var(--steel-100);
+}
+
+.panel__actions {
+  display: flex;
+  justify-content: flex-start;
+  margin-top: 1.75rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--steel-800);
+}
+
+/* ------------------------------------------------------------------ HUD */
+
+/*
+  Deliberately sparse. Health and stamina bottom left, ammunition bottom
+  right, money and journey top left. Nothing in the middle of the screen,
+  and nothing that says how far there is left to go.
+*/
+.hud__corner {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.hud__corner--top-left {
+  top: var(--hud-inset);
+  left: var(--hud-inset);
+}
+
+.hud__corner--bottom-left {
+  bottom: var(--hud-inset);
+  left: var(--hud-inset);
+}
+
+.hud__corner--bottom-right {
+  bottom: var(--hud-inset);
+  right: var(--hud-inset);
+  align-items: flex-end;
+}
+
+.hud__readout {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  font-family: var(--font-display);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-shadow: 0 1px 3px rgb(0 0 0 / 0.9);
+}
+
+.hud__label {
+  font-size: 0.7rem;
+  color: var(--steel-400);
+}
+
+.hud__value {
+  font-size: 1.35rem;
+  color: var(--steel-100);
+}
+
+.hud__value--money {
+  color: var(--signal-green);
+}
+
+.hud__value--warning {
+  color: var(--warning);
+}
+
+.hud__value--danger {
+  color: var(--danger);
+}
+
+.hud__bar {
+  position: relative;
+  width: 12rem;
+  height: 4px;
+  background: rgb(0 0 0 / 0.55);
+  overflow: hidden;
+}
+
+.hud__bar-fill {
+  position: absolute;
+  inset: 0;
+  transform-origin: left center;
+  background: var(--steel-100);
+  transition: transform 120ms linear;
+}
+
+.hud__bar--health .hud__bar-fill {
+  background: var(--steel-100);
+}
+
+.hud__bar--health[data-critical="true"] .hud__bar-fill {
+  background: var(--danger);
+}
+
+.hud__bar--stamina .hud__bar-fill {
+  background: var(--signal-green);
+}
+
+.hud__bar[hidden] {
+  display: none;
+}
+
+.hud__ammo {
+  font-family: var(--font-display);
+  letter-spacing: 0.1em;
+  text-shadow: 0 1px 3px rgb(0 0 0 / 0.9);
+}
+
+.hud__ammo-magazine {
+  font-size: 2rem;
+  color: var(--steel-100);
+}
+
+.hud__ammo-reserve {
+  font-size: 1.1rem;
+  color: var(--steel-400);
+}
+
+.hud__weapon {
+  font-size: 0.75rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--steel-400);
+}
+
+/* Interaction prompt, centred just below the crosshair. */
+.hud__prompt {
+  position: absolute;
+  left: 50%;
+  top: 58%;
+  transform: translateX(-50%);
+  padding: 0.4rem 0.9rem;
+  font-size: 0.85rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--steel-100);
+  background: rgb(0 0 0 / 0.45);
+  text-shadow: 0 1px 3px rgb(0 0 0 / 0.9);
+}
+
+.hud__prompt[hidden] {
+  display: none;
+}
+
+.hud__crosshair {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 3px;
+  height: 3px;
+  margin: -1.5px 0 0 -1.5px;
+  background: rgb(230 236 238 / 0.75);
+  border-radius: 50%;
+}
+
+.hud__throttle {
+  display: flex;
+  gap: 3px;
+}
+
+.hud__throttle-notch {
+  width: 1.4rem;
+  height: 4px;
+  background: var(--steel-700);
+}
+
+.hud__throttle-notch[data-active="true"] {
+  background: var(--signal-green);
+}
+
+/* Damage vignette, driven by the player's condition. */
+.hud__vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(ellipse at center, transparent 42%, rgb(90 12 8 / 0.72) 100%);
+  transition: opacity 400ms ease;
+}
+
+/* ------------------------------------------------------------- messages */
+
+.toast-stack {
+  position: absolute;
+  left: 50%;
+  bottom: 14%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  transform: translateX(-50%);
+}
+
+.toast {
+  padding: 0.45rem 1.1rem;
+  font-size: 0.85rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--steel-100);
+  background: rgb(0 0 0 / 0.6);
+  border-left: 2px solid var(--signal-green);
+  animation: toast-in 240ms ease-out both;
+}
+
+.toast--warning {
+  border-left-color: var(--warning);
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+}
+
+/* --------------------------------------------------------------- fades */
+
+.fade {
+  position: absolute;
+  inset: 0;
+  background: #000;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 900ms ease;
+}
+
+.fade[data-visible="true"] {
+  opacity: 1;
+}

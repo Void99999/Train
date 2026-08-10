@@ -1,0 +1,445 @@
+/**
+ * LAST TRAIN - the world.
+ *
+ * Track, ground, sky, lighting, scenery and the train itself. The train never
+ * actually moves: the world slides past underneath it. That keeps the player
+ * and the train near the origin, which avoids floating-point precision falling
+ * apart a hundred kilometres down the line, and makes an endless railway a
+ * matter of recycling scenery rather than building it.
+ *
+ * The same scene serves the main menu and the game. The menu simply parks the
+ * camera beside a stationary train at night; nothing has to be torn down and
+ * rebuilt when the player presses Start.
+ */
+
+import * as THREE from "../../vendor/three/three.module.js";
+import { buildVehicleMesh, disposeMesh } from "./trainMeshes.js";
+import { ballastMaterial, railMaterial, groundMaterial, metalMaterial, lampMaterial } from "./materials.js";
+import { TRAIN } from "../data/balance.js";
+
+/** How far ahead and behind the track and scenery are built, in metres. */
+const WORLD_LENGTH = 900;
+/** Spacing of recycled scenery props. */
+const POLE_SPACING = 42;
+const SLEEPER_SPACING = 0.65;
+
+export class World {
+  scene = new THREE.Scene();
+
+  #sun;
+  #moon;
+  #ambient;
+  #hemisphere;
+  #sky;
+  #stars;
+  #trackGroup = new THREE.Group();
+  #sceneryGroup = new THREE.Group();
+  #trainGroup = new THREE.Group();
+  #vehicleMeshes = new Map();
+  #scrollOffset = 0;
+  #headlights = [];
+  #fill;
+
+  constructor({ quality }) {
+    this.quality = quality;
+
+    this.scene.add(this.#trackGroup, this.#sceneryGroup, this.#trainGroup);
+    this.#buildSky();
+    this.#buildLighting();
+    this.#buildGround();
+    this.#buildTrack();
+    this.#buildScenery();
+  }
+
+  /* ------------------------------------------------------------------ sky */
+
+  #buildSky() {
+    // A large inverted sphere with a vertical gradient. Cheap, and it takes
+    // colour from the day/night cycle without needing a skybox asset.
+    const geometry = new THREE.SphereGeometry(1200, 32, 20);
+    const material = new THREE.ShaderMaterial({
+      side: THREE.BackSide,
+      depthWrite: false,
+      uniforms: {
+        horizonColour: { value: new THREE.Color(0x0a0e16) },
+        zenithColour: { value: new THREE.Color(0x02040a) },
+      },
+      vertexShader: `
+        varying vec3 vPosition;
+        void main() {
+          vPosition = position;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform vec3 horizonColour;
+        uniform vec3 zenithColour;
+        varying vec3 vPosition;
+        void main() {
+          float height = clamp(normalize(vPosition).y * 1.4 + 0.15, 0.0, 1.0);
+          gl_FragColor = vec4(mix(horizonColour, zenithColour, height), 1.0);
+        }
+      `,
+    });
+
+    this.#sky = new THREE.Mesh(geometry, material);
+    this.#sky.name = "sky";
+    this.scene.add(this.#sky);
+
+    this.#buildStars();
+  }
+
+  #buildStars() {
+    const count = 1400;
+    const positions = new Float32Array(count * 3);
+    const sizes = new Float32Array(count);
+
+    for (let i = 0; i < count; i += 1) {
+      // Upper hemisphere only - stars below the horizon are never seen.
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.acos(Math.random() * 0.92 + 0.04);
+      const radius = 1000;
+
+      positions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
+      positions[i * 3 + 1] = radius * Math.cos(phi);
+      positions[i * 3 + 2] = radius * Math.sin(phi) * Math.sin(theta);
+      sizes[i] = 1 + Math.random() * 2.2;
+    }
+
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+    geometry.setAttribute("size", new THREE.BufferAttribute(sizes, 1));
+
+    this.#stars = new THREE.Points(
+      geometry,
+      new THREE.PointsMaterial({
+        color: 0xdce6ff,
+        size: 2.2,
+        sizeAttenuation: false,
+        transparent: true,
+        opacity: 0,
+        depthWrite: false,
+      }),
+    );
+    this.#stars.name = "stars";
+    this.scene.add(this.#stars);
+  }
+
+  /* -------------------------------------------------------------- lighting */
+
+  #buildLighting() {
+    this.#ambient = new THREE.AmbientLight(0x8899aa, 0.3);
+    this.scene.add(this.#ambient);
+
+    // Sky/ground bounce. Does most of the work of making an outdoor scene look
+    // like it is outdoors rather than lit by a single lamp.
+    this.#hemisphere = new THREE.HemisphereLight(0x94b0cc, 0x3a3227, 0.5);
+    this.scene.add(this.#hemisphere);
+
+    this.#sun = new THREE.DirectionalLight(0xfff3dc, 0);
+    this.#sun.castShadow = this.quality.shadows;
+    if (this.quality.shadows) {
+      this.#sun.shadow.mapSize.set(this.quality.shadowMapSize, this.quality.shadowMapSize);
+      this.#sun.shadow.camera.near = 1;
+      this.#sun.shadow.camera.far = 260;
+      this.#sun.shadow.camera.left = -70;
+      this.#sun.shadow.camera.right = 70;
+      this.#sun.shadow.camera.top = 70;
+      this.#sun.shadow.camera.bottom = -70;
+      this.#sun.shadow.bias = -0.0006;
+    }
+    this.scene.add(this.#sun, this.#sun.target);
+
+    this.#moon = new THREE.DirectionalLight(0x9fb6d8, 0.3);
+    this.#moon.position.set(-60, 90, -40);
+    this.scene.add(this.#moon);
+
+    // A visible moon disc, so the night sky has something in it.
+    const moonDisc = new THREE.Mesh(
+      new THREE.SphereGeometry(28, 24, 18),
+      lampMaterial(0xe8eef8, 1.1),
+    );
+    moonDisc.position.set(-380, 460, -620);
+    moonDisc.name = "moon";
+    this.scene.add(moonDisc);
+    this.moonDisc = moonDisc;
+
+    this.#buildYardLighting();
+  }
+
+  /**
+   * A working lamp beside the track, and a cold fill from the opposite side.
+   *
+   * Moonlight alone leaves the train as a black cut-out. A real railway
+   * facility has lights on it, so putting one here is both what the place
+   * would look like and what makes the machine readable at night. The fill
+   * light has no fixture because it stands in for sky bounce.
+   */
+  #buildYardLighting() {
+    const poleMaterial = metalMaterial({ colour: 0x2e3230, wear: 0.75, seed: 520, repeat: 1 });
+    const group = new THREE.Group();
+
+    const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.16, 9, 8), poleMaterial);
+    mast.position.y = 4.5;
+    mast.castShadow = true;
+    group.add(mast);
+
+    const arm = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.12, 0.12), poleMaterial);
+    arm.position.set(-1.1, 8.8, 0);
+    group.add(arm);
+
+    const shade = new THREE.Mesh(
+      new THREE.ConeGeometry(0.55, 0.45, 10, 1, true),
+      poleMaterial,
+    );
+    shade.position.set(-2.2, 8.7, 0);
+    group.add(shade);
+
+    const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.16, 10, 8), lampMaterial(0xffd9a0, 3.5));
+    bulb.position.set(-2.2, 8.5, 0);
+    group.add(bulb);
+
+    const lamp = new THREE.PointLight(0xffcf94, 240, 46, 1.8);
+    lamp.position.set(-2.2, 8.4, 0);
+    lamp.castShadow = false;
+    group.add(lamp);
+
+    // Set back and behind the locomotive, so it lights the machine without
+    // standing in front of the camera.
+    group.position.set(9.5, 0, -12);
+    this.scene.add(group);
+    this.yardLight = lamp;
+    this.yardBulb = bulb;
+
+    // Cold fill from the far side, standing in for sky bounce off the ground.
+    this.#fill = new THREE.PointLight(0x7f9bc4, 90, 70, 1.6);
+    this.#fill.position.set(-12, 9, -6);
+    this.scene.add(this.#fill);
+  }
+
+  /* ---------------------------------------------------------------- ground */
+
+  #buildGround() {
+    const ground = new THREE.Mesh(
+      new THREE.PlaneGeometry(600, WORLD_LENGTH * 2, 1, 1),
+      groundMaterial(),
+    );
+    ground.rotation.x = -Math.PI / 2;
+    ground.receiveShadow = true;
+    ground.name = "ground";
+    this.scene.add(ground);
+
+    const ballast = new THREE.Mesh(
+      new THREE.BoxGeometry(7.2, 0.5, WORLD_LENGTH * 2),
+      ballastMaterial(),
+    );
+    ballast.position.y = 0.05;
+    ballast.receiveShadow = true;
+    this.scene.add(ballast);
+  }
+
+  /* ----------------------------------------------------------------- track */
+
+  #buildTrack() {
+    const rail = railMaterial();
+    const sleeperMaterial = metalMaterial({ colour: 0x3b3128, wear: 0.85, seed: 300, repeat: 1 });
+
+    // Rails run the length of the world and never move; only the sleepers and
+    // the scenery are recycled, which is enough to sell motion.
+    for (const side of [-0.7175, 0.7175]) {
+      const head = new THREE.Mesh(
+        new THREE.BoxGeometry(0.075, 0.16, WORLD_LENGTH * 2),
+        rail,
+      );
+      head.position.set(side, 0.42, 0);
+      head.castShadow = false;
+      head.receiveShadow = true;
+      this.scene.add(head);
+
+      const web = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.1, WORLD_LENGTH * 2), rail);
+      web.position.set(side, 0.3, 0);
+      this.scene.add(web);
+    }
+
+    // Sleepers, instanced: there are several thousand of them.
+    const count = Math.floor((WORLD_LENGTH * 2) / SLEEPER_SPACING);
+    const sleepers = new THREE.InstancedMesh(
+      new THREE.BoxGeometry(2.6, 0.16, 0.26),
+      sleeperMaterial,
+      count,
+    );
+    sleepers.receiveShadow = true;
+
+    const matrix = new THREE.Matrix4();
+    for (let i = 0; i < count; i += 1) {
+      matrix.makeTranslation(0, 0.24, -WORLD_LENGTH + i * SLEEPER_SPACING);
+      sleepers.setMatrixAt(i, matrix);
+    }
+    sleepers.instanceMatrix.needsUpdate = true;
+    sleepers.name = "sleepers";
+    this.#trackGroup.add(sleepers);
+    this.sleepers = sleepers;
+  }
+
+  /* --------------------------------------------------------------- scenery */
+
+  #buildScenery() {
+    const poleMaterial = metalMaterial({ colour: 0x36302a, wear: 0.8, seed: 410, repeat: 1 });
+    const count = Math.floor((WORLD_LENGTH * 2) / POLE_SPACING);
+
+    for (let i = 0; i < count; i += 1) {
+      const pole = new THREE.Group();
+      const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.19, 8.5, 6), poleMaterial);
+      mast.position.y = 4.25;
+      mast.castShadow = true;
+      pole.add(mast);
+
+      for (const height of [7.6, 6.9]) {
+        const arm = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.12, 0.12), poleMaterial);
+        arm.position.set(0, height, 0);
+        pole.add(arm);
+      }
+
+      pole.position.set(9.5, 0, -WORLD_LENGTH + i * POLE_SPACING);
+      pole.userData.baseZ = pole.position.z;
+      this.#sceneryGroup.add(pole);
+    }
+  }
+
+  /* ----------------------------------------------------------------- train */
+
+  /**
+   * Rebuilds the train's meshes to match the simulation.
+   *
+   * Called whenever the consist changes and cheap enough to call on damage
+   * state changes too: only the vehicles whose appearance actually changed are
+   * rebuilt, so a wagon dropping from light to medium damage does not disturb
+   * the rest of the train.
+   */
+  syncTrain(train) {
+    const seen = new Set();
+    let offset = 0;
+
+    for (const vehicle of train.vehicles) {
+      seen.add(vehicle.id);
+      const half = vehicle.spec.size.length / 2;
+      offset += half;
+
+      let entry = this.#vehicleMeshes.get(vehicle.id);
+      const needsRebuild =
+        !entry ||
+        entry.mesh.userData.damageState !== vehicle.damageState ||
+        entry.mesh.userData.armoured !== vehicle.isArmoured ||
+        entry.mesh.userData.level !== vehicle.level;
+
+      if (needsRebuild) {
+        if (entry) {
+          this.#trainGroup.remove(entry.mesh);
+          disposeMesh(entry.mesh);
+        }
+        const mesh = buildVehicleMesh(vehicle);
+        this.#trainGroup.add(mesh);
+        entry = { mesh, vehicle };
+        this.#vehicleMeshes.set(vehicle.id, entry);
+      }
+
+      // The locomotive sits at the origin; wagons trail behind it.
+      entry.mesh.position.z = -offset + train.vehicles[0].spec.size.length / 2;
+      offset += half + TRAIN.couplingLengthMetres;
+    }
+
+    for (const [id, entry] of this.#vehicleMeshes) {
+      if (seen.has(id)) continue;
+      this.#trainGroup.remove(entry.mesh);
+      disposeMesh(entry.mesh);
+      this.#vehicleMeshes.delete(id);
+    }
+
+    this.#headlights = [];
+    this.#trainGroup.traverse((node) => {
+      if (node.name === "headlight") this.#headlights.push(node);
+    });
+  }
+
+  meshFor(vehicleId) {
+    return this.#vehicleMeshes.get(vehicleId)?.mesh ?? null;
+  }
+
+  /* ---------------------------------------------------------------- update */
+
+  /**
+   * Advances the world.
+   *
+   * @param {number} deltaSeconds
+   * @param {number} speedMetresPerSecond how fast the train is moving
+   * @param {object} sky day/night snapshot
+   */
+  update(deltaSeconds, speedMetresPerSecond, sky) {
+    this.#scrollWorld(deltaSeconds * speedMetresPerSecond);
+    this.#applySky(sky);
+  }
+
+  /**
+   * Slides the recycled scenery backwards and wraps it round, which is what
+   * makes an endless line out of nine hundred metres of geometry.
+   */
+  #scrollWorld(distance) {
+    if (distance === 0) return;
+    this.#scrollOffset = (this.#scrollOffset + distance) % POLE_SPACING;
+
+    for (const pole of this.#sceneryGroup.children) {
+      let z = pole.userData.baseZ - this.#scrollOffset;
+      if (z < -WORLD_LENGTH) z += WORLD_LENGTH * 2;
+      pole.position.z = z;
+    }
+
+    // Sleepers scroll on their own, shorter cycle.
+    this.#trackGroup.position.z = -((this.#scrollOffset % SLEEPER_SPACING) + SLEEPER_SPACING) % SLEEPER_SPACING;
+  }
+
+  #applySky(sky) {
+    if (!sky) return;
+
+    this.#sky.material.uniforms.horizonColour.value.setHex(sky.skyColour);
+    this.#sky.material.uniforms.zenithColour.value.setHex(sky.skyColour).multiplyScalar(0.35);
+
+    this.#stars.material.opacity = Math.max(0, sky.darkness - 0.25) * 1.3;
+    this.moonDisc.visible = sky.darkness > 0.1;
+    this.moonDisc.material.emissiveIntensity = 0.4 + sky.darkness * 1.2;
+
+    this.#sun.color.setHex(sky.sunColour);
+    this.#sun.intensity = sky.sunIntensity;
+
+    const distance = 120;
+    this.#sun.position.set(
+      Math.cos(sky.sunAzimuth) * distance,
+      Math.max(-20, Math.sin(sky.sunElevation) * distance),
+      Math.sin(sky.sunAzimuth) * distance * 0.4,
+    );
+    this.#sun.target.position.set(0, 0, 0);
+
+    this.#moon.intensity = sky.moonIntensity;
+    this.#ambient.intensity = sky.ambientIntensity * 0.8;
+    this.#hemisphere.intensity = sky.ambientIntensity;
+    // At night the sky is nearly black, and tinting the bounce light with it
+    // would remove the only fill the scene has. Keep a cold blue instead.
+    this.#hemisphere.color.setHex(sky.darkness > 0.5 ? 0x39506e : sky.skyColour);
+
+    // Artificial light comes on as it gets dark, not at a fixed clock time.
+    const headlightIntensity = sky.needsArtificialLight ? 220 : 20;
+    for (const light of this.#headlights) light.intensity = headlightIntensity;
+
+    if (this.yardLight) {
+      this.yardLight.intensity = sky.needsArtificialLight ? 240 : 0;
+      this.yardBulb.material.emissiveIntensity = sky.needsArtificialLight ? 3.5 : 0;
+      this.#fill.intensity = 30 + sky.darkness * 70;
+    }
+
+    this.scene.fog = new THREE.Fog(sky.skyColour, 40, sky.isNight ? 220 : 420);
+  }
+
+  dispose() {
+    for (const { mesh } of this.#vehicleMeshes.values()) disposeMesh(mesh);
+    this.#vehicleMeshes.clear();
+  }
+}
