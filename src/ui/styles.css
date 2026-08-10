@@ -600,3 +600,128 @@ input[type="range"]:focus-visible {
 .fade[data-visible="true"] {
   opacity: 1;
 }
+
+/* ---------------------------------------------------------- cinematics */
+
+/*
+  The cinematic layer sits above the world and below nothing. It is inert
+  until a cutscene activates it, so it can never swallow a menu click while
+  the player is looking at the main menu.
+*/
+.cinematic {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 200ms linear;
+}
+
+.cinematic[data-active="true"] {
+  opacity: 1;
+}
+
+.cinematic__bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 0;
+  background: #000;
+  transition: height 700ms ease;
+}
+
+.cinematic__bar--top {
+  top: 0;
+}
+
+.cinematic__bar--bottom {
+  bottom: 0;
+}
+
+.cinematic__fade {
+  position: absolute;
+  inset: 0;
+  background: #000;
+  opacity: 0;
+}
+
+.cinematic__flash {
+  position: absolute;
+  inset: 0;
+  background: #fff5e2;
+  opacity: 0;
+  mix-blend-mode: screen;
+}
+
+/* Cockpit warning wash. Strongest at the edges, so the centre stays readable. */
+.cinematic__alarm {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  background: radial-gradient(ellipse at center, transparent 35%, rgb(168 26 16 / 0.75) 100%);
+}
+
+.cinematic__skip {
+  position: absolute;
+  right: var(--hud-inset);
+  bottom: calc(var(--hud-inset) + 12vh);
+  font-size: 0.75rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--steel-400);
+  text-shadow: 0 1px 3px rgb(0 0 0 / 0.9);
+}
+
+.cinematic__skip[hidden] {
+  display: none !important;
+}
+
+/* Shown briefly when gameplay begins, so the handover is unmistakable. */
+.control-handover {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  transform: translateX(-50%);
+  padding: 0.6rem 1.4rem;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--steel-100);
+  background: rgb(0 0 0 / 0.45);
+  border-left: 2px solid var(--signal-green);
+  animation: handover 3s ease-out both;
+  pointer-events: none;
+}
+
+@keyframes handover {
+  0% { opacity: 0; }
+  12% { opacity: 1; }
+  70% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* Click-to-capture prompt, shown when the browser has not granted pointer lock. */
+.pointer-prompt {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  gap: 0.6rem;
+  justify-items: center;
+  background: rgb(4 6 7 / 0.55);
+  cursor: pointer;
+}
+
+.pointer-prompt__title {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--steel-100);
+}
+
+.pointer-prompt__hint {
+  font-size: 0.8rem;
+  letter-spacing: 0.14em;
+  color: var(--steel-400);
+}

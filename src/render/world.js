@@ -15,6 +15,7 @@
 import * as THREE from "../../vendor/three/three.module.js";
 import { buildVehicleMesh, disposeMesh } from "./trainMeshes.js";
 import { ballastMaterial, railMaterial, groundMaterial, metalMaterial, lampMaterial } from "./materials.js";
+import { Box, ColliderSet } from "../systems/world/collision.js";
 import { TRAIN } from "../data/balance.js";
 
 /** How far ahead and behind the track and scenery are built, in metres. */
@@ -35,15 +36,25 @@ export class World {
   #trackGroup = new THREE.Group();
   #sceneryGroup = new THREE.Group();
   #trainGroup = new THREE.Group();
+  /* Everything that makes the scene a railway. Hidden during the battlefield
+     acts of the intro, so the cinematic can reuse the same space. */
+  #railwayGroup = new THREE.Group();
   #vehicleMeshes = new Map();
   #scrollOffset = 0;
   #headlights = [];
   #fill;
 
+  /** Walkable geometry, in train space. Rebuilt whenever the consist changes. */
+  colliders = new ColliderSet();
+  /** Things the player can look at and press E on. */
+  interactables = [];
+  #throttleLights = [];
+
   constructor({ quality }) {
     this.quality = quality;
 
-    this.scene.add(this.#trackGroup, this.#sceneryGroup, this.#trainGroup);
+    this.scene.add(this.#railwayGroup, this.#trainGroup);
+    this.#railwayGroup.add(this.#trackGroup, this.#sceneryGroup);
     this.#buildSky();
     this.#buildLighting();
     this.#buildGround();
@@ -207,7 +218,7 @@ export class World {
     // Set back and behind the locomotive, so it lights the machine without
     // standing in front of the camera.
     group.position.set(9.5, 0, -12);
-    this.scene.add(group);
+    this.#railwayGroup.add(group);
     this.yardLight = lamp;
     this.yardBulb = bulb;
 
@@ -227,7 +238,7 @@ export class World {
     ground.rotation.x = -Math.PI / 2;
     ground.receiveShadow = true;
     ground.name = "ground";
-    this.scene.add(ground);
+    this.#railwayGroup.add(ground);
 
     const ballast = new THREE.Mesh(
       new THREE.BoxGeometry(7.2, 0.5, WORLD_LENGTH * 2),
@@ -235,7 +246,7 @@ export class World {
     );
     ballast.position.y = 0.05;
     ballast.receiveShadow = true;
-    this.scene.add(ballast);
+    this.#railwayGroup.add(ballast);
   }
 
   /* ----------------------------------------------------------------- track */
@@ -254,11 +265,11 @@ export class World {
       head.position.set(side, 0.42, 0);
       head.castShadow = false;
       head.receiveShadow = true;
-      this.scene.add(head);
+      this.#railwayGroup.add(head);
 
       const web = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.1, WORLD_LENGTH * 2), rail);
       web.position.set(side, 0.3, 0);
-      this.scene.add(web);
+      this.#railwayGroup.add(web);
     }
 
     // Sleepers, instanced: there are several thousand of them.
@@ -359,6 +370,90 @@ export class World {
     this.#trainGroup.traverse((node) => {
       if (node.name === "headlight") this.#headlights.push(node);
     });
+
+    this.#rebuildColliders();
+
+    // Cache the cab's throttle notch lamps so the indicator can be driven from
+    // the simulation every frame rather than set once and hoped about.
+    this.#throttleLights = [1, 2, 3, 4].map((index) => this.findInTrain(`throttle-light-${index}`));
+  }
+
+  /**
+   * Lights the driver's notches to match the throttle.
+   * Cumulative, like the HUD: three lit means three quarters.
+   */
+  setThrottleIndicator(index) {
+    for (let i = 0; i < this.#throttleLights.length; i += 1) {
+      const light = this.#throttleLights[i];
+      if (light) light.material.emissiveIntensity = i < index ? 3.2 : 0;
+    }
+  }
+
+  /**
+   * Collects the walkable geometry from every vehicle into one set, shifted
+   * into train space by each vehicle's position in the consist.
+   *
+   * Rebuilt whenever the train changes shape, so a wagon that is bought,
+   * upgraded or blown off the back takes its floors and walls with it.
+   */
+  #rebuildColliders() {
+    this.colliders.clear();
+    this.interactables = [];
+
+    for (const { mesh } of this.#vehicleMeshes.values()) {
+      const offset = mesh.position.z;
+
+      for (const box of mesh.userData.colliders ?? []) {
+        this.colliders.add(
+          new Box(
+            box.minX, box.minY, box.minZ + offset,
+            box.maxX, box.maxY, box.maxZ + offset,
+            { tag: box.tag },
+          ),
+        );
+      }
+
+      for (const item of mesh.userData.interactables ?? []) {
+        this.interactables.push({
+          ...item,
+          vehicleId: mesh.userData.vehicleId,
+          box: new Box(
+            item.box.minX, item.box.minY, item.box.minZ + offset,
+            item.box.maxX, item.box.maxY, item.box.maxZ + offset,
+            { tag: item.id },
+          ),
+        });
+      }
+    }
+  }
+
+  /**
+   * Shows or hides the railway. The intro's battlefield acts occupy the same
+   * space, so the two are swapped rather than placed apart.
+   */
+  setRailwayVisible(visible) {
+    this.#railwayGroup.visible = visible;
+  }
+
+  setTrainVisible(visible) {
+    this.#trainGroup.visible = visible;
+  }
+
+  /** Finds a named part of the train, such as a throttle notch light. */
+  findInTrain(name) {
+    let found = null;
+    this.#trainGroup.traverse((node) => {
+      if (!found && node.name === name) found = node;
+    });
+    return found;
+  }
+
+  /** Where the player should stand when a run begins, in train space. */
+  spawnPointFor(vehicleId) {
+    const entry = this.#vehicleMeshes.get(vehicleId);
+    if (!entry?.mesh.userData.spawn) return null;
+    const spawn = entry.mesh.userData.spawn;
+    return { x: spawn.x, y: spawn.y, z: spawn.z + entry.mesh.position.z };
   }
 
   meshFor(vehicleId) {

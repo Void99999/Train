@@ -14,6 +14,7 @@
 
 import * as THREE from "../../vendor/three/three.module.js";
 import { metalMaterial, glassMaterial, lampMaterial } from "./materials.js";
+import { buildLocomotiveCab } from "./interiors.js";
 import { VEHICLE_KIND, MOUNT_TYPE } from "../data/wagons.js";
 import { DAMAGE_STATE } from "../systems/train/vehicle.js";
 
@@ -126,52 +127,41 @@ export function buildLocomotive({ size, wear = 0.3 }) {
   chassis.position.y = 1.05;
   group.add(chassis);
 
-  // Long hood forward of the cab, where the machinery lives.
-  const hoodLength = length * 0.46;
+  // The cab is a real room, built as walls with thickness rather than a solid
+  // block. A solid box would be invisible from the inside - every face points
+  // away from the camera and is culled - which is what "missing walls" means.
+  const cab = buildLocomotiveCab(size);
+  group.add(cab.group);
+
+  // Long hood forward of the cab, where the machinery lives. It starts exactly
+  // at the cab's front wall so there is no gap between the two.
+  const hoodStart = cab.dimensions.frontZ;
+  const hoodEnd = length / 2 - 0.45;
+  const hoodLength = hoodEnd - hoodStart;
+  const hoodCentre = (hoodStart + hoodEnd) / 2;
+
   const hood = box(width * 0.82, 1.7, hoodLength, paint);
-  hood.position.set(0, 2.2, length * 0.22);
+  hood.position.set(0, 2.2, hoodCentre);
   group.add(hood);
 
   // Louvred panels along the hood sides.
   for (const side of [-1, 1]) {
-    for (let i = 0; i < 4; i += 1) {
+    for (let i = 0; i < 5; i += 1) {
       const louvre = box(0.06, 0.9, 0.7, trim);
-      louvre.position.set(
-        side * (width * 0.41),
-        2.3,
-        length * 0.22 - hoodLength / 2 + 0.9 + i * 0.95,
-      );
+      louvre.position.set(side * (width * 0.41), 2.3, hoodStart + 0.9 + i * 1.1);
       group.add(louvre);
     }
   }
 
-  // Cab: tall, squared off, set back over the rear truck.
-  const cabLength = length * 0.3;
-  const cab = box(width * 0.95, 2.5, cabLength, paint);
-  cab.position.set(0, 2.6, -length * 0.18);
-  group.add(cab);
-
-  // Cab roof overhang.
-  const roof = box(width * 1.02, 0.14, cabLength + 0.4, trim);
-  roof.position.set(0, 3.88, -length * 0.18);
+  // Cab roof overhang, sitting on top of the interior's ceiling.
+  const roof = box(width * 1.04, 0.14, cab.dimensions.length + 0.4, trim);
+  roof.position.set(0, cab.dimensions.ceilingY + 0.2, cab.dimensions.centreZ);
   group.add(roof);
 
-  // Windows: front screen and one each side.
-  const glass = glassMaterial();
-  const front = box(width * 0.66, 0.95, 0.08, glass);
-  front.position.set(0, 3.15, -length * 0.18 + cabLength / 2);
-  group.add(front);
-
-  for (const side of [-1, 1]) {
-    const window = box(0.08, 0.8, cabLength * 0.5, glass);
-    window.position.set(side * (width * 0.47), 3.15, -length * 0.18);
-    group.add(window);
-  }
-
-  // Twin exhaust stacks.
+  // Twin exhaust stacks, on the hood ahead of the cab.
   for (const offset of [-0.45, 0.45]) {
     const stack = cylinder(0.19, 0.75, trim, 12);
-    stack.position.set(offset, 3.4, length * 0.3);
+    stack.position.set(offset, 3.4, hoodStart + 1.6);
     group.add(stack);
   }
 
@@ -223,6 +213,14 @@ export function buildLocomotive({ size, wear = 0.3 }) {
   group.add(rearBogie);
 
   group.name = "locomotive";
+
+  // The interior's colliders and spawn point travel with the mesh, so the
+  // geometry the player can see and the geometry that stops them walking
+  // through it are produced by the same code and cannot drift apart.
+  group.userData.colliders = cab.colliders;
+  group.userData.interactables = cab.interactables;
+  group.userData.spawn = cab.spawn;
+  group.userData.cab = cab.dimensions;
   return group;
 }
 
