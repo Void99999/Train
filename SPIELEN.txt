@@ -1,0 +1,68 @@
+LAST TRAIN — so startest du das Spiel
+=====================================
+
+Zwei Wege. Der erste braucht gar nichts.
+
+
+1) SOFORT SPIELEN  (empfohlen)
+------------------------------
+Doppelklick auf:
+
+    last-train-standalone.html
+
+Das war's. In dieser einen Datei steckt alles drin — kein Server, keine
+Installation, kein Internet. Du kannst die Datei auch allein irgendwohin
+kopieren, sie funktioniert überall.
+
+Brauchst du einen halbwegs aktuellen Browser (Chrome, Edge, Firefox oder
+Safari) und eine Grafikkarte, die WebGL kann. Das kann praktisch jeder
+Rechner der letzten zehn Jahre.
+
+
+2) ZUM WEITERENTWICKELN
+-----------------------
+Wenn du am Spiel selbst arbeiten willst, brauchst du Node.js
+(https://nodejs.org) und startest im Projektordner:
+
+    npm start
+
+Dann im Browser öffnen:  http://localhost:8080
+
+Warum nicht einfach index.html doppelklicken? Das Spiel besteht aus
+ES-Modulen, und die blockiert jeder Browser bei einer Datei von der
+Festplatte. Deshalb der kleine Server — er ist in tools/serve.js und hat
+keine Abhängigkeiten.
+
+Nach Änderungen an den Quelldateien die Einzeldatei neu bauen:
+
+    node tools/build-standalone.js
+
+
+STEUERUNG
+---------
+    W A S D        laufen
+    Maus           umsehen
+    Umschalt       sprinten
+    E              benutzen
+    R              nachladen
+    H              Erste-Hilfe-Set
+    Tab (halten)   Waffenrad
+    Pfeil hoch/runter   Leistungsstufe des Zuges
+    Esc            Pause
+
+Sprache lässt sich im Hauptmenü und im Pausenmenü umstellen und wird
+gespeichert.
+
+
+WAS SCHON DRIN IST — UND WAS NICHT
+----------------------------------
+Fertig und getestet: der ganze Unterbau. Zugfahrt mit vier echten
+Leistungsstufen, Gewicht und Panzerung, Schaden an einzelnen Wagen,
+Abkuppeln bei Zerstörung, Handel, Werkstatt, Fortschritt, Gegner-Werte,
+der Lader, Tag/Nacht, Menüs und HUD.
+
+Noch nicht gebaut: durch den Zug laufen, die Stützpunkte zum Aussteigen,
+die Gegner selbst, das Waffenrad, die Werkstatt-Oberfläche, Ton und die
+Zwischensequenzen.
+
+Mehr dazu in README.md und docs/.

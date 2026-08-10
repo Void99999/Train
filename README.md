@@ -14,27 +14,47 @@ every wagon he adds makes it slower, which means longer under fire.
 
 **Keep moving. Survive. Get home.**
 
-## Running it
+## Playing it
+
+Double-click **`last-train-standalone.html`**. That is the whole procedure — no
+server, no installation, no internet. Everything the game needs is inside that
+one file, and it can be copied anywhere on its own.
+
+It needs a current browser and a machine that can do WebGL, which in practice
+means anything from the last decade.
+
+## Developing it
 
 ```
 npm start          # http://localhost:8080
-```
-
-There is no build step and there are no dependencies to install. Editing a file
-and reloading the page is the whole development loop.
-
-> Opening `index.html` by double-clicking shows a blank page. The game is
-> delivered as native ES modules and browsers refuse to load those over
-> `file://`. Serve the folder — that is what `npm start` does.
-
-```
 npm test           # 180 unit tests, no browser needed
 npm run check      # locale consistency + the full suite
+npm run build      # regenerate last-train-standalone.html
 ```
+
+There are no dependencies to install and no build step in the loop: edit a file,
+reload the page.
+
+> Double-clicking `index.html` shows a blank page. The game is delivered as
+> native ES modules and browsers refuse to load those over `file://`. Serve the
+> folder — that is what `npm start` does — or use the standalone file above.
+
+### How the standalone build works
+
+`tools/build-standalone.js` embeds every module's source as a string. At load
+time a small resolver walks the import graph, turns each module into a Blob URL,
+and rewrites the relative specifiers in its dependents to point at those URLs.
+Blob URLs are same-origin wherever the page came from, so the module graph loads
+from a file on disk.
+
+Only the specifier strings are rewritten — there is no bundler and no
+transpiler, so the standalone build runs exactly the same code as the served
+one. Rebuild it after changing any source file.
 
 ## What is in the repository
 
 ```
+last-train-standalone.html  the whole game in one file (generated)
 index.html                  the game shell
 src/data/                   every balancing value and catalogue
 src/data/locales/           English and German
