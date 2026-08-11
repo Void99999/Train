@@ -69,6 +69,8 @@ export default {
     PROMPT_TRADE: "Handeln",
     PROMPT_BOARD_TRAIN: "Einsteigen",
     PROMPT_LEAVE_TRAIN: "Aussteigen",
+    PROMPT_STEP_OUTSIDE: "Nach draußen",
+    PROMPT_STEP_INSIDE: "Zurück nach innen",
     PROMPT_PICK_UP: "Aufnehmen",
 
     SHOP_CARGO_TRADER: "Frachthändler",
@@ -125,6 +127,7 @@ export default {
     VEHICLE_COMBAT: "Kampfwagen",
     VEHICLE_LEVEL: "Stufe {level}",
     VEHICLE_DETACHED: "Abgekuppelt",
+    VEHICLE_NO_WAGON: "Kein Waggon verbunden.",
     VEHICLE_DESTROYED: "Zerstört",
 
     BLUEPRINT_TITLE: "Zugplan",

@@ -14,7 +14,7 @@
 
 import * as THREE from "../../vendor/three/three.module.js";
 import { metalMaterial, glassMaterial, lampMaterial } from "./materials.js";
-import { buildLocomotiveCab } from "./interiors.js";
+import { buildLocomotiveCab, buildSideWalkways } from "./interiors.js";
 import { VEHICLE_KIND, MOUNT_TYPE } from "../data/wagons.js";
 import { DAMAGE_STATE } from "../systems/train/vehicle.js";
 
@@ -104,26 +104,6 @@ function buildBogie({ wheelRadius = 0.52, axles = 2, width = 2.2 }) {
   return group;
 }
 
-/** Pipe railing along a walkway edge. */
-function buildRailing(length, material) {
-  const group = new THREE.Group();
-  const posts = Math.max(2, Math.round(length / 1.4));
-
-  for (let i = 0; i < posts; i += 1) {
-    const post = cylinder(0.035, 0.9, material, 6);
-    post.position.set(0, 0.45, -length / 2 + (i * length) / (posts - 1));
-    group.add(post);
-  }
-
-  for (const height of [0.86, 0.5]) {
-    const rail = cylinder(0.03, length, material, 6);
-    rail.rotation.x = Math.PI / 2;
-    rail.position.set(0, height, 0);
-    group.add(rail);
-  }
-  return group;
-}
-
 /**
  * The locomotive. Original design; nothing here is modelled on a real machine
  * or on another game's train.
@@ -175,23 +155,37 @@ export function buildLocomotive({ size, wear = 0.3 }) {
   roof.position.set(0, cab.dimensions.ceilingY + 0.2, cab.dimensions.centreZ);
   group.add(roof);
 
-  // Twin exhaust stacks, on the hood ahead of the cab.
-  for (const offset of [-0.45, 0.45]) {
-    const stack = cylinder(0.19, 0.75, trim, 12);
-    stack.position.set(offset, 3.4, hoodStart + 1.6);
+  /*
+   * Twin exhaust stacks, low and wide.
+   *
+   * They were tall pipes on the hood centre-line and they stood squarely in
+   * the driver's view - two rusty columns down the middle of the windscreen.
+   * Moving them apart is not enough on its own: the hood is only three metres
+   * wide, and at that distance nothing on it can be pushed out of a forward
+   * sightline. So they are short instead, sitting proud of the hood rather
+   * than towering over it, the way exhaust ports on a low-hood machine do.
+   */
+  for (const offset of [-0.92, 0.92]) {
+    const stack = cylinder(0.2, 0.3, trim, 12);
+    stack.position.set(offset, 3.14, hoodStart + 3.6);
     group.add(stack);
+
+    // A rain cap, so a short stack still reads as an exhaust.
+    const cap = cylinder(0.26, 0.05, trim, 12);
+    cap.position.set(offset, 3.32, hoodStart + 3.6);
+    group.add(cap);
   }
 
-  // Walkways and railings down both sides of the hood.
-  for (const side of [-1, 1]) {
-    const walkway = box(0.5, 0.08, length * 0.7, frame);
-    walkway.position.set(side * (width * 0.52), 1.36, length * 0.08);
-    group.add(walkway);
-
-    const railing = buildRailing(length * 0.66, trim);
-    railing.position.set(side * (width * 0.7), 1.4, length * 0.08);
-    group.add(railing);
-  }
+  /*
+   * Walkways down both sides.
+   *
+   * These used to be a plank and a railing with a gap between them and no
+   * collision at all - scenery you could walk straight through. They are now
+   * real decks at cab-floor height with railings the player can stand behind
+   * and shoot over, built alongside their colliders so the two cannot drift.
+   */
+  const walkways = buildSideWalkways(size, { frame, trim });
+  group.add(walkways.group);
 
   // Buffer beams and couplers at both ends.
   for (const end of [-1, 1]) {
@@ -234,7 +228,8 @@ export function buildLocomotive({ size, wear = 0.3 }) {
   // The interior's colliders and spawn point travel with the mesh, so the
   // geometry the player can see and the geometry that stops them walking
   // through it are produced by the same code and cannot drift apart.
-  group.userData.colliders = cab.colliders;
+  // The cab's own geometry plus the decks outside its doors.
+  group.userData.colliders = [...cab.colliders, ...walkways.colliders];
   group.userData.interactables = cab.interactables;
   group.userData.spawn = cab.spawn;
   group.userData.cab = cab.dimensions;

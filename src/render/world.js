@@ -16,6 +16,7 @@ import * as THREE from "../../vendor/three/three.module.js";
 import { buildVehicleMesh, disposeMesh } from "./trainMeshes.js";
 import { ballastMaterial, railMaterial, groundMaterial, metalMaterial, lampMaterial } from "./materials.js";
 import { Box, ColliderSet } from "../systems/world/collision.js";
+import { throttleQuadrant, sideDoorLayout, cabDimensions } from "./interiors.js";
 import { Rng } from "../core/rng.js";
 import { TRAIN, UNITS } from "../data/balance.js";
 
@@ -50,6 +51,9 @@ export class World {
   interactables = [];
   #throttleLights = [];
   #speedNeedle = null;
+  #throttleLever = null;
+  #sideDoors = [];
+  #cabLayout = null;
   #scrollingProps = [];
   #wheels = [];
   #wheelAngle = 0;
@@ -530,6 +534,101 @@ export class World {
     // the simulation every frame rather than set once and hoped about.
     this.#throttleLights = [1, 2, 3, 4].map((index) => this.findInTrain(`throttle-light-${index}`));
     this.#speedNeedle = this.findInTrain("gauge-speed");
+    this.#throttleLever = this.findInTrain("throttle-lever");
+    this.#cabLayout = sideDoorLayout(cabDimensions(train.locomotive.spec.size));
+    this.#collectSideDoors();
+  }
+
+  /* ------------------------------------------------------------ side doors */
+
+  /**
+   * Finds the cab's side doors and everything that has to move with them.
+   *
+   * Re-collected whenever the train is rebuilt, because syncTrain throws the
+   * old meshes and colliders away and a door holding references to those would
+   * quietly stop working.
+   */
+  #collectSideDoors() {
+    this.#sideDoors = [];
+
+    for (const name of ["left", "right"]) {
+      const slide = this.findInTrain(`cab-side-door-${name}-slide`);
+      if (!slide) continue;
+
+      const collider = this.colliders.boxes.find((box) => box.tag === `cab-side-door-${name}`);
+      const interactable = this.interactables.find((item) => item.id === `side-door-${name}`);
+
+      this.#sideDoors.push({
+        name,
+        slide,
+        collider,
+        interactable,
+        /** 0 shut, 1 fully open. */
+        openness: 0,
+        target: 0,
+      });
+    }
+
+    this.#applySideDoors();
+  }
+
+  /** Starts a door opening or closing. Returns the state it is heading for. */
+  setSideDoorOpen(name, open) {
+    const door = this.#sideDoors.find((entry) => entry.name === name);
+    if (!door) return null;
+    door.target = open ? 1 : 0;
+    return door.target === 1;
+  }
+
+  /** Whether a door is open or on its way open. */
+  isSideDoorOpen(name) {
+    const door = this.#sideDoors.find((entry) => entry.name === name);
+    return door ? door.target === 1 : false;
+  }
+
+  #updateSideDoors(delta) {
+    if (this.#sideDoors.length === 0) return;
+
+    const layout = this.#cabLayout;
+    const rate = delta / (layout?.slideSeconds ?? 0.65);
+    let moved = false;
+
+    for (const door of this.#sideDoors) {
+      if (door.openness === door.target) continue;
+      const step = Math.min(rate, Math.abs(door.target - door.openness));
+      door.openness += Math.sign(door.target - door.openness) * step;
+      moved = true;
+    }
+
+    if (moved) this.#applySideDoors();
+  }
+
+  #applySideDoors() {
+    const travel = this.#cabLayout?.travel ?? 1;
+
+    for (const door of this.#sideDoors) {
+      // The leaf slides back along the hull, towards the rear of the cab.
+      door.slide.position.z = -door.openness * travel;
+
+      // A door only stops the player while it is very nearly shut. Anything
+      // looser and you can be caught between a moving leaf and the frame.
+      if (door.collider) door.collider.enabled = door.openness < 0.1;
+
+      if (door.interactable) {
+        door.interactable.promptKey = door.target === 1 ? "PROMPT_CLOSE_DOOR" : "PROMPT_OPEN_DOOR";
+      }
+    }
+  }
+
+  /**
+   * Slides the throttle lever along its quadrant.
+   *
+   * @param {number} notch 0 for idle, 1-4 for the four settings
+   * @param {ReturnType<typeof cabDimensions>} cab
+   */
+  setThrottleLever(notch, cab) {
+    if (!this.#throttleLever || !cab) return;
+    this.#throttleLever.position.x = throttleQuadrant(cab).notchX(notch);
   }
 
   /**
@@ -644,6 +743,7 @@ export class World {
     const topSpeed = TRAIN.baseMaxSpeedKmh * UNITS.kmhToMetresPerSecond;
     this.#vibrate(elapsed, Math.min(1, speedMetresPerSecond / topSpeed));
 
+    this.#updateSideDoors(deltaSeconds);
     this.#applySky(sky);
   }
 

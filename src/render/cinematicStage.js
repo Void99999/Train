@@ -175,6 +175,13 @@ export class CinematicStage {
   #fires = [];
   #rotorDisc;
   #tailRotor;
+  #gunCradle;
+  #gunRecoil;
+  #gunnerEye;
+  #gunnerAim;
+  #scratch = new THREE.Vector3();
+  #scratchB = new THREE.Vector3();
+  #scratchC = new THREE.Vector3();
 
   constructor({ scene }) {
     this.#scene = scene;
@@ -654,55 +661,117 @@ export class CinematicStage {
     this.#scene.add(group);
   }
 
-  /** The weapon the protagonist is operating, seen from behind in first person. */
+  /**
+   * The weapon the protagonist is operating, seen from behind in first person.
+   *
+   * The whole assembly hangs off the helicopter, not off the camera. That is
+   * the difference between a weapon bolted into a doorway and one that floats
+   * beside the aircraft: a pintle gun banks when the aircraft banks, drops
+   * when it drops, and cannot drift, because it is simply part of it.
+   *
+   * Four nested frames, each with exactly one job:
+   *
+   *   pintle   bolted to the door sill. Traverse (left and right).
+   *   cradle   elevation (up and down). The gunner's head hangs off this, so
+   *            the camera looks wherever the weapon points.
+   *   recoil   the gun rocking back on its buffer when it fires.
+   *   parts    the metal.
+   *
+   * Recoil lives inside the cradle, so it moves the weapon and nothing else -
+   * not the gunner's eye, and certainly not the aircraft.
+   */
   #buildDoorGun() {
-    const group = new THREE.Group();
-    group.visible = false;
-
     const dark = metalMaterial({ colour: 0x1f2325, wear: 0.6, seed: 720, repeat: 1 });
 
+    const pintle = new THREE.Group();
+    pintle.visible = false;
+    // In the left doorway, on the sill, just outside the cabin skin.
+    pintle.position.set(-1.42, -0.34, -0.5);
+    // Trained out of the door and forward, the way a door gunner works.
+    pintle.rotation.y = -0.72;
+
+    // The post it turns on. Part of the aircraft, so it stays put while the
+    // gun above it elevates and recoils.
+    const post = mesh(new THREE.CylinderGeometry(0.07, 0.09, 0.62, 8), dark);
+    post.position.y = -0.31;
+    pintle.add(post);
+    const collar = mesh(new THREE.CylinderGeometry(0.11, 0.11, 0.1, 10), dark, { cast: false });
+    pintle.add(collar);
+
+    const cradle = new THREE.Group();
+    pintle.add(cradle);
+
+    const recoil = new THREE.Group();
+    cradle.add(recoil);
+
     const receiver = mesh(new THREE.BoxGeometry(0.22, 0.24, 1.0), dark);
-    group.add(receiver);
+    recoil.add(receiver);
 
     const barrel = mesh(new THREE.CylinderGeometry(0.055, 0.06, 1.5, 10), dark);
     barrel.rotation.x = Math.PI / 2;
     barrel.position.z = 1.2;
-    group.add(barrel);
+    recoil.add(barrel);
 
     // Perforated jacket, suggested with rings rather than modelled holes.
     for (let i = 0; i < 6; i += 1) {
       const ring = mesh(new THREE.TorusGeometry(0.085, 0.014, 6, 12), dark, { cast: false });
       ring.rotation.y = Math.PI / 2;
       ring.position.z = 0.75 + i * 0.18;
-      group.add(ring);
+      recoil.add(ring);
     }
-
-    const mount = mesh(new THREE.CylinderGeometry(0.06, 0.08, 0.9, 8), dark);
-    mount.position.y = -0.55;
-    group.add(mount);
 
     const grip = mesh(new THREE.BoxGeometry(0.1, 0.34, 0.12), dark);
     grip.position.set(0, -0.24, -0.5);
-    group.add(grip);
+    recoil.add(grip);
 
+    const spadeLeft = mesh(new THREE.BoxGeometry(0.05, 0.26, 0.09), dark);
+    spadeLeft.position.set(-0.16, -0.16, -0.62);
+    recoil.add(spadeLeft);
+    const spadeRight = spadeLeft.clone();
+    spadeRight.position.x = 0.16;
+    recoil.add(spadeRight);
+
+    // The ammunition box is strapped to the cradle, not to the gun body - it
+    // does not travel back with the receiver.
     const ammoBox = mesh(new THREE.BoxGeometry(0.34, 0.3, 0.42), dark);
-    ammoBox.position.set(0.26, -0.1, -0.1);
-    group.add(ammoBox);
+    ammoBox.position.set(0.28, -0.14, -0.12);
+    cradle.add(ammoBox);
 
     const flash = mesh(new THREE.SphereGeometry(0.24, 8, 6), lampMaterial(0xffd08a, 0), {
       cast: false,
     });
     flash.position.z = 2;
-    group.add(flash);
+    recoil.add(flash);
     this.muzzleFlash = flash;
 
     const light = new THREE.PointLight(0xffc070, 0, 18, 2);
     light.position.z = 2;
-    group.add(light);
+    recoil.add(light);
     this.muzzleLight = light;
 
-    this.doorGun = group;
-    this.#scene.add(group);
+    /*
+     * Where the gunner is: standing at the pintle, behind and above the
+     * breech. On the pintle rather than the cradle, because a man depressing
+     * a gun leans over it - his head does not swing up in an arc behind it.
+     */
+    const eye = new THREE.Object3D();
+    eye.position.set(0.16, 0.3, -1);
+    pintle.add(eye);
+
+    // A point far down the sightline. Aiming the camera at this rather than
+    // computing angles keeps the view and the barrel permanently agreed.
+    const aim = new THREE.Object3D();
+    aim.position.set(0, 0, 40);
+    cradle.add(aim);
+
+    this.#gunCradle = cradle;
+    this.#gunRecoil = recoil;
+    this.#gunnerEye = eye;
+    this.#gunnerAim = aim;
+
+    this.doorGun = pintle;
+    // Bolted to the airframe. This single line is what stops it floating.
+    this.helicopter.add(pintle);
   }
 
   /* ---------------------------------------------------------------- shelter */
@@ -831,8 +900,18 @@ export class CinematicStage {
   }
 
   /**
-   * A gloved hand and forearm, for the shot where the protagonist selects
-   * full power. Deliberately simple: it is on screen for two seconds.
+   * A gloved hand and forearm, for the shot where the protagonist opens the
+   * throttle. Deliberately simple: it is on screen for two seconds.
+   *
+   * The local frame matters more than the shape. The origin is the middle of
+   * the grip - where the knob sits - fingers curl forward along +z, and the
+   * forearm runs *backward and upward* toward an implied elbow.
+   *
+   * That last part is the whole point. The previous version had the forearm
+   * hanging back and *down*, so however carefully the hand was flown over the
+   * desk, the arm behind it was ploughing through the console. An arm that
+   * leaves the wrist heading up towards a shoulder cannot do that, whatever
+   * path the hand takes.
    */
   #buildHand() {
     const group = new THREE.Group();
@@ -841,19 +920,45 @@ export class CinematicStage {
     const glove = new THREE.MeshStandardMaterial({ color: 0x3b3630, roughness: 0.9 });
     const sleeve = new THREE.MeshStandardMaterial({ color: 0x4a4f3f, roughness: 0.95 });
 
-    const forearm = mesh(new THREE.CylinderGeometry(0.075, 0.095, 0.5, 8), sleeve);
-    forearm.rotation.x = Math.PI / 2.4;
-    forearm.position.set(0, -0.16, -0.22);
+    /*
+     * The forearm runs backward and only slightly up - about eight degrees.
+     *
+     * The first attempt at this angled it a full twenty-four degrees to be
+     * certain it cleared the desk, and on screen that read as a post standing
+     * on the console rather than as an arm. A man reaching for a lever whose
+     * knob is a third of a metre above the desk holds his forearm nearly
+     * level; the clearance comes from the lever being tall, not from the arm
+     * being raised.
+     */
+    const ARM_RISE = 0.14;
+    const armPitch = -(Math.PI / 2 - ARM_RISE);
+
+    const forearm = mesh(new THREE.CylinderGeometry(0.052, 0.072, 0.54, 10), sleeve);
+    forearm.rotation.x = armPitch;
+    forearm.position.set(0, 0.05, -0.3);
     group.add(forearm);
 
-    const palm = mesh(new THREE.BoxGeometry(0.1, 0.055, 0.14), glove);
+    // The cuff, where the glove meets the sleeve.
+    const cuff = mesh(new THREE.CylinderGeometry(0.062, 0.062, 0.07, 10), glove);
+    cuff.rotation.x = armPitch;
+    cuff.position.set(0, 0.021, -0.11);
+    group.add(cuff);
+
+    const palm = mesh(new THREE.BoxGeometry(0.105, 0.075, 0.12), glove);
+    palm.position.set(0, 0.015, 0.01);
     group.add(palm);
 
-    // One extended finger, which is what actually touches the notch.
-    const finger = mesh(new THREE.CylinderGeometry(0.016, 0.018, 0.11, 6), glove);
-    finger.rotation.x = Math.PI / 2;
-    finger.position.set(0, 0, 0.11);
-    group.add(finger);
+    // Fingers curled round the knob, and a thumb across the top of it.
+    const fingers = mesh(new THREE.BoxGeometry(0.1, 0.05, 0.075), glove);
+    fingers.position.set(0, -0.035, 0.055);
+    fingers.rotation.x = 0.5;
+    group.add(fingers);
+
+    const thumb = mesh(new THREE.CylinderGeometry(0.019, 0.021, 0.085, 6), glove);
+    thumb.rotation.z = Math.PI / 2;
+    thumb.rotation.y = -0.4;
+    thumb.position.set(0.055, 0.045, 0.035);
+    group.add(thumb);
 
     this.hand = group;
     this.#scene.add(group);
@@ -878,6 +983,57 @@ export class CinematicStage {
     this.muzzleFlash.material.emissiveIntensity = amount * 6;
     this.muzzleFlash.visible = amount > 0.02;
     this.muzzleLight.intensity = amount * 40;
+  }
+
+  /* --------------------------------------------------------- the door gun */
+
+  /**
+   * Elevation of the weapon, in radians. Positive is down, because every shot
+   * in the sequence is firing at the ground.
+   */
+  setDoorGunElevation(radians) {
+    if (this.#gunCradle) this.#gunCradle.rotation.x = radians;
+  }
+
+  /**
+   * How far the gun is back on its buffer, 0-1.
+   *
+   * Nine centimetres and three degrees of muzzle rise. That is a lot for a
+   * weapon and nothing at all for an aircraft, which is the point: the recoil
+   * belongs to the gun. The helicopter is eight tonnes and does not care.
+   */
+  setDoorGunRecoil(amount) {
+    if (!this.#gunRecoil) return;
+    const kick = Math.max(0, Math.min(1, amount));
+    this.#gunRecoil.position.z = -0.09 * kick;
+    this.#gunRecoil.rotation.x = -0.05 * kick;
+  }
+
+  /**
+   * The gunner's eye and a point down his sightline, both in world space.
+   *
+   * Both hang off the weapon's cradle inside the helicopter, so this already
+   * accounts for wherever the aircraft has rolled, pitched and fallen to. The
+   * camera never has to work any of that out.
+   *
+   * @returns {{eye: {x,y,z}, aim: {x,y,z}, up: {x,y,z}}}
+   */
+  gunnerView() {
+    // The shot moved the helicopter this frame; the anchors hanging off it
+    // have not caught up until the matrices are rebuilt.
+    this.helicopter.updateWorldMatrix(true, true);
+
+    const eye = this.#gunnerEye.getWorldPosition(this.#scratch);
+    const aim = this.#gunnerAim.getWorldPosition(this.#scratchB);
+    // The aircraft's own up, so the horizon banks with it instead of the
+    // world staying stubbornly level while the machine rolls over.
+    const up = this.#scratchC.set(0, 1, 0).applyQuaternion(this.helicopter.quaternion);
+
+    return {
+      eye: { x: eye.x, y: eye.y, z: eye.z },
+      aim: { x: aim.x, y: aim.y, z: aim.z },
+      up: { x: up.x, y: up.y, z: up.z },
+    };
   }
 
   /** Rotor speed, 0-1. Drops as the engine dies. */
@@ -928,7 +1084,9 @@ export class CinematicStage {
     for (const name of ["helicopter", "battlefield", "shelter", "doorGun", "hand"]) {
       const target = this[name];
       if (!target) continue;
-      this.#scene.remove(target);
+      // The door gun hangs off the helicopter rather than off the scene, so
+      // ask for its actual parent instead of assuming.
+      target.parent?.remove(target);
       target.traverse((node) => {
         node.geometry?.dispose();
         if (Array.isArray(node.material)) node.material.forEach((m) => m.dispose());

@@ -186,21 +186,29 @@ export function createSoundLibrary(random = Math.random) {
 
   /* ---------------------------------------------------------- explosions */
 
+  /**
+   * An explosion has to be the loudest thing in the game. It is built in four
+   * layers because a single burst reads as a hiss no matter how loud it is:
+   * the crack tells you it happened, the blast gives it size, the sub gives it
+   * force, and the debris tail gives it aftermath.
+   */
   sounds.explosion = (engine, { position = null, scale = 1 } = {}) => {
+    // The crack. Short, bright, and the part that arrives first.
     engine.noiseBurst({
       duration: 0.12 * scale,
       attack: 0.001,
-      gain: 0.85,
+      gain: 1,
       filter: "highpass",
       startFrequency: 1800,
       endFrequency: 700,
       bus: "weapons",
       position,
     });
+    // The blast itself, sweeping down into the floor of the mix.
     engine.noiseBurst({
       duration: 1.9 * scale,
       attack: 0.008,
-      gain: 0.9,
+      gain: 1,
       filter: "lowpass",
       startFrequency: 700,
       endFrequency: 35,
@@ -212,8 +220,21 @@ export function createSoundLibrary(random = Math.random) {
       frequency: 48 / scale,
       endFrequency: 20,
       duration: 1.6 * scale,
-      gain: 0.6,
+      gain: 0.85,
       type: "sine",
+      bus: "weapons",
+      position,
+    });
+    // Debris and dust settling. Quiet, but it is what makes the blast feel
+    // like it happened somewhere rather than in a vacuum.
+    engine.noiseBurst({
+      duration: 2.4 * scale,
+      attack: 0.25,
+      gain: 0.3,
+      filter: "bandpass",
+      startFrequency: 1400,
+      endFrequency: 300,
+      q: 0.5,
       bus: "weapons",
       position,
     });
@@ -368,6 +389,25 @@ export function createSoundLibrary(random = Math.random) {
       duration: 0.11,
       gain: 0.14 * intensity,
       type: "sine",
+      bus: "train",
+      position,
+    });
+  };
+
+  /**
+   * A loose panel, a latch, a tool box shifting. Deliberately dry and quiet:
+   * these fire irregularly underneath the engine bed and their job is to stop
+   * the continuous voices sounding like a synthesiser holding a chord.
+   */
+  sounds.panel_rattle = (engine, { position = null, intensity = 1 } = {}) => {
+    engine.noiseBurst({
+      duration: 0.04 + random() * 0.05,
+      attack: 0.001,
+      gain: 0.07 * intensity,
+      filter: "bandpass",
+      startFrequency: 900 * vary(random, 0.5),
+      endFrequency: 400,
+      q: 4,
       bus: "train",
       position,
     });

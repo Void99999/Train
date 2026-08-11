@@ -25,6 +25,15 @@ export class Box {
     this.maxY = maxY;
     this.maxZ = maxZ;
     this.tag = tag;
+    /*
+     * Whether this box currently stops anything.
+     *
+     * Almost every collider in the game is permanent, but a door has to be
+     * solid when it is shut and not there at all when it is open. Rather than
+     * adding and removing boxes - which would mean rebuilding the whole set
+     * every time somebody opens a door - the box stays and stops counting.
+     */
+    this.enabled = true;
   }
 
   /**
@@ -74,6 +83,7 @@ export class Box {
 }
 
 export function overlaps(a, b) {
+  if (a.enabled === false || b.enabled === false) return false;
   return (
     a.minX < b.maxX && a.maxX > b.minX &&
     a.minY < b.maxY && a.maxY > b.minY &&

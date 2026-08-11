@@ -92,19 +92,22 @@ export class Cutscene {
       const left = shot.duration - this.#elapsedInShot;
 
       if (remaining < left) {
-        this.#elapsedInShot += remaining;
+        const step = remaining;
+        this.#elapsedInShot += step;
         remaining = 0;
-      } else {
-        // Finish this shot exactly at its end, then carry the rest forward.
-        this.#elapsedInShot = shot.duration;
-        remaining -= left;
-        shot.onUpdate?.(1, this.#elapsedInShot, context);
-        shot.onExit?.(context);
-        this.#advance(context);
+        // The fourth argument is how much time this call covers. A shot that
+        // moves something by a fixed amount per call rather than per second
+        // travels a different distance on a fast machine than on a slow one.
+        shot.onUpdate?.(this.#elapsedInShot / shot.duration, this.#elapsedInShot, context, step);
         continue;
       }
 
-      shot.onUpdate?.(this.#elapsedInShot / shot.duration, this.#elapsedInShot, context);
+      // Finish this shot exactly at its end, then carry the rest forward.
+      this.#elapsedInShot = shot.duration;
+      remaining -= left;
+      shot.onUpdate?.(1, this.#elapsedInShot, context, left);
+      shot.onExit?.(context);
+      this.#advance(context);
     }
   }
 

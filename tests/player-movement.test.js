@@ -407,3 +407,42 @@ test("easing and interpolation behave", () => {
   const mid = lerpPoint({ x: 0, y: 0, z: 0 }, { x: 10, y: 20, z: -10 }, 0.5);
   assert.deepEqual(mid, { x: 5, y: 10, z: -5 });
 });
+
+test("a shot is told how much time each update covers", () => {
+  /*
+   * Without this, a shot that moves something by a fixed amount per call
+   * travels a different distance depending on the frame rate. The helicopter
+   * did exactly that: on a slow machine it crawled and the framing of the
+   * whole act went with it.
+   */
+  const steps = [];
+  const cutscene = new Cutscene([
+    { name: "a", duration: 1, onUpdate: (t, elapsed, context, delta) => steps.push(delta) },
+  ]);
+
+  cutscene.update(0.25, {});
+  cutscene.update(0.25, {});
+  cutscene.update(0.25, {});
+
+  assert.deepEqual(steps, [0.25, 0.25, 0.25]);
+});
+
+test("the time a shot is told about adds up to its duration, however it is stepped", () => {
+  const sum = { small: 0, large: 0 };
+
+  const run = (step, key) => {
+    const cutscene = new Cutscene([
+      { name: "a", duration: 2, onUpdate: (t, e, c, delta) => (sum[key] += delta) },
+      { name: "b", duration: 2 },
+    ]);
+    for (let i = 0; i < 200; i += 1) cutscene.update(step, {});
+  };
+
+  run(0.016, "small");
+  run(0.25, "large");
+
+  // Both stepping rates hand the first shot exactly its two seconds - which
+  // is what makes anything driven by delta frame-rate independent.
+  assert.ok(Math.abs(sum.small - 2) < 1e-6, `fine steps: ${sum.small}`);
+  assert.ok(Math.abs(sum.large - 2) < 1e-6, `coarse steps: ${sum.large}`);
+});

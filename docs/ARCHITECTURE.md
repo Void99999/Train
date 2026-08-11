@@ -124,20 +124,36 @@ the machine rather than only on a health bar.
 
 ## Testing
 
-`npm run check` runs the locale check and the full suite. The suite covers the
-simulation exhaustively and the presentation not at all — 180 tests, none of
+`npm run check` runs the locale check and the full suite — 259 tests, none of
 which need a GPU.
 
-Browser verification is manual: `npm start` and open the page. The console
-should be clean.
+Most of them cover the simulation. A few cover geometry, which is unusual and
+worth explaining: `tests/domStub.js` provides just enough of a 2D canvas for
+the render modules to build their meshes under Node, so a test can construct
+the real cab, the real locomotive and the real cinematic props and measure
+them. That is how the door, the walkway and the two camera paths through the
+cab are checked — by walking a body through the actual colliders and by taking
+the actual bounding box of the actual hand mesh, rather than by reasoning about
+coordinates on paper. Two earlier attempts at the hand-through-the-console bug
+were fixed on paper and were still wrong.
+
+Anything that depends on what a frame *looks like* — lighting, materials, the
+mix — still has to be looked at and listened to. `npm start` and open the page.
 
 ## Current state
 
 Built and tested: the data layer, all core services, the train simulation,
 the economy, progression, the journey, the player, the combat model, the
-Loader, the day/night cycle, the menus and the HUD.
+Loader, the day/night cycle, the menus and the HUD, the walkable cab with its
+side doors and walkways, the interaction system, the intro cinematic and the
+audio layer.
 
-Not yet built: walkable interiors, outpost locations, enemy AI actors,
-projectiles, the weapon wheel, the workshop and shop interfaces, the blueprint
-panel, audio, and the cinematics. The systems those features need already exist
-and are tested; what is missing is the presentation and the actors.
+Not yet built: outpost locations, enemy AI actors, projectiles, the workshop
+and shop interfaces. The systems those features need already exist and are
+tested; what is missing is the presentation and the actors.
+
+Still placeholder, and described as such deliberately: every sound is
+synthesised at runtime rather than recorded; there are no character models,
+no skeleton and no inverse kinematics, so the hand in the intro is a shaped
+prop on a scripted path; and the locomotive, while it is now a real room with
+real doors, is built from primitives rather than modelled.

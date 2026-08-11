@@ -14,6 +14,7 @@
   --steel-700: #23292c;
   --steel-600: #333b3f;
   --steel-400: #6d787d;
+  --steel-300: #93a0a5;
   --steel-200: #b3bdc1;
   --steel-100: #dde3e5;
 
@@ -416,12 +417,20 @@ input[type="range"]:focus-visible {
   font-family: var(--font-display);
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  text-shadow: 0 1px 3px rgb(0 0 0 / 0.9);
+  /*
+   * Two shadows: a tight dark one for contrast, and a wide soft one that acts
+   * as a scrim. The HUD sits over whatever the player is looking at, and the
+   * cab's pale green walls washed the small grey labels out completely.
+   */
+  text-shadow:
+    0 1px 3px rgb(0 0 0 / 0.95),
+    0 0 0.9em rgb(0 0 0 / 0.85);
 }
 
 .hud__label {
   font-size: 0.7rem;
-  color: var(--steel-400);
+  /* Lifted from steel-400: the dimmer grey vanished against a lit interior. */
+  color: var(--steel-300);
 }
 
 .hud__value {

@@ -21,7 +21,7 @@ import { World } from "./render/world.js";
 import { CinematicStage } from "./render/cinematicStage.js";
 
 import { createIntroSequence } from "./cinematics/introSequence.js";
-import { cabDimensions } from "./render/interiors.js";
+import { cabDimensions, sideDoorLayout } from "./render/interiors.js";
 
 import { Train } from "./systems/train/train.js";
 import { MountRegistry } from "./systems/train/mounts.js";
@@ -48,6 +48,7 @@ import { BlueprintPanel } from "./ui/blueprintPanel.js";
 import { el } from "./ui/dom.js";
 
 import { AudioDirector } from "./audio/audioDirector.js";
+import { locomotiveMix } from "./audio/trainAudio.js";
 
 import { weaponSpec } from "./data/weapons.js";
 import { TRAIN, ECONOMY } from "./data/balance.js";
@@ -78,6 +79,7 @@ export class Game {
   #loopHandle = null;
   #lastFrameTime = 0;
   #run = null;
+  #cab = null;
   #menuTrain = null;
   #menuCameraTime = 0;
   #elapsed = 0;
@@ -183,12 +185,38 @@ export class Game {
       this.audio.play(opened ? "ui_confirm" : "ui_move");
     });
 
+    /*
+     * The rear door and the side doors are deliberately different things.
+     *
+     * The side doors let you out onto the walkway, and they always work - you
+     * can open one at a stand or at a hundred kilometres an hour. The rear
+     * door is the connection into the rest of the train, so it only goes
+     * anywhere when there is something coupled behind the locomotive.
+     */
     this.interaction.register("rear-door", () => {
+      if (!this.#run) return;
+      const wagons = this.#run.train.wagons ?? [];
+
+      if (wagons.length === 0) {
+        this.audio.play("ui_deny");
+        this.hud.toast(this.localization.t("VEHICLE_NO_WAGON"), { variant: "warning" });
+        return;
+      }
+
       this.audio.play("door");
-      // There is nothing coupled behind the locomotive yet, so the door opens
-      // onto the end of the train. Saying so is better than silence.
-      this.hud.toast(this.localization.t("VEHICLE_DETACHED"), { variant: "warning" });
+      this.hud.toast(this.localization.t("VEHICLE_TRANSPORT"));
     });
+
+    for (const side of ["left", "right"]) {
+      this.interaction.register(`side-door-${side}`, () => {
+        const opening = this.#world.setSideDoorOpen(side, !this.#world.isSideDoorOpen(side));
+        if (opening === null) return;
+        this.audio.play("door");
+        this.hud.toast(
+          this.localization.t(opening ? "PROMPT_STEP_OUTSIDE" : "PROMPT_CLOSE_DOOR"),
+        );
+      });
+    }
   }
 
   #wireRunEvents() {
@@ -281,6 +309,9 @@ export class Game {
     }
 
     this.#run = context;
+    // The cab's dimensions never change during a run, and both the cinematic
+    // and the interior controls need them.
+    this.#cab = cabDimensions(train.locomotive.spec.size);
     this.#world.syncTrain(train);
     this.#player.setColliders(this.#world.colliders);
     this.#player.setStamina(stamina);
@@ -327,7 +358,7 @@ export class Game {
       locomotiveSize: this.#run.train.locomotive.spec.size,
       // Resolved once, because several shots need to know where the cab is
       // before the shot that used to compute it has run.
-      cabDimensions: cabDimensions(this.#run.train.locomotive.spec.size),
+      cabDimensions: this.#cab,
       scrollSpeed: 0,
     };
 
@@ -758,6 +789,8 @@ export class Game {
       this.#stage.update(delta, this.#elapsed);
       this.#world.update(delta, train.speedMetresPerSecond, sky, this.#elapsed);
       this.#world.setThrottleIndicator(train.throttleIndex);
+      // The lever in the cab shows the setting the player actually chose.
+      this.#world.setThrottleLever(train.throttleIndex, this.#cab);
       this.#world.setSpeedIndicator(train.speedKmh / TRAIN.baseMaxSpeedKmh);
       this.#placeFirstPersonCamera(train);
       this.hud.update(this.#buildHudSnapshot());
@@ -918,9 +951,31 @@ export class Game {
         ? this.#run.inventory.reserveRoundsFor(this.#run.inventory.equippedWeaponId, this.#run.train)
         : 0,
       throttleIndex: this.#run?.train.throttleIndex ?? 0,
+      speedKmh: this.#run?.train.speedKmh ?? 0,
       interactableCount: this.#world.interactables.length,
       pointerLocked: Boolean(document.pointerLockElement),
       cinematicActive: this.cinematic.isActive,
+      cutsceneShot: this.#cutscene?.currentShot?.name ?? null,
+      audio: {
+        ready: this.audio.isReady,
+        trainVoicesRunning: this.audio.trainAudio.isRunning,
+      },
+      // What the train actually sounds like right now, so the mix can be
+      // inspected on a machine with no sound card.
+      audioMix: this.#run
+        ? locomotiveMix({
+            throttleFraction: this.#run.train.throttleFraction,
+            speedFraction: Math.min(
+              1,
+              this.#run.train.speedKmh / Math.max(1, this.#run.train.maxSpeedKmh),
+            ),
+            moving: this.#run.train.speedMetresPerSecond > 0.4,
+          })
+        : null,
+      sideDoors: {
+        left: this.#world.isSideDoorOpen("left"),
+        right: this.#world.isSideDoorOpen("right"),
+      },
     };
   }
 
@@ -954,11 +1009,104 @@ export class Game {
     this.#player.look(yaw, pitch);
   }
 
+  /* --------------------------------------------------- doors and walkways */
+
+  /**
+   * Diagnostic: presses E on whatever the player is currently looking at.
+   * The real key path, not a shortcut round it - a test that called the door
+   * handler directly would pass with the prompt and the gaze both broken.
+   */
+  debugInteract() {
+    return this.interaction.activate({ game: this });
+  }
+
+  debugSideDoorOpen(side) {
+    return this.#world.isSideDoorOpen(side);
+  }
+
+  /** Diagnostic: stands in front of a side door and looks straight at it. */
+  debugFaceSideDoor(side) {
+    if (!this.#run) return null;
+    const doorway = sideDoorLayout(this.#cab);
+    const direction = side === "right" ? 1 : -1;
+
+    this.#player.position.x = direction * 0.75;
+    this.#player.position.y = this.#cab.floorY;
+    this.#player.position.z = doorway.centreZ;
+    // Yaw is measured so that forward is (sin yaw, cos yaw): a quarter turn
+    // to the right faces +x, minus a quarter faces -x.
+    this.#player.yaw = (direction * Math.PI) / 2;
+    this.#player.pitch = -0.12;
+    this.#updateInteractionPrompt();
+
+    return { ...this.#player.position };
+  }
+
+  /** Diagnostic: stands at the rear door and looks at it. */
+  debugFaceRearDoor() {
+    if (!this.#run) return null;
+    this.#player.position.x = 0;
+    this.#player.position.y = this.#cab.floorY;
+    this.#player.position.z = this.#cab.backZ + 1.9;
+    // Facing -z, towards the back of the train.
+    this.#player.yaw = Math.PI;
+    this.#player.pitch = -0.05;
+    this.#updateInteractionPrompt();
+    return { ...this.#player.position };
+  }
+
+  /**
+   * Diagnostic: walks out through a side door the way the player would -
+   * through the movement system, against the real colliders.
+   */
+  debugStepOutside(side) {
+    return this.#debugWalk(side === "right" ? 1 : -1);
+  }
+
+  /** Diagnostic: walks back in through a side door. */
+  debugStepInside(side) {
+    const result = this.#debugWalk(side === "right" ? -1 : 1);
+    return result;
+  }
+
+  #debugWalk(directionX) {
+    if (!this.#run) return null;
+    const before = { ...this.#player.position };
+
+    // Face along the world x axis and walk. Forward is (sin yaw, cos yaw), so
+    // a quarter turn right faces +x. This goes through the same movement and
+    // collision path the keyboard does - which is the point of testing it.
+    this.#player.yaw = (directionX * Math.PI) / 2;
+
+    for (let step = 0; step < 120; step += 1) {
+      this.#player.update(1 / 60, { forward: 1 });
+    }
+
+    return {
+      from: { x: +before.x.toFixed(2), y: +before.y.toFixed(2), z: +before.z.toFixed(2) },
+      to: {
+        x: +this.#player.position.x.toFixed(2),
+        y: +this.#player.position.y.toFixed(2),
+        z: +this.#player.position.z.toFixed(2),
+      },
+      grounded: this.#player.isGrounded,
+    };
+  }
+
   advanceIntro(seconds, step = 0.25) {
     if (!this.#cutscene) return false;
     for (let elapsed = 0; elapsed < seconds && this.#cutscene; elapsed += step) {
       this.#stage.update(step, (this.#elapsed += step));
       this.#cutscene?.update(step, this.#cutsceneContext);
+      // The world too, or a fast-forward leaves the scenery, the wheels and
+      // the cab doors frozen where they were - and then the thing being
+      // looked at is not the thing the player would see.
+      this.#world.update(
+        step,
+        this.#cutsceneContext?.scrollSpeed ?? 0,
+        this.dayNight.snapshot(),
+        this.#elapsed,
+      );
     }
     return true;
   }

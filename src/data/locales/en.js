@@ -73,6 +73,8 @@ export default {
     PROMPT_TRADE: "Trade",
     PROMPT_BOARD_TRAIN: "Board the train",
     PROMPT_LEAVE_TRAIN: "Step off",
+    PROMPT_STEP_OUTSIDE: "Step outside",
+    PROMPT_STEP_INSIDE: "Step back inside",
     PROMPT_PICK_UP: "Pick up",
 
     /* --------------------------------------------------------------- shops */
@@ -133,6 +135,7 @@ export default {
     VEHICLE_COMBAT: "Combat Wagon",
     VEHICLE_LEVEL: "Level {level}",
     VEHICLE_DETACHED: "Uncoupled",
+    VEHICLE_NO_WAGON: "No wagon connected.",
     VEHICLE_DESTROYED: "Destroyed",
 
     /* ------------------------------------------------------------ blueprint */

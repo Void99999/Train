@@ -18,10 +18,90 @@
  */
 
 import { Cutscene, ease, lerpPoint } from "./cutsceneDirector.js";
-import { cabDimensions } from "../render/interiors.js";
+import { cabDimensions, sideDoorLayout, throttleQuadrant } from "../render/interiors.js";
 
-/** Points the camera at a target from a position, in one call. */
+/**
+ * The driver's hand opening the throttle, as a pose for a given point in the
+ * shot.
+ *
+ * Exported and pure so a test can walk the whole movement frame by frame and
+ * check the arm against the actual console geometry. The previous two attempts
+ * at this were reasoned about on paper and both left the forearm inside the
+ * desk; this one is measured.
+ *
+ * @param {number} t 0-1 through the shot
+ * @param {ReturnType<typeof cabDimensions>} cab
+ * @returns {{position: {x,y,z}, rotation: {x,y,z}, notch: number, gripped: boolean}}
+ */
+export function throttleReachPose(t, cab) {
+  const quadrant = throttleQuadrant(cab);
+
+  /** Where the knob is when the lever sits at a given notch. */
+  const knobAt = (notch) => ({
+    x: quadrant.notchX(notch),
+    y: quadrant.slotY + quadrant.knobOffset.y,
+    z: quadrant.z + quadrant.knobOffset.z,
+  });
+
+  // Hand resting on his knee, well back from the desk and out of the shot.
+  const rest = { x: -0.15, y: cab.floorY + 0.72, z: cab.centreZ - 0.55 };
+
+  /*
+   * Two beats. He reaches for the lever where it stands at idle, closes his
+   * hand on it, then pushes it the length of the quadrant to full power.
+   */
+  const REACH_ENDS = 0.44;
+  const PUSH_ENDS = 0.82;
+
+  if (t < REACH_ENDS) {
+    const reach = ease(t / REACH_ENDS);
+    const grip = knobAt(0);
+    const position = lerpPoint(rest, grip, reach);
+
+    // Up over the edge of the desk on the way in, rather than through it.
+    position.y += Math.sin(reach * Math.PI) * 0.2;
+
+    return {
+      position,
+      // From hanging loose at the knee to level, gripping the knob.
+      rotation: { x: -0.95 + reach * 0.99, y: 0.2 - reach * 0.2, z: 0 },
+      notch: 0,
+      gripped: reach > 0.98,
+    };
+  }
+
+  const push = ease(Math.min(1, (t - REACH_ENDS) / (PUSH_ENDS - REACH_ENDS)));
+  const from = knobAt(0);
+  const to = knobAt(4);
+
+  return {
+    position: lerpPoint(from, to, push),
+    // Wrist nearly level, rolling forward a little as he drives it home. Any
+    // more pitch than this and the forearm rears up out of the console.
+    rotation: { x: 0.04 + push * 0.1, y: 0, z: 0 },
+    // The lever travels with the hand, so the notch is wherever it has got to.
+    notch: push * 4,
+    gripped: true,
+  };
+}
+
+/**
+ * Points the camera at a target from a position, in one call.
+ *
+ * Always restores a level horizon first. Only the helicopter shots roll the
+ * camera, and the player can skip out of them at any frame; a shot that
+ * forgot to put `up` back would leave every later shot tilted. Resetting it
+ * here means no shot can be left holding that.
+ */
 function place(context, position, target) {
+  context.camera.up.set(0, 1, 0);
+  context.camera.position.set(position.x, position.y, position.z);
+  context.camera.lookAt(target.x, target.y, target.z);
+}
+
+/** As `place`, but with the horizon tilted - used when riding the aircraft. */
+function placeRolled(context, position, target, up) {
+  context.camera.up.set(up.x, up.y, up.z);
   context.camera.position.set(position.x, position.y, position.z);
   context.camera.lookAt(target.x, target.y, target.z);
 }
@@ -40,12 +120,122 @@ function offset(point, delta) {
 }
 
 /**
+ * The path the protagonist takes climbing aboard, as an eye position and a
+ * point to look at.
+ *
+ * Three legs, and no leg ever changes two axes while crossing a surface. That
+ * is the whole point of the shape.
+ *
+ * The old version was a single straight line from the ground outside to the
+ * driving position, which meant the camera moved inward and forward at the
+ * same time and cut the corner - straight through the jamb beside the doorway,
+ * and now through the walkway railing as well. So: climb first, entirely
+ * outside the train; cross into the cab at a height above the railing and in
+ * the middle of the door opening; only then turn and walk to the controls.
+ *
+ * Exported so a test can check the whole path against the cab's real geometry.
+ *
+ * @param {number} progress 0-1
+ * @param {ReturnType<typeof cabDimensions>} cab
+ */
+export function boardingPath(progress, cab) {
+  const doorway = sideDoorLayout(cab);
+  const deck = doorway.walkway;
+
+  /*
+   * He boards on the right, which is the side he walked up to.
+   *
+   * Standing back from the deck rather than right against it: at eighteen
+   * centimetres the railing was so close that its two rails cut diagonally
+   * across the whole frame and the doorway behind them could not be read.
+   */
+  const outsideX = deck.outerX + 0.62;
+  const deckEyeY = deck.topY + 1.68;
+  const doorZ = doorway.centreZ;
+
+  const CLIMB_ENDS = 0.36;
+  const CROSS_ENDS = 0.74;
+
+  const at = (x, y, z) => ({ x, y, z });
+  const look = (x, y, z) => ({ x, y, z });
+
+  if (progress < CLIMB_ENDS) {
+    // Up the steps. Nothing but height changes, and it happens clear of the
+    // train, so there is no surface to cut through.
+    const climb = progress / CLIMB_ENDS;
+    return {
+      eye: at(outsideX, 1.68 + (deckEyeY - 1.68) * climb, doorZ),
+      // Looking at the doorway he is climbing towards.
+      look: look(0, deck.topY + 1.4, doorZ),
+    };
+  }
+
+  if (progress < CROSS_ENDS) {
+    // In through the door. Height and z are fixed: the eye is above the
+    // railing and squarely in the middle of the opening for the whole move.
+    const cross = (progress - CLIMB_ENDS) / (CROSS_ENDS - CLIMB_ENDS);
+    return {
+      eye: at(outsideX + (0.55 - outsideX) * cross, deckEyeY, doorZ),
+      look: look(-0.3, deck.topY + 1.3, doorZ + (cab.frontZ - doorZ) * cross),
+    };
+  }
+
+  // Inside now: turn forward and walk up to the controls.
+  const walk = (progress - CROSS_ENDS) / (1 - CROSS_ENDS);
+  return {
+    eye: at(0.55, cab.floorY + 1.68, doorZ + (cab.centreZ - 0.5 - doorZ) * walk),
+    look: look(-0.4, cab.floorY + 1.3, cab.frontZ),
+  };
+}
+
+/** Puts the hand prop where a pose says it goes. */
+function applyHandPose(context, pose) {
+  context.stage.hand.position.set(pose.position.x, pose.position.y, pose.position.z);
+  context.stage.hand.rotation.set(pose.rotation.x, pose.rotation.y, pose.rotation.z);
+}
+
+/**
  * Builds the opening cutscene.
  *
  * @param {object} options
  * @param {Function} options.onFinished called once the intro is over, however
  *                                      it ended - watched or skipped
  */
+/**
+ * What time of day each act happens at.
+ *
+ * The whole intro used to run between 0.02 and 0.225, and the day/night cycle
+ * puts the sun below the horizon for all of that: sun intensity is zero until
+ * 0.25, so "he leaves at dawn" was staged in the middle of the night. Every
+ * shot after the title was near-black, which is most of why the battlefield
+ * and the departure could not be read.
+ *
+ * The times below tell the story instead of fighting it. He is shot down at
+ * dusk, spends the night on the ground, and gets the locomotive moving as the
+ * sun comes up - which is also the only arrangement in which the windows can
+ * show him anything.
+ */
+const TIME = {
+  /** The title train, at night. */
+  opening: 0.02,
+  /** The helicopter, hit in the late afternoon. */
+  lateAfternoon: 0.66,
+  /** Face down in the dirt, hours later. */
+  deepNight: 0.05,
+  /** Getting to his feet as the sky goes grey. */
+  firstLight: 0.2,
+  /** Climbing aboard as the sun clears the horizon. */
+  sunrise: 0.3,
+  /**
+   * Pulling out into the morning.
+   *
+   * Not 0.225, which is what "dawn" looked like on paper: the cycle puts sun
+   * intensity at zero until 0.25, so the whole departure - and every window in
+   * the cab - was staged in the dark.
+   */
+  morning: 0.34,
+};
+
 export function createIntroSequence({ onFinished }) {
   const shots = [];
 
@@ -58,7 +248,7 @@ export function createIntroSequence({ onFinished }) {
       context.world.setRailwayVisible(true);
       context.world.setTrainVisible(true);
       context.stage.hideAll();
-      context.dayNight.setTimeOfDay(0.02);
+      context.dayNight.setTimeOfDay(TIME.opening);
       context.scrollSpeed = 0;
       context.overlay.setFade(0);
     },
@@ -135,6 +325,9 @@ export function createIntroSequence({ onFinished }) {
     name: "battlefield-reveal",
     duration: 2.6,
     onEnter(context) {
+      // Last of the light. The battlefield is the widest shot in the game and
+      // it has to be readable; at night it is a black rectangle.
+      context.dayNight.setTimeOfDay(TIME.lateAfternoon);
       // The battlefield occupies the same space as the railway, so the two
       // are swapped rather than kept apart.
       context.world.setRailwayVisible(false);
@@ -150,9 +343,9 @@ export function createIntroSequence({ onFinished }) {
       context.stage.helicopter.position.set(0, 58, -40);
       context.stage.helicopter.rotation.set(0.06, 0, -0.12);
     },
-    onUpdate(t, elapsed, context) {
+    onUpdate(t, elapsed, context, delta) {
       context.overlay.setFade(1 - ease(t));
-      flyHelicopter(context, elapsed, { forward: 16, bank: -0.12 });
+      flyHelicopter(context, elapsed, { forward: 16, bank: -0.12, delta });
       rideInDoorway(context, elapsed, { lookDown: 0.5 });
     },
   });
@@ -160,8 +353,12 @@ export function createIntroSequence({ onFinished }) {
   shots.push({
     name: "over-the-battlefield",
     duration: 4.2,
-    onUpdate(t, elapsed, context) {
-      flyHelicopter(context, elapsed, { forward: 16, bank: -0.12 - Math.sin(elapsed * 0.4) * 0.06 });
+    onUpdate(t, elapsed, context, delta) {
+      flyHelicopter(context, elapsed, {
+        forward: 16,
+        bank: -0.12 - Math.sin(elapsed * 0.4) * 0.06,
+        delta,
+      });
       rideInDoorway(context, elapsed, { lookDown: 0.5 - t * 0.12 });
     },
   });
@@ -169,17 +366,21 @@ export function createIntroSequence({ onFinished }) {
   shots.push({
     name: "door-gun",
     duration: 3.6,
-    onUpdate(t, elapsed, context) {
-      flyHelicopter(context, elapsed, { forward: 16, bank: -0.15 });
-      rideInDoorway(context, elapsed, { lookDown: 0.42, recoil: true });
+    onUpdate(t, elapsed, context, delta) {
+      flyHelicopter(context, elapsed, { forward: 16, bank: -0.15, delta });
 
       // The weapon fires in bursts rather than continuously.
-      const inBurst = Math.sin(elapsed * 2.2) > -0.25;
-      const pulse = inBurst ? 0.55 + Math.abs(Math.sin(elapsed * 46)) * 0.45 : 0;
+      const firing = Math.sin(elapsed * 2.2) > -0.25;
+      rideInDoorway(context, elapsed, { lookDown: 0.42, firing });
+
+      // The flash is on the same nine-a-second cycle as the recoil, so the
+      // muzzle lights up on the stroke that throws the gun back.
+      const pulse = firing ? 0.55 + (1 - ((elapsed * 9) % 1)) * 0.45 : 0;
       context.stage.setMuzzleFlash(pulse);
     },
     onExit(context) {
       context.stage.setMuzzleFlash(0);
+      context.stage.setDoorGunRecoil(0);
     },
   });
 
@@ -193,14 +394,14 @@ export function createIntroSequence({ onFinished }) {
         { scale: 0.5, duration: 3 },
       );
     },
-    onUpdate(t, elapsed, context) {
+    onUpdate(t, elapsed, context, delta) {
       context.overlay.setFlash(Math.max(0, 0.9 - t * 3));
       // The alarm comes up as the engine note falls away.
       context.overlay.setAlarm(ease(t) * 0.85);
       context.stage.setHelicopterDamage(ease(t) * 0.7);
       context.stage.setRotorSpeed(1 - ease(t) * 0.35);
 
-      flyHelicopter(context, elapsed, { forward: 14, bank: -0.15 - ease(t) * 0.3 });
+      flyHelicopter(context, elapsed, { forward: 14, bank: -0.15 - ease(t) * 0.3, delta });
       rideInDoorway(context, elapsed, { lookDown: 0.42, shakeAmount: ease(t) * 0.2 });
     },
     onExit(context) {
@@ -211,7 +412,7 @@ export function createIntroSequence({ onFinished }) {
   shots.push({
     name: "losing-control",
     duration: 3.8,
-    onUpdate(t, elapsed, context) {
+    onUpdate(t, elapsed, context, delta) {
       // Alarm pulses rather than sitting steady - a warning, not a filter.
       context.overlay.setAlarm(0.55 + Math.abs(Math.sin(elapsed * 6)) * 0.4);
       context.stage.setHelicopterDamage(0.7 + ease(t) * 0.3);
@@ -219,8 +420,8 @@ export function createIntroSequence({ onFinished }) {
 
       const helicopter = context.stage.helicopter;
       helicopter.position.y = 58 - ease(t) * 44;
-      helicopter.position.z += 14 * 0.016;
-      helicopter.rotation.y += 0.02 + ease(t) * 0.08;
+      helicopter.position.z += 14 * delta;
+      helicopter.rotation.y += (1.2 + ease(t) * 5) * delta;
       helicopter.rotation.z = -0.45 - ease(t) * 0.35;
       helicopter.rotation.x = 0.12 + ease(t) * 0.25;
 
@@ -265,13 +466,13 @@ export function createIntroSequence({ onFinished }) {
   const CRAWL_END = { x: 3.2, y: 0.42, z: -18 };
   /** Where he stands up, and where the walk to the cab begins. */
   const STAND_AT = { x: 3.2, z: -18 };
-  /** The cab's side door, which is the thing he actually walks to. */
-  const CAB_DOOR = { x: 2.6, z: -4.6 };
 
   shots.push({
     name: "wake-on-the-ground",
     duration: 2.2,
     onEnter(context) {
+      // Hours have passed. It is the middle of the night.
+      context.dayNight.setTimeOfDay(TIME.deepNight);
       // The shelter carries its own railway - track, ballast, sleepers,
       // platform and yard lamps - and it sits at the origin, so the world's
       // locomotive is standing on those rails from this moment on.
@@ -332,6 +533,9 @@ export function createIntroSequence({ onFinished }) {
     name: "standing-up",
     duration: 3.2,
     onUpdate(t, elapsed, context) {
+      // The sky goes grey behind him as he gets up.
+      context.dayNight.setTimeOfDay(TIME.deepNight + (TIME.firstLight - TIME.deepNight) * ease(t));
+
       // Rising is slow and unsteady, and the shake fades as he finds his feet.
       const rise = ease(Math.min(1, t * 1.15));
       const height = 0.42 + rise * 1.26;
@@ -339,6 +543,9 @@ export function createIntroSequence({ onFinished }) {
 
       const eye = offset({ x: STAND_AT.x, y: height, z: STAND_AT.z }, shake(unsteady, elapsed, 11));
       place(context, eye, { x: 0.4, y: 1.4 + rise * 1.2, z: -6 });
+    },
+    onExit(context) {
+      context.dayNight.setTimeOfDay(TIME.firstLight);
     },
   });
 
@@ -352,12 +559,26 @@ export function createIntroSequence({ onFinished }) {
   shots.push({
     name: "walking-to-the-train",
     duration: 5.0,
+    onEnter(context) {
+      // He hauls the cab door open as he comes up to it, so it is standing
+      // open by the time he reaches the steps. Opening a door he then walks
+      // through is a second of screen time; walking through a shut one is a bug.
+      context.world.setSideDoorOpen("right", true);
+    },
     onUpdate(t, elapsed, context) {
+      // The sun comes up over the walk.
+      context.dayNight.setTimeOfDay(TIME.firstLight + (TIME.sunrise - TIME.firstLight) * t);
+
+      const cab = context.cabDimensions;
+      // He walks to the foot of the boarding steps, which is where the next
+      // shot picks him up. Both shots ask the same function where that is.
+      const boarding = boardingPath(0, cab).eye;
+
       const walk = ease(t);
       const position = {
-        x: STAND_AT.x + (CAB_DOOR.x - STAND_AT.x) * walk,
+        x: STAND_AT.x + (boarding.x - STAND_AT.x) * walk,
         y: 1.68,
-        z: STAND_AT.z + (CAB_DOOR.z - STAND_AT.z) * walk,
+        z: STAND_AT.z + (boarding.z - STAND_AT.z) * walk,
       };
 
       // An injured, heavy walk: a pronounced limp rather than a steady bob.
@@ -369,8 +590,13 @@ export function createIntroSequence({ onFinished }) {
         z: 0,
       });
 
-      // He looks at the cab door he is heading for.
-      place(context, eye, { x: 1.2, y: 2.4, z: -3.4 });
+      // He looks at the open doorway he is heading for.
+      place(context, eye, { x: 0.6, y: 2.6, z: boarding.z });
+    },
+    onExit(context) {
+      // Whatever happened above, the door is open before he climbs.
+      context.world.setSideDoorOpen("right", true);
+      context.dayNight.setTimeOfDay(TIME.sunrise);
     },
   });
 
@@ -378,24 +604,21 @@ export function createIntroSequence({ onFinished }) {
     name: "climbing-into-the-cab",
     duration: 3.6,
     onUpdate(t, elapsed, context) {
-      const climb = ease(t);
+      context.dayNight.setTimeOfDay(TIME.sunrise + (TIME.morning - TIME.sunrise) * t);
+
       const cab = context.cabDimensions;
+      const pose = boardingPath(ease(t), cab);
 
-      // Up the steps and in through the doorway: the eye rises as it crosses
-      // the threshold, which is what climbing into a locomotive feels like.
-      const from = { x: CAB_DOOR.x, y: 1.68, z: CAB_DOOR.z };
-      const to = { x: 0.55, y: cab.floorY + 1.62, z: cab.centreZ - 0.5 };
-      const eye = lerpPoint(from, to, climb);
-
-      // The pull on the grab handle, and the step up.
-      const effort = Math.sin(climb * Math.PI) * 0.05;
+      // The pull on the grab iron, and the step up.
+      const effort = Math.sin(ease(t) * Math.PI) * 0.05;
       place(
         context,
-        offset(eye, { x: 0, y: effort, z: 0 }),
-        { x: -0.4, y: cab.floorY + 1.3, z: cab.frontZ },
+        offset(pose.eye, { x: 0, y: effort, z: 0 }),
+        pose.look,
       );
     },
     onExit(context) {
+      context.dayNight.setTimeOfDay(TIME.morning);
       // He is inside now, and the walls hide the swap: the battlefield goes
       // away and the running railway comes back.
       context.stage.hideAll();
@@ -408,11 +631,18 @@ export function createIntroSequence({ onFinished }) {
     name: "in-the-cab",
     duration: 3.2,
     onEnter(context) {
-      // First light. He leaves at dawn.
-      context.dayNight.setTimeOfDay(0.225);
+      // The sun is up. He leaves in the morning.
+      context.dayNight.setTimeOfDay(TIME.morning);
       context.scrollSpeed = 0;
       context.stage.setVisible("hand", true);
       context.cab = context.cabDimensions;
+      // He pulls the door shut behind him before he touches anything.
+      context.world.setSideDoorOpen("right", false);
+    },
+    onExit(context) {
+      // Skipping the intro must leave the cab in the same state as watching
+      // it: aboard, door shut, ready to drive.
+      context.world.setSideDoorOpen("right", false);
     },
     onUpdate(t, elapsed, context) {
       const cab = context.cab;
@@ -429,9 +659,8 @@ export function createIntroSequence({ onFinished }) {
       );
       place(context, offset(eye, shake(0.012, elapsed, 6)), target);
 
-      // The hand waits out of shot until the next beat.
-      context.stage.hand.position.set(-0.15, cab.floorY + 0.72, cab.centreZ - 0.55);
-      context.stage.hand.rotation.set(-1.1, 0.15, 0);
+      // The hand waits on his knee, out of shot, until the next beat.
+      applyHandPose(context, throttleReachPose(0, cab));
     },
   });
 
@@ -440,55 +669,40 @@ export function createIntroSequence({ onFinished }) {
     duration: 3.4,
     onEnter(context) {
       context.world.setThrottleIndicator(0);
+      context.world.setThrottleLever(0, context.cab);
     },
     onUpdate(t, elapsed, context) {
       const cab = context.cab;
-      const consoleZ = cab.frontZ - 0.45;
-      // Must match the quadrant built in interiors.js.
-      const quadrantZ = consoleZ + 0.16;
-      const notchX = -0.81 + 3 * 0.26;
-      const notchY = cab.floorY + 1.0 + 0.15;
+      const quadrant = throttleQuadrant(cab);
 
       /*
-       * The reach.
-       *
-       * A straight line from the lap to the notch passes through the desk,
-       * which is what made the arm clip through the console. The hand is moved
-       * along an arc instead: out and up first, clearing the desk edge, then
-       * forward and down onto the control - which is also how a person
-       * actually reaches for something in front of them.
+       * He takes hold of the lever where it stands at idle and drives it the
+       * length of the quadrant. The lever moves with the hand rather than
+       * snapping to full at a magic moment, so the notches light one at a time
+       * as it passes them - which is the shot doing the work of explaining
+       * what the throttle is before the player ever touches it.
        */
-      const reach = ease(Math.min(1, t * 1.9));
-      const rest = { x: -0.15, y: cab.floorY + 0.72, z: cab.centreZ - 0.55 };
-      const target = { x: notchX, y: notchY + 0.035, z: quadrantZ + 0.02 };
+      const pose = throttleReachPose(t, cab);
+      applyHandPose(context, pose);
 
-      const handPosition = lerpPoint(rest, target, reach);
-      // The arc: lift clear of the desk in the middle of the move, and settle
-      // onto the control at the end.
-      handPosition.y += Math.sin(reach * Math.PI) * 0.16;
-
-      context.stage.hand.position.set(handPosition.x, handPosition.y, handPosition.z);
-      // The wrist rolls over as the hand comes down onto the notch.
-      context.stage.hand.rotation.set(-1.1 + reach * 0.75, 0.15 - reach * 0.15, 0);
-
-      // Contact at 55% through the shot: full power goes in, and the notches
-      // light up. From the moment gameplay starts the simulation drives them.
-      const pressed = t > 0.55;
-      context.world.setThrottleIndicator(pressed ? 4 : 0);
+      context.world.setThrottleLever(pose.notch, cab);
+      context.world.setThrottleIndicator(Math.floor(pose.notch + 0.001));
 
       const eye = { x: 0.3, y: cab.floorY + 1.62, z: cab.centreZ - 0.35 };
       place(context, offset(eye, shake(0.01, elapsed, 6)), {
         x: -0.45,
         y: cab.floorY + 1.05,
-        z: consoleZ,
+        z: quadrant.consoleZ,
       });
 
-      // The engine takes up as the notch goes in.
-      context.scrollSpeed = pressed ? ease((t - 0.55) / 0.45) * 9 : 0;
+      // The engine takes up as the lever comes forward, not before.
+      context.scrollSpeed = (pose.notch / 4) * 9;
     },
     onExit(context) {
       context.stage.setVisible("hand", false);
-      // The notches stay lit: the throttle really is at full when play begins.
+      // The lever stays where he left it: the throttle really is at full when
+      // play begins, and the cab has to agree.
+      context.world.setThrottleLever(4, context.cab);
       context.world.setThrottleIndicator(4);
     },
   });
@@ -526,41 +740,57 @@ export function createIntroSequence({ onFinished }) {
 
 /**
  * Moves the helicopter along its flight path.
- * Kept in one place so every shot in act two agrees about where it is.
+ *
+ * Kept in one place so every shot in act two agrees about where it is, and
+ * driven by real elapsed time rather than an assumed sixty frames a second.
+ * With a hard-coded step the aircraft crossed four times as much ground on a
+ * fast machine as on a slow one, and the shot framing went with it.
+ *
+ * @param {number} delta seconds this call covers
+ * @param {number} forward metres per second along the track
  */
-function flyHelicopter(context, elapsed, { forward, bank }) {
+function flyHelicopter(context, elapsed, { forward, bank, delta = 0 }) {
   const helicopter = context.stage.helicopter;
-  helicopter.position.z += forward * 0.016;
+  helicopter.position.z += forward * delta;
   helicopter.position.y = 58 + Math.sin(elapsed * 0.7) * 1.4;
   helicopter.rotation.z = bank;
   helicopter.rotation.x = 0.06;
 }
 
 /**
- * Puts the camera in the helicopter's open door, with the weapon in shot.
- * The protagonist is operating it, so the gun sits below and ahead of the eye.
+ * Puts the camera behind the door gun.
+ *
+ * The gun is bolted into the helicopter and the gunner's head hangs off the
+ * gun, so there is nothing to position here: the stage is asked where the
+ * gunner's eye ended up after the aircraft moved, and the camera goes there.
+ * That is why the weapon cannot drift away from the doorway any more - the
+ * camera follows the gun, rather than the gun chasing the camera.
+ *
+ * @param {number} lookDown  how far the weapon is depressed, 0-1
+ * @param {number} shakeAmount airframe vibration, in metres
+ * @param {boolean} firing   whether the gun is being fired this frame
  */
-function rideInDoorway(context, elapsed, { lookDown = 0.5, shakeAmount = 0.05, recoil = false }) {
-  const helicopter = context.stage.helicopter;
-  const gun = context.stage.doorGun;
+function rideInDoorway(context, elapsed, { lookDown = 0.5, shakeAmount = 0.05, firing = false }) {
+  const stage = context.stage;
 
-  const doorway = {
-    x: helicopter.position.x - 1.5,
-    y: helicopter.position.y - 0.2,
-    z: helicopter.position.z + 0.4,
-  };
+  // Depressed onto the ground: from sixty metres up, anything shallower and
+  // the shot is all sky.
+  stage.setDoorGunElevation(lookDown);
 
-  // Airframe vibration, plus the weapon's own recoil while it is firing.
-  const vibration = shake(shakeAmount + 0.02, elapsed, 41);
-  const kick = recoil ? Math.abs(Math.sin(elapsed * 46)) * 0.03 : 0;
+  /*
+   * Recoil is a sawtooth, not a sine: the gun slams back in about four
+   * milliseconds and the buffer pushes it out over the rest of the cycle.
+   * A sine would read as the gun swaying.
+   */
+  const cyclesPerSecond = 9;
+  const phase = firing ? (elapsed * cyclesPerSecond) % 1 : 0;
+  stage.setDoorGunRecoil(firing ? Math.max(0, 1 - phase * 1.8) : 0);
 
-  const eye = offset(doorway, vibration);
-  place(context, eye, {
-    x: eye.x - 6,
-    y: eye.y - lookDown * 12,
-    z: eye.z + 9,
-  });
+  // Vibration is the airframe, and the gunner's head with it. Firing adds a
+  // barely-there tremor - the weapon kicks, the eight-tonne aircraft does not.
+  const tremor = firing ? 0.006 : 0;
+  const vibration = shake(shakeAmount + 0.015 + tremor, elapsed, 41);
 
-  gun.position.set(eye.x - 0.55, eye.y - 0.5 - kick, eye.z + 0.85);
-  gun.rotation.set(-lookDown * 0.85, -0.55, 0);
+  const view = stage.gunnerView();
+  placeRolled(context, offset(view.eye, vibration), view.aim, view.up);
 }

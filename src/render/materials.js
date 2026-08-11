@@ -319,16 +319,36 @@ export function groundMaterial() {
   });
 }
 
-/** Glass for cab and wagon windows: dark, dirty, faintly reflective. */
-export function glassMaterial() {
-  return new THREE.MeshPhysicalMaterial({
-    color: 0x11181a,
+/**
+ * Glass for cab and wagon windows.
+ *
+ * The driver has to be able to see out. Two earlier versions could not: a
+ * dark physical material with transmission, and then a pale tinted one. Both
+ * washed the windscreen out against a lit cab, because a pane with a bright
+ * base colour picks up the interior lamps across its whole surface and the
+ * result is a glowing sheet rather than a window.
+ *
+ * The trick is that clean glass has almost no diffuse response at all. What
+ * you see in a window at night is *specular* - a few tight highlights of the
+ * lamps behind you, not the room smeared over the pane. So the base colour
+ * here is nearly black and the surface is polished: the lamps leave small
+ * bright glints, everything else passes straight through, and the pane reads
+ * as glass because of the glint and the frame around it.
+ *
+ * @param {number} [opacity] lower for windows that must stay see-through
+ */
+export function glassMaterial({ opacity = 0.12, tint = 0x0c1412 } = {}) {
+  return new THREE.MeshStandardMaterial({
+    color: tint,
     metalness: 0,
-    roughness: 0.28,
-    transmission: 0.35,
-    thickness: 0.05,
+    // Polished, so highlights stay small and sharp instead of spreading into
+    // a haze across the whole window.
+    roughness: 0.14,
     transparent: true,
-    opacity: 0.86,
+    opacity,
+    // Glass must not write depth, or it hides whatever is behind it from the
+    // transparency sort and the track outside disappears.
+    depthWrite: false,
   });
 }
 

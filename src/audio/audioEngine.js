@@ -17,14 +17,35 @@
  * so nothing is created until `resume()` is called from a real gesture.
  */
 
-/** Distance model for positional sounds, in metres. */
-const REFERENCE_DISTANCE = 6;
-const MAX_DISTANCE = 320;
-const ROLLOFF = 1.4;
+/**
+ * Distance model for positional sounds, in metres.
+ *
+ * The reference distance is generous and the rolloff gentle on purpose. Combat
+ * happens tens of metres away across open ground, and with a tighter model an
+ * exploding tank at 60 m came out quieter than the cab it was heard from -
+ * technically correct falloff, completely wrong for the game.
+ */
+const REFERENCE_DISTANCE = 12;
+const MAX_DISTANCE = 400;
+const ROLLOFF = 1;
+
+/**
+ * Bus levels. The train is a bed that plays for the entire run, so it sits
+ * well below everything that only happens occasionally: it should be constant
+ * and physical, never the loudest thing on screen. Weapons and explosions run
+ * at full level and the limiter below keeps them from hurting.
+ */
+const BUS_LEVELS = {
+  train: 0.5,
+  weapons: 1,
+  world: 0.9,
+  ui: 0.45,
+};
 
 export class AudioEngine {
   #context = null;
   #master = null;
+  #limiter = null;
   #buses = {};
   #noiseBuffer = null;
   #volume = 1;
@@ -49,20 +70,33 @@ export class AudioEngine {
       if (!Context) return false;
 
       this.#context = new Context();
+
+      // A limiter across the whole mix. Two jobs: it stops a cluster of
+      // explosions from clipping into something painful, and because the
+      // train bed is the only thing playing continuously, a blast briefly
+      // pushes the train down underneath it - the ducking is free and it is
+      // exactly what should happen.
+      this.#limiter = this.#context.createDynamicsCompressor();
+      this.#limiter.threshold.value = -14;
+      this.#limiter.knee.value = 14;
+      this.#limiter.ratio.value = 6;
+      // Slow enough to let a transient through before it clamps, so shots
+      // keep their crack, and slow to let go so it does not pump.
+      this.#limiter.attack.value = 0.006;
+      this.#limiter.release.value = 0.3;
+      this.#limiter.connect(this.#context.destination);
+
       this.#master = this.#context.createGain();
       this.#master.gain.value = this.#muted ? 0 : this.#volume;
-      this.#master.connect(this.#context.destination);
+      this.#master.connect(this.#limiter);
 
       // Separate buses so a mix change is one line rather than a hunt.
-      for (const name of ["train", "weapons", "world", "ui"]) {
+      for (const [name, level] of Object.entries(BUS_LEVELS)) {
         const bus = this.#context.createGain();
-        bus.gain.value = 1;
+        bus.gain.value = level;
         bus.connect(this.#master);
         this.#buses[name] = bus;
       }
-      // Weapons are loud; give the rest room to breathe underneath them.
-      this.#buses.weapons.gain.value = 0.85;
-      this.#buses.ui.gain.value = 0.5;
     }
 
     if (this.#context.state === "suspended") this.#context.resume();
