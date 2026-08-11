@@ -58,6 +58,7 @@ export default {
     HUD_NO_OUTPOST_YET: "Keiner",
 
     PROMPT_INTERACT: "{key} drücken",
+    PROMPT_FORMAT: "{key} \u00b7 {action}",
     PROMPT_DRIVE: "Ans Führerpult",
     PROMPT_LEAVE_CONTROLS: "Zurücktreten",
     PROMPT_OPEN_DOOR: "Tür öffnen",

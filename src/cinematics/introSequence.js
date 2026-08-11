@@ -43,8 +43,14 @@ export function throttleReachPose(t, cab) {
     z: quadrant.z + quadrant.knobOffset.z,
   });
 
-  // Hand resting on his knee, well back from the desk and out of the shot.
-  const rest = { x: -0.15, y: cab.floorY + 0.72, z: cab.centreZ - 0.55 };
+  /*
+   * Hand hanging at his side, just below and behind the eye - which is where
+   * a first-person arm has to start if it is to read as *his* arm rather than
+   * as an object across the room. It used to rest two and a half metres back,
+   * and at that distance a forearm pointing towards the camera is a stub with
+   * an end cap on it.
+   */
+  const rest = { x: 0.16, y: quadrant.consoleTop, z: quadrant.z - 1.05 };
 
   /*
    * Two beats. He reaches for the lever where it stands at idle, closes his
@@ -59,12 +65,20 @@ export function throttleReachPose(t, cab) {
     const position = lerpPoint(rest, grip, reach);
 
     // Up over the edge of the desk on the way in, rather than through it.
-    position.y += Math.sin(reach * Math.PI) * 0.2;
+    position.y += Math.sin(reach * Math.PI) * 0.36;
 
     return {
       position,
-      // From hanging loose at the knee to level, gripping the knob.
-      rotation: { x: -0.95 + reach * 0.99, y: 0.2 - reach * 0.2, z: 0 },
+      /*
+       * From hanging at his side to level, gripping the knob.
+       *
+       * The wrist barely pitches. It is tempting to let it tip right back at
+       * the start, and it looks better in isolation - but the arm behind the
+       * wrist is one and a half metres long, so ten degrees at the wrist is
+       * a quarter of a metre at the elbow, and the elbow is what ends up
+       * inside the desk.
+       */
+      rotation: { x: -0.1 + reach * 0.14, y: 0.2 - reach * 0.2, z: 0 },
       notch: 0,
       gripped: reach > 0.98,
     };
@@ -215,6 +229,18 @@ function applyHandPose(context, pose) {
  * sun comes up - which is also the only arrangement in which the windows can
  * show him anything.
  */
+/**
+ * The helicopter's cruising height and where it starts.
+ *
+ * Both were wrong for the ground underneath. At fifty-eight metres, a weapon
+ * depressed twenty-two degrees points at ground a hundred and forty metres
+ * ahead - past the far end of the built battlefield and off the edge of the
+ * ground plane, which is why the shot was sky and a diagonal seam. Lower and
+ * further back, the gun looks at the part of the battlefield that has ruins
+ * and fires on it.
+ */
+const FLIGHT = { height: 26, startZ: -110, speed: 11 };
+
 const TIME = {
   /** The title train, at night. */
   opening: 0.02,
@@ -233,7 +259,7 @@ const TIME = {
    * intensity at zero until 0.25, so the whole departure - and every window in
    * the cab - was staged in the dark.
    */
-  morning: 0.34,
+  morning: 0.4,
 };
 
 export function createIntroSequence({ onFinished }) {
@@ -340,12 +366,12 @@ export function createIntroSequence({ onFinished }) {
       context.stage.setHelicopterDamage(0);
       context.scrollSpeed = 0;
 
-      context.stage.helicopter.position.set(0, 58, -40);
+      context.stage.helicopter.position.set(0, FLIGHT.height, FLIGHT.startZ);
       context.stage.helicopter.rotation.set(0.06, 0, -0.12);
     },
     onUpdate(t, elapsed, context, delta) {
       context.overlay.setFade(1 - ease(t));
-      flyHelicopter(context, elapsed, { forward: 16, bank: -0.12, delta });
+      flyHelicopter(context, elapsed, { forward: FLIGHT.speed, bank: -0.12, delta });
       rideInDoorway(context, elapsed, { lookDown: 0.5 });
     },
   });
@@ -355,7 +381,7 @@ export function createIntroSequence({ onFinished }) {
     duration: 4.2,
     onUpdate(t, elapsed, context, delta) {
       flyHelicopter(context, elapsed, {
-        forward: 16,
+        forward: FLIGHT.speed,
         bank: -0.12 - Math.sin(elapsed * 0.4) * 0.06,
         delta,
       });
@@ -367,7 +393,7 @@ export function createIntroSequence({ onFinished }) {
     name: "door-gun",
     duration: 3.6,
     onUpdate(t, elapsed, context, delta) {
-      flyHelicopter(context, elapsed, { forward: 16, bank: -0.15, delta });
+      flyHelicopter(context, elapsed, { forward: FLIGHT.speed, bank: -0.15, delta });
 
       // The weapon fires in bursts rather than continuously.
       const firing = Math.sin(elapsed * 2.2) > -0.25;
@@ -401,7 +427,7 @@ export function createIntroSequence({ onFinished }) {
       context.stage.setHelicopterDamage(ease(t) * 0.7);
       context.stage.setRotorSpeed(1 - ease(t) * 0.35);
 
-      flyHelicopter(context, elapsed, { forward: 14, bank: -0.15 - ease(t) * 0.3, delta });
+      flyHelicopter(context, elapsed, { forward: FLIGHT.speed, bank: -0.15 - ease(t) * 0.3, delta });
       rideInDoorway(context, elapsed, { lookDown: 0.42, shakeAmount: ease(t) * 0.2 });
     },
     onExit(context) {
@@ -419,8 +445,8 @@ export function createIntroSequence({ onFinished }) {
       context.stage.setRotorSpeed(0.65 - ease(t) * 0.4);
 
       const helicopter = context.stage.helicopter;
-      helicopter.position.y = 58 - ease(t) * 44;
-      helicopter.position.z += 14 * delta;
+      helicopter.position.y = FLIGHT.height - ease(t) * (FLIGHT.height - 12);
+      helicopter.position.z += FLIGHT.speed * delta;
       helicopter.rotation.y += (1.2 + ease(t) * 5) * delta;
       helicopter.rotation.z = -0.45 - ease(t) * 0.35;
       helicopter.rotation.x = 0.12 + ease(t) * 0.25;
@@ -646,10 +672,16 @@ export function createIntroSequence({ onFinished }) {
     },
     onUpdate(t, elapsed, context) {
       const cab = context.cab;
+      /*
+       * Standing at the controls, not across the room from them - but not
+       * with his nose on the quadrant either. A metre and a third back and
+       * twenty degrees down is where a driver's eye actually is: the desk
+       * fills the lower half of the frame and the track is visible over it.
+       */
       const eye = {
-        x: 0.3,
-        y: cab.floorY + 1.62,
-        z: cab.centreZ - 0.35,
+        x: 0.32,
+        y: cab.floorY + 1.68,
+        z: throttleQuadrant(cab).z - 1.35,
       };
       // Looking down and left at the driver's desk.
       const target = lerpPoint(
@@ -688,11 +720,11 @@ export function createIntroSequence({ onFinished }) {
       context.world.setThrottleLever(pose.notch, cab);
       context.world.setThrottleIndicator(Math.floor(pose.notch + 0.001));
 
-      const eye = { x: 0.3, y: cab.floorY + 1.62, z: cab.centreZ - 0.35 };
+      const eye = { x: 0.32, y: cab.floorY + 1.68, z: quadrant.z - 1.35 };
       place(context, offset(eye, shake(0.01, elapsed, 6)), {
-        x: -0.45,
-        y: cab.floorY + 1.05,
-        z: quadrant.consoleZ,
+        x: -0.35,
+        y: quadrant.slotY + 0.02,
+        z: quadrant.consoleZ + 0.05,
       });
 
       // The engine takes up as the lever comes forward, not before.
@@ -752,7 +784,7 @@ export function createIntroSequence({ onFinished }) {
 function flyHelicopter(context, elapsed, { forward, bank, delta = 0 }) {
   const helicopter = context.stage.helicopter;
   helicopter.position.z += forward * delta;
-  helicopter.position.y = 58 + Math.sin(elapsed * 0.7) * 1.4;
+  helicopter.position.y = FLIGHT.height + Math.sin(elapsed * 0.7) * 1.4;
   helicopter.rotation.z = bank;
   helicopter.rotation.x = 0.06;
 }

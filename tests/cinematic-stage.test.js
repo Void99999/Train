@@ -123,3 +123,49 @@ test("the horizon banks with the aircraft", () => {
   assert.ok(level.y > 0.99, "flying level, up is up");
   assert.ok(Math.abs(rolled.x) > 0.5, "rolled hard over, the world tips with it");
 });
+
+test("the gunner can actually see the battlefield past his own aircraft", () => {
+  /*
+   * The camera used to sit deep inside a solid cabin box. Nothing was framed
+   * but the inside of the hull - the whole act was a dark slab. Rather than
+   * eyeballing it, this fans rays across the shot's frustum and counts how
+   * many the aircraft eats.
+   */
+  const stage = flying();
+  stage.helicopter.traverse((node) => (node.visible = true));
+  stage.setDoorGunElevation(0.42);
+
+  const view = stage.gunnerView();
+  const camera = new THREE.PerspectiveCamera(60, 16 / 9, 0.1, 2000);
+  camera.up.set(view.up.x, view.up.y, view.up.z);
+  camera.position.set(view.eye.x, view.eye.y, view.eye.z);
+  camera.lookAt(view.aim.x, view.aim.y, view.aim.z);
+  camera.updateMatrixWorld();
+
+  const raycaster = new THREE.Raycaster();
+  raycaster.far = 400;
+
+  let blocked = 0;
+  let total = 0;
+  for (let iy = -5; iy <= 5; iy += 1) {
+    for (let ix = -8; ix <= 8; ix += 1) {
+      total += 1;
+      raycaster.setFromCamera(new THREE.Vector2(ix / 8, iy / 5), camera);
+      if (raycaster.intersectObject(stage.helicopter, true).length > 0) blocked += 1;
+    }
+  }
+
+  const fraction = blocked / total;
+  assert.ok(fraction < 0.4, `most of the frame is the world, not the hull (${Math.round(fraction * 100)}% blocked)`);
+  assert.ok(fraction > 0.05, "but the weapon and the doorway are still in shot");
+});
+
+test("the gunner is in the door opening, not buried in the cabin", () => {
+  const stage = flying();
+  const { eye } = stage.gunnerView();
+  const local = stage.helicopter.worldToLocal(new THREE.Vector3(eye.x, eye.y, eye.z));
+
+  // The cabin skin is at 1.3; the door opening runs from z -1.9 to 0.6.
+  assert.ok(local.x < -1.1, `out at the doorway (x=${local.x.toFixed(2)})`);
+  assert.ok(local.z > -1.9 && local.z < 0.6, "and within the opening, not behind the bulkhead");
+});

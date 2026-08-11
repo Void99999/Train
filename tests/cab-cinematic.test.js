@@ -115,13 +115,15 @@ test("the lever travels the whole quadrant rather than jumping", () => {
   }
 });
 
-test("the hand starts out of the way, back at his knee", () => {
+test("the hand starts at his side, below the desk and clear of it", () => {
   const start = throttleReachPose(0, cab);
   const quadrant = throttleQuadrant(cab);
+  const desk = cabColliders().find((collider) => collider.tag === "cab-console");
 
-  // Well behind the console, so the shot before this one is not full of arm.
-  assert.ok(start.position.z < quadrant.consoleZ - 1.5, "a good way back");
-  assert.ok(start.position.y < quadrant.deskTopY, "and below the desk");
+  // Behind the console rather than over it, and low - so the shot opens on an
+  // empty desk and the arm comes up into frame.
+  assert.ok(start.position.z < desk.minZ, `behind the desk (z=${start.position.z.toFixed(2)})`);
+  assert.ok(start.position.y < quadrant.deskTopY, "and below its surface");
   assert.equal(start.gripped, false);
 });
 

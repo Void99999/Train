@@ -817,7 +817,18 @@ export class World {
     if (!sky) return;
 
     this.#sky.material.uniforms.horizonColour.value.setHex(sky.skyColour);
-    this.#sky.material.uniforms.zenithColour.value.setHex(sky.skyColour).multiplyScalar(0.35);
+
+    /*
+     * The zenith is deeper than the horizon, but not a third of it - at that
+     * ratio a sunlit landscape sat under a night sky, which is most of why
+     * daylight still read as dark. How much deeper depends on how much
+     * daylight there is: at midday the difference is a haze band low down,
+     * and at night there is barely any difference at all.
+     */
+    const daylight = 1 - sky.darkness;
+    this.#sky.material.uniforms.zenithColour.value
+      .setHex(sky.skyColour)
+      .multiplyScalar(0.5 + daylight * 0.25);
 
     this.#stars.material.opacity = Math.max(0, sky.darkness - 0.25) * 1.3;
     this.moonDisc.visible = sky.darkness > 0.1;

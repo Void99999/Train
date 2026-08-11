@@ -222,7 +222,8 @@ export class CinematicStage {
     group.visible = false;
 
     const ground = mesh(
-      new THREE.PlaneGeometry(400, 400),
+      // Big enough that the aircraft never flies off the edge of it.
+      new THREE.PlaneGeometry(1400, 1400),
       new THREE.MeshStandardMaterial({ color: 0x2a251d, roughness: 1, metalness: 0 }),
       { cast: false },
     );
@@ -550,9 +551,39 @@ export class CinematicStage {
     const body = metalMaterial({ colour: 0x2f3a33, wear: 0.5, seed: 710, repeat: 2 });
     const dark = metalMaterial({ colour: 0x22262a, wear: 0.6, seed: 711, repeat: 1 });
 
-    const cabin = mesh(new THREE.BoxGeometry(2.6, 2.2, 5.4), body);
-    cabin.position.y = 0;
-    group.add(cabin);
+    /*
+     * The cabin is built as a shell with its left side open, not as a solid
+     * box. The gunner stands in that doorway, which means the camera stands
+     * there too - and a camera inside a solid box sees the inside of a solid
+     * box. The whole battlefield act was the back of a slab.
+     */
+    const cabinFloor = mesh(new THREE.BoxGeometry(2.6, 0.12, 5.4), body);
+    cabinFloor.position.y = -1.1;
+    group.add(cabinFloor);
+
+    const cabinRoof = mesh(new THREE.BoxGeometry(2.6, 0.12, 5.4), body);
+    cabinRoof.position.y = 1.1;
+    group.add(cabinRoof);
+
+    // Right side closed, left side open where the door has been slid back.
+    const rightWall = mesh(new THREE.BoxGeometry(0.12, 2.2, 5.4), body);
+    rightWall.position.x = 1.3;
+    group.add(rightWall);
+
+    for (const [z, depth] of [[1.65, 2.1], [-2.3, 0.8]]) {
+      const panel = mesh(new THREE.BoxGeometry(0.12, 2.2, depth), body);
+      panel.position.set(-1.3, 0, z);
+      group.add(panel);
+    }
+
+    const bulkhead = mesh(new THREE.BoxGeometry(2.6, 2.2, 0.12), dark);
+    bulkhead.position.z = -2.7;
+    group.add(bulkhead);
+
+    // The slid-back door itself, stowed against the rear of the opening.
+    const slidDoor = mesh(new THREE.BoxGeometry(0.09, 1.9, 1.0), dark);
+    slidDoor.position.set(-1.42, 0, -2.4);
+    group.add(slidDoor);
 
     const nose = mesh(new THREE.SphereGeometry(1.3, 14, 10), body);
     nose.scale.set(1, 0.85, 1.1);
@@ -755,7 +786,7 @@ export class CinematicStage {
      * a gun leans over it - his head does not swing up in an arc behind it.
      */
     const eye = new THREE.Object3D();
-    eye.position.set(0.16, 0.3, -1);
+    eye.position.set(-0.455, 0.39, -0.731);
     pintle.add(eye);
 
     // A point far down the sightline. Aiming the camera at this rather than
@@ -921,25 +952,34 @@ export class CinematicStage {
     const sleeve = new THREE.MeshStandardMaterial({ color: 0x4a4f3f, roughness: 0.95 });
 
     /*
-     * The forearm runs backward and only slightly up - about eight degrees.
+     * The forearm runs backward and very slightly *down*, towards a shoulder
+     * below the eye - which is where a shoulder is.
      *
-     * The first attempt at this angled it a full twenty-four degrees to be
-     * certain it cleared the desk, and on screen that read as a post standing
-     * on the console rather than as an arm. A man reaching for a lever whose
-     * knob is a third of a metre above the desk holds his forearm nearly
-     * level; the clearance comes from the lever being tall, not from the arm
-     * being raised.
+     * Two earlier versions had it climbing away from the wrist: at
+     * twenty-four degrees it read as a post standing on the console, and even
+     * at eight it left the frame over the driver's head. The clearance over
+     * the desk does not come from raising the arm - it comes from the lever
+     * knob standing a third of a metre proud of the desk, and from the elbow
+     * end being behind the desk entirely.
      */
-    const ARM_RISE = 0.14;
+    const ARM_RISE = -0.13;
     const armPitch = -(Math.PI / 2 - ARM_RISE);
 
-    const forearm = mesh(new THREE.CylinderGeometry(0.052, 0.072, 0.54, 10), sleeve);
+    /*
+     * Long enough to run past the camera and off the edge of the frame.
+     *
+     * A forearm that stops in mid-air at chest height is a floating tube, and
+     * no amount of tidying the end of it changes that. In first person the
+     * arm has to leave the shot the way a real one does - by belonging to the
+     * person holding the camera.
+     */
+    const forearm = mesh(new THREE.CylinderGeometry(0.044, 0.072, 1.4, 10), sleeve);
     forearm.rotation.x = armPitch;
-    forearm.position.set(0, 0.05, -0.3);
+    forearm.position.set(0, 0.0156 + 0.7 * Math.sin(ARM_RISE), -0.034 - 0.7 * Math.cos(ARM_RISE));
     group.add(forearm);
 
     // The cuff, where the glove meets the sleeve.
-    const cuff = mesh(new THREE.CylinderGeometry(0.062, 0.062, 0.07, 10), glove);
+    const cuff = mesh(new THREE.CylinderGeometry(0.055, 0.055, 0.07, 10), glove);
     cuff.rotation.x = armPitch;
     cuff.position.set(0, 0.021, -0.11);
     group.add(cuff);

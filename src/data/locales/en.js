@@ -62,6 +62,9 @@ export default {
 
     /* ------------------------------------------------------------- prompts */
     PROMPT_INTERACT: "Press {key}",
+    // The key and the action, joined. Kept as a whole string so a language
+    // that wants a different order or punctuation can have one.
+    PROMPT_FORMAT: "Press {key} \u00b7 {action}",
     PROMPT_DRIVE: "Take the controls",
     PROMPT_LEAVE_CONTROLS: "Step back",
     PROMPT_OPEN_DOOR: "Open door",

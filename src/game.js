@@ -829,9 +829,10 @@ export class Game {
 
     this.hud.setPrompt(
       focused
-        ? `${this.localization.t("PROMPT_INTERACT", {
+        ? this.localization.t("PROMPT_FORMAT", {
             key: this.input.primaryLabel(ACTION.interact),
-          })}  ${this.localization.t(focused.promptKey)}`
+            action: this.localization.t(focused.promptKey),
+          })
         : null,
     );
   }
