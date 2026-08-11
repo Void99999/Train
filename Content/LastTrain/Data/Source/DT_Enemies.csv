@@ -1,0 +1,5 @@
+Name,NameKey,MaxHealth,WeaponId,MoveSpeedMetresPerSecond,Bounty,bIsVehicle,LengthMetres,WidthMetres,HeightMetres
+soldier,ENEMY_SOLDIER,80,enemy_rifle,4.6,15,False,0.6,0.7,1.8
+heavy_soldier,ENEMY_HEAVY_SOLDIER,200,enemy_heavy_weapon,2.9,35,False,0.75,0.9,1.9
+combat_vehicle,ENEMY_COMBAT_VEHICLE,600,enemy_autocannon,30,120,True,5.4,2.3,2.2
+tank,ENEMY_TANK,2500,enemy_tank_cannon,16,400,True,7.6,3.4,2.6

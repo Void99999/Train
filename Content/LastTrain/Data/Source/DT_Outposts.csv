@@ -1,0 +1,11 @@
+Name,NameKey,DistanceKm,Index,bHasCargoTrader,bHasWeaponSupply,bHasAmmunitionStore,bHasMedicalPost,bHasRepairBay,bHasWorkshop,Unlocks
+outpost_1,OUTPOST_1_NAME,10.0,1,True,True,True,True,True,True,"assault_rifle,transport_1,combat_1,combat_2"
+outpost_2,OUTPOST_2_NAME,20.0,2,True,True,True,True,True,True,"upgrade.armour"
+outpost_3,OUTPOST_3_NAME,30.0,3,True,True,True,True,True,True,"rpg,combat_3"
+outpost_4,OUTPOST_4_NAME,40.0,4,True,True,True,True,True,True,"combat_4,crew.loader"
+outpost_5,OUTPOST_5_NAME,50.0,5,True,True,True,True,True,True,""
+outpost_6,OUTPOST_6_NAME,60.0,6,True,True,True,True,True,True,"minigun"
+outpost_7,OUTPOST_7_NAME,70.0,7,True,True,True,True,True,True,""
+outpost_8,OUTPOST_8_NAME,80.0,8,True,True,True,True,True,True,""
+outpost_9,OUTPOST_9_NAME,90.0,9,True,True,True,True,True,True,""
+outpost_10,OUTPOST_10_NAME,100.0,10,True,True,True,True,True,True,""

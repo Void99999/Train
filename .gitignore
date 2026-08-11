@@ -1,4 +1,55 @@
+# ---------------------------------------------------------------- Unreal
+# Everything Unreal regenerates. None of it belongs in the repository, and
+# Binaries in particular will make a clone unbuildable on another machine.
+Binaries/
+DerivedDataCache/
+Intermediate/
+Saved/
+Build/
+.vs/
+.vscode/
+.idea/
+
+# Generated project files.
+*.sln
+*.suo
+*.opensdf
+*.sdf
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+*.xcodeproj
+*.xcworkspace
+Makefile
+CMakeLists.txt
+.ignore
+
+# Compiled binaries.
+*.dll
+*.exe
+*.lib
+*.pdb
+*.ipa
+*.app
+
+# ------------------------------------------------------------------ assets
+# Unreal assets are binary. They are tracked - a project without its content
+# is not a project - but they need Git LFS to be workable at any size. Set it
+# up before adding meshes or textures:
+#
+#   git lfs install
+#   git lfs track "*.uasset" "*.umap"
+#
+# Autosaves and collection files are not worth keeping.
+Saved/Autosaves/
+*.collection
+*.tmp
+
+# ------------------------------------------------------ browser prototype
 node_modules/
 npm-debug.log*
+
+# ------------------------------------------------------------------ system
 .DS_Store
+Thumbs.db
 *.local

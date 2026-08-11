@@ -1,0 +1,12 @@
+Name,NameKey,Damage,MagazineSize,RoundsPerMinute,ReloadSeconds,RangeMetres,Delivery,ProjectileSpeed,Splash.RadiusMetres,Penetration,AmmoCargoId,Price,bPersonal
+pistol,WEAPON_PISTOL,25,12,260,1.4,60,Hitscan,0,0,0.05,pistol_ammo,0,True
+assault_rifle,WEAPON_ASSAULT_RIFLE,30,30,600,2.3,180,Hitscan,0,0,0.2,rifle_ammo,450,True
+rpg,WEAPON_RPG,500,1,25,3.4,300,Projectile,55,6,1.0,rocket,1200,True
+minigun,WEAPON_MINIGUN,20,150,1800,5.5,160,Hitscan,0,0,0.35,rifle_ammo,3000,True
+mounted_machine_gun,WEAPON_MOUNTED_MACHINE_GUN,35,100,550,4,260,Hitscan,0,0,0.4,rifle_ammo,0,False
+mounted_rocket_launcher,WEAPON_MOUNTED_ROCKET_LAUNCHER,650,2,30,4.5,420,Projectile,70,9,1.0,rocket,0,False
+heavy_turret_cannon,WEAPON_HEAVY_TURRET_CANNON,1500,1,12,7,600,Projectile,240,12,1.0,heavy_shell,0,False
+enemy_rifle,WEAPON_ASSAULT_RIFLE,12,30,450,2.6,150,Hitscan,0,0,0.15,,0,False
+enemy_heavy_weapon,WEAPON_MOUNTED_MACHINE_GUN,22,50,400,4.2,170,Hitscan,0,0,0.5,,0,False
+enemy_autocannon,WEAPON_MOUNTED_MACHINE_GUN,45,40,300,5,260,Hitscan,0,0,0.7,,0,False
+enemy_tank_cannon,WEAPON_HEAVY_TURRET_CANNON,320,1,10,6,500,Projectile,220,8,1.0,,0,False
