@@ -46,6 +46,7 @@
   const fpsGoal   = $(".fps-goal");
   const fpsLegs   = $(".fps-legs");
   const cab       = $("#cab");
+  const news      = $("#news");
 
   const ctx   = fx.getContext("2d");
   const sctx  = skyfx.getContext("2d");
@@ -342,6 +343,85 @@
     g.gain.setTargetAtTime(0.0001, ac.currentTime, 0.3);
     setTimeout(function () { try { src.stop(); } catch (e) {} }, 1200);
     fireNode = null;
+  }
+
+  /* Nachrichtensignation: vier Toene, der letzte eine Oktave hoeher, dazu
+     ein Paukenschlag darunter. Jede Note sind zwei leicht verstimmte
+     Saegezaehne - das gibt den breiten Blaeserklang. */
+  function newsJingle() {
+    const a = resume(); if (!a) return;
+    const t0 = a.currentTime;
+    const notes = [
+      { f: 261.6, at: 0.00, dur: 0.30 },
+      { f: 349.2, at: 0.19, dur: 0.30 },
+      { f: 392.0, at: 0.38, dur: 0.30 },
+      { f: 523.3, at: 0.57, dur: 1.10 }
+    ];
+
+    notes.forEach(function (n) {
+      const t = t0 + n.at;
+      const g = a.createGain();
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.11, t + 0.03);
+      g.gain.setValueAtTime(0.11, t + n.dur * 0.6);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + n.dur);
+      const lp = a.createBiquadFilter();
+      lp.type = "lowpass";
+      lp.frequency.setValueAtTime(2600, t);
+      lp.frequency.exponentialRampToValueAtTime(1200, t + n.dur);
+      g.connect(lp);
+      lp.connect(master);
+      lp.connect(reverb);
+
+      [-4, 4].forEach(function (detune) {
+        const o = a.createOscillator();
+        o.type = "sawtooth";
+        o.frequency.value = n.f;
+        o.detune.value = detune;
+        o.connect(g);
+        o.start(t); o.stop(t + n.dur + 0.05);
+      });
+    });
+
+    /* Paukenschlag auf der letzten Note */
+    const t = t0 + 0.57;
+    const sub = a.createOscillator();
+    const sg = a.createGain();
+    sub.type = "sine";
+    sub.frequency.setValueAtTime(96, t);
+    sub.frequency.exponentialRampToValueAtTime(44, t + 0.5);
+    sg.gain.setValueAtTime(0.0001, t);
+    sg.gain.exponentialRampToValueAtTime(0.5, t + 0.02);
+    sg.gain.exponentialRampToValueAtTime(0.0001, t + 0.9);
+    sub.connect(sg); sg.connect(master); sg.connect(reverb);
+    sub.start(t); sub.stop(t + 0.95);
+  }
+
+  /* Martinshorn aus der Ferne: zwei Toene im Wechsel, tiefpassgefiltert
+     und leise - so klingt es nach ein paar Strassen Entfernung. */
+  function distantSiren(reps) {
+    const a = resume(); if (!a) return;
+    const t0 = a.currentTime;
+
+    const lp = a.createBiquadFilter();
+    lp.type = "lowpass";
+    lp.frequency.value = 900;
+    lp.connect(master);
+    lp.connect(reverb);
+
+    for (let i = 0; i < reps; i++) {
+      const t = t0 + i * 0.62;
+      const o = a.createOscillator();
+      const g = a.createGain();
+      o.type = "triangle";
+      o.frequency.value = i % 2 ? 349.2 : 440;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.05, t + 0.05);
+      g.gain.setValueAtTime(0.05, t + 0.45);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.58);
+      o.connect(g).connect(lp);
+      o.start(t); o.stop(t + 0.6);
+    }
   }
 
 
@@ -1167,6 +1247,7 @@
   /* Zurueck auf Anfang: Szene aufraeumen und aufblenden */
   function finishSequence() {
     stopFieldScene();
+    stopNewsScene();
     cab.classList.remove("on", "reach", "press");
     world.style.visibility = "";
     parts.length = 0;
@@ -1323,6 +1404,7 @@
     timers.length = 0;
     stopRotor();
     stopFieldScene();
+    stopNewsScene();
     cab.classList.remove("on", "reach", "press");
     heli.classList.remove("on");
     heliState.on = false;
@@ -1682,14 +1764,61 @@
       later(function () { out.style.setProperty("--speed", ".6s"); }, 3400);
     }, 2900);
 
-    /* Schwarzblende, dann steht wieder das Startmenue */
+    /* Schwarzblende, dahinter wird auf den Nachrichtenbericht umgestellt */
     later(function () { fade.classList.add("on"); }, 7600);
     later(function () {
       cab.classList.remove("on", "reach", "press");
       const out = $(".cab-band");
       if (out) out.style.setProperty("--speed", "0s");
-      finishSequence();
+      news.classList.add("on");
+      runNewsScene();
     }, 9400);
+    later(function () { fade.classList.remove("on"); }, 9900);
+  }
+
+
+  /* ============ 6d. Nachrichtenbericht ============
+     Fuenfter Akt. Der Sender berichtet, was aus dem Haus geworden ist, an
+     dem die Lok stand: erst das Studio, dann der Umschnitt an den
+     Brandort. Meldung, Sender und Personen sind frei erfunden.
+     Das Ende der Sequenz liegt hier - danach steht wieder das Menue. */
+  function runNewsScene() {
+    /* Der Film gibt das Bild frei: ohne Kinobalken fuellt der Beitrag den
+       Rahmen wie eine echte Sendung - und Logo, Live-Ecke und Laufband
+       stehen nicht mehr hinter den schwarzen Balken. */
+    bars.classList.remove("on");
+    newsJingle();
+    later(function () { news.classList.add("ticker"); }, 900);
+    later(function () { news.classList.add("band1"); }, 1400);
+
+    /* Die Bauchbinde geht raus, bevor geschnitten wird */
+    later(function () { news.classList.remove("band1"); }, 5300);
+
+    /* Umschnitt auf die Aufnahme vom Brandort: Glut knistert, in der
+       Ferne faehrt noch ein Wagen an */
+    later(function () {
+      news.classList.add("site");
+      startFireLoop();
+      distantSiren(4);
+    }, 5900);
+    later(function () { news.classList.add("band2"); }, 7000);
+    later(function () { distantSiren(3); }, 11200);
+
+    /* Abblende - danach steht wieder der Startbildschirm */
+    later(function () {
+      news.classList.remove("band2");
+      fadeFireLoop();
+    }, 12700);
+    later(function () { fade.classList.add("on"); }, 13300);
+    later(function () {
+      stopNewsScene();
+      finishSequence();
+    }, 15000);
+  }
+
+  function stopNewsScene() {
+    news.classList.remove("on", "site", "band1", "band2", "ticker");
+    stopFireLoop();
   }
 
 

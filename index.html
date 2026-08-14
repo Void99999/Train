@@ -1357,6 +1357,388 @@
     <div class="cab-vig"></div>
   </div>
 
+
+  <!-- ============== Nachrichtenbericht ==============
+       Fuenfter Akt. Ein erfundener Beitrag im Stil einer Nachrichtensendung:
+       erst das Studio, dann der Umschnitt auf den Brandort - das Haus, an dem
+       die Lok stand, ist niedergebrannt. Sender, Meldung und Personen sind
+       ausgedacht; das ist Teil der Spielhandlung, kein echter Bericht.
+
+       Zwei Einstellungen liegen uebereinander; das Skript schaltet mit der
+       Klasse .site von der einen auf die andere. Darueber liegt das
+       Grafikpaket aus HTML: Logo, Live-Ecke, Bauchbinde, Laufband. -->
+  <div id="news" aria-hidden="true">
+
+    <!-- ---------- Einstellung 1: Studio ---------- -->
+    <svg class="news-shot news-studio" viewBox="0 0 1200 700" preserveAspectRatio="xMidYMid slice">
+      <defs>
+        <linearGradient id="gNwall" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%"   stop-color="#1b2a44"/>
+          <stop offset="54%"  stop-color="#0e1728"/>
+          <stop offset="100%" stop-color="#070b14"/>
+        </linearGradient>
+        <radialGradient id="gNspot" cx="50%" cy="50%" r="50%">
+          <stop offset="0%"   stop-color="#3c7cb8" stop-opacity=".5"/>
+          <stop offset="100%" stop-color="#3c7cb8" stop-opacity="0"/>
+        </radialGradient>
+        <linearGradient id="gNdesk" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%"   stop-color="#31465f"/>
+          <stop offset="9%"   stop-color="#111c2d"/>
+          <stop offset="100%" stop-color="#060a11"/>
+        </linearGradient>
+        <linearGradient id="gNsuit" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%"   stop-color="#26344a"/>
+          <stop offset="100%" stop-color="#0d141f"/>
+        </linearGradient>
+        <linearGradient id="gNskin" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%"   stop-color="#e3b491"/>
+          <stop offset="100%" stop-color="#ab7955"/>
+        </linearGradient>
+        <linearGradient id="gNfeed" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%"   stop-color="#160b06"/>
+          <stop offset="62%"  stop-color="#3f180a"/>
+          <stop offset="100%" stop-color="#0f0705"/>
+        </linearGradient>
+      </defs>
+
+      <rect width="1200" height="700" fill="url(#gNwall)"/>
+
+      <!-- Lichtstreifen in der Studiowand -->
+      <g fill="#4f9ad6" opacity=".14">
+        <rect x="36" y="-20" width="26" height="560" rx="13"/>
+        <rect x="98" y="-20" width="12" height="560" rx="6"/>
+        <rect x="1096" y="-20" width="12" height="560" rx="6"/>
+        <rect x="1132" y="-20" width="26" height="560" rx="13"/>
+      </g>
+      <ellipse cx="370" cy="330" rx="340" ry="300" fill="url(#gNspot)"/>
+
+      <!-- Bildwand hinter dem Moderator: die Aufnahme vom Brandort.
+           Ein eigenes SVG - so beschneidet der Rahmen den Inhalt von selbst. -->
+      <g>
+        <rect x="626" y="102" width="496" height="326" rx="10" fill="#04070d"/>
+        <svg x="636" y="112" width="476" height="306" viewBox="0 0 476 306" preserveAspectRatio="xMidYMid slice">
+          <rect width="476" height="306" fill="url(#gNfeed)"/>
+          <ellipse cx="238" cy="258" rx="230" ry="96" fill="#ff7a1e" opacity=".3"/>
+          <!-- Baumreihe hinter dem Brandort -->
+          <g fill="#0a0705" opacity=".95">
+            <path d="M18 258 L34 214 L50 258 Z"/><path d="M64 258 L76 226 L88 258 Z"/>
+            <path d="M382 258 L398 218 L414 258 Z"/><path d="M424 258 L438 228 L452 258 Z"/>
+          </g>
+          <!-- brennendes Haus -->
+          <g>
+            <path d="M152 258 L152 152 L238 108 L324 152 L324 258 Z" fill="#0d0908"/>
+            <path d="M142 158 L238 100 L334 158 L328 168 L238 112 L148 168 Z" fill="#070505"/>
+            <rect x="176" y="182" width="36" height="36" fill="#ff9a2e"/>
+            <rect x="264" y="182" width="36" height="36" fill="#ffb552"/>
+            <rect x="214" y="210" width="30" height="48" fill="#ffd88a"/>
+          </g>
+          <!-- Flammen schlagen aus dem Dach -->
+          <g class="news-flames" fill="#ff8b23">
+            <path class="f1" d="M196 150 Q182 116 202 88 Q206 116 224 96 Q236 128 214 152 Z"/>
+            <path class="f2" d="M244 152 Q230 110 254 78 Q258 112 280 92 Q294 130 268 154 Z"/>
+            <path class="f3" d="M290 158 Q280 128 298 104 Q302 130 318 114 Q328 142 310 160 Z"/>
+          </g>
+          <g class="news-flames" fill="#ffd06a" opacity=".85">
+            <path class="f2" d="M214 152 Q206 124 220 104 Q224 126 236 112 Q244 136 230 154 Z"/>
+            <path class="f1" d="M262 154 Q254 126 268 106 Q272 128 284 114 Q292 138 278 156 Z"/>
+          </g>
+          <rect y="256" width="476" height="50" fill="#0a0806"/>
+          <!-- Einsatzkraefte im Gegenlicht -->
+          <g fill="#080605">
+            <path d="M96 256 L96 232 Q96 222 106 222 Q116 222 116 232 L116 256 Z"/>
+            <path d="M100 224 Q96 210 106 210 Q116 210 112 224 Z"/>
+            <path d="M352 256 L352 234 Q352 224 362 224 Q372 224 372 234 L372 256 Z"/>
+            <path d="M356 226 Q352 212 362 212 Q372 212 368 226 Z"/>
+          </g>
+        </svg>
+        <rect x="626" y="102" width="496" height="326" rx="10" fill="none" stroke="#2a3d55" stroke-width="6"/>
+        <rect x="634" y="110" width="480" height="310" rx="6" fill="none" stroke="#63a8dd" stroke-width="2" opacity=".5"/>
+      </g>
+
+      <!-- Moderator. Der Kopf nickt leicht, der Mund bewegt sich beim Sprechen. -->
+      <g class="news-anchor">
+        <!-- Jackett und Schultern -->
+        <path d="M196 700 L214 566 Q234 470 322 440 L440 440 Q528 470 548 566 L566 700 Z" fill="url(#gNsuit)"/>
+        <!-- Hemd und Krawatte -->
+        <path d="M330 442 L381 500 L432 442 L410 434 L381 470 L352 434 Z" fill="#e8eef5"/>
+        <path d="M381 476 L396 496 L389 566 L373 566 L366 496 Z" fill="#a8241d"/>
+        <!-- Revers -->
+        <path d="M330 442 L381 500 L344 520 L318 460 Z" fill="#1a2534"/>
+        <path d="M432 442 L381 500 L418 520 L444 460 Z" fill="#1a2534"/>
+        <!-- Hals -->
+        <path d="M352 396 L410 396 L414 448 L381 468 L348 448 Z" fill="#a3714f"/>
+        <!-- Kopf -->
+        <ellipse cx="381" cy="330" rx="62" ry="74" fill="url(#gNskin)"/>
+        <!-- Ohren -->
+        <ellipse cx="320" cy="336" rx="10" ry="15" fill="#c08e68"/>
+        <ellipse cx="442" cy="336" rx="10" ry="15" fill="#c08e68"/>
+        <!-- Haar -->
+        <path d="M319 320 Q316 250 381 250 Q446 250 443 320 Q436 286 408 278 Q381 292 352 280 Q328 288 319 320 Z" fill="#2b1f18"/>
+        <!-- Brauen und Augen -->
+        <g fill="#2b1f18">
+          <rect x="341" y="312" width="30" height="6" rx="3"/>
+          <rect x="391" y="312" width="30" height="6" rx="3"/>
+        </g>
+        <ellipse cx="356" cy="333" rx="9" ry="5.5" fill="#f4f7fa"/>
+        <ellipse cx="406" cy="333" rx="9" ry="5.5" fill="#f4f7fa"/>
+        <circle cx="357" cy="334" r="4" fill="#2a1c14"/>
+        <circle cx="407" cy="334" r="4" fill="#2a1c14"/>
+        <!-- Oberlider: nehmen dem Blick das Starre -->
+        <g fill="none" stroke="#a8785a" stroke-width="3" stroke-linecap="round">
+          <path d="M347 330 Q356 324 365 330"/>
+          <path d="M397 330 Q406 324 415 330"/>
+        </g>
+        <!-- Nase -->
+        <path d="M381 336 L389 364 L374 366" fill="none" stroke="#9a6a4a" stroke-width="3" stroke-linecap="round"/>
+        <!-- Mund: das Skript laesst ihn ueber die CSS-Animation sprechen -->
+        <ellipse class="news-mouth" cx="381" cy="382" rx="17" ry="7" fill="#5e2b22"/>
+      </g>
+
+      <!-- Pult -->
+      <path d="M100 700 L100 540 Q600 502 1100 540 L1100 700 Z" fill="url(#gNdesk)"/>
+      <path d="M100 540 Q600 502 1100 540 L1100 552 Q600 514 100 552 Z" fill="#5b7ea3" opacity=".5"/>
+      <rect x="470" y="580" width="240" height="66" rx="6" fill="#0b1421" opacity=".8"/>
+      <g class="news-deskmark">
+        <rect x="500" y="596" width="34" height="34" rx="4" fill="#d4192b"/>
+        <rect x="540" y="596" width="34" height="34" rx="4" fill="#1c6fc4"/>
+        <rect x="580" y="596" width="34" height="34" rx="4" fill="#e8b214"/>
+      </g>
+    </svg>
+
+
+    <!-- ---------- Einstellung 2: der Brandort ---------- -->
+    <svg class="news-shot news-site" viewBox="0 0 1200 700" preserveAspectRatio="xMidYMid slice">
+      <defs>
+        <linearGradient id="gNsky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%"   stop-color="#04070c"/>
+          <stop offset="58%"  stop-color="#101922"/>
+          <stop offset="100%" stop-color="#2a2a26"/>
+        </linearGradient>
+        <linearGradient id="gNground" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%"   stop-color="#241f18"/>
+          <stop offset="40%"  stop-color="#14110d"/>
+          <stop offset="100%" stop-color="#080706"/>
+        </linearGradient>
+        <linearGradient id="gNwreck" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%"   stop-color="#43332a"/>
+          <stop offset="55%"  stop-color="#241a14"/>
+          <stop offset="100%" stop-color="#0d0a08"/>
+        </linearGradient>
+        <radialGradient id="gNglow" cx="50%" cy="100%" r="70%">
+          <stop offset="0%"   stop-color="#ff7a1e" stop-opacity=".45"/>
+          <stop offset="100%" stop-color="#ff7a1e" stop-opacity="0"/>
+        </radialGradient>
+        <linearGradient id="gNbeam" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%"   stop-color="#cfe6ff" stop-opacity=".22"/>
+          <stop offset="100%" stop-color="#cfe6ff" stop-opacity="0"/>
+        </linearGradient>
+        <radialGradient id="gNhaze" cx="50%" cy="62%" r="52%">
+          <stop offset="0%"   stop-color="#6b6155" stop-opacity=".3"/>
+          <stop offset="60%"  stop-color="#6b6155" stop-opacity=".12"/>
+          <stop offset="100%" stop-color="#6b6155" stop-opacity="0"/>
+        </radialGradient>
+        <!-- Weiche Kanten fuer die Rauchschwaden: ohne das bleiben es
+             sichtbare Ellipsen statt Rauch. -->
+        <filter id="fNsmoke" x="-60%" y="-60%" width="220%" height="220%">
+          <feGaussianBlur stdDeviation="17"/>
+        </filter>
+      </defs>
+
+      <rect width="1200" height="700" fill="url(#gNsky)"/>
+      <!-- Rauchdunst ueber der Brandstelle -->
+      <rect width="1200" height="700" fill="url(#gNhaze)"/>
+      <!-- Baumsilhouetten am Horizont -->
+      <g fill="#070a09">
+        <path d="M40 470 L64 402 L88 470 Z"/><path d="M104 470 L120 424 L136 470 Z"/>
+        <path d="M170 470 L192 396 L214 470 Z"/><path d="M244 470 L258 430 L272 470 Z"/>
+        <path d="M930 470 L952 400 L974 470 Z"/><path d="M1000 470 L1016 428 L1032 470 Z"/>
+        <path d="M1064 470 L1088 394 L1112 470 Z"/><path d="M1136 470 L1152 432 L1168 470 Z"/>
+      </g>
+
+      <rect y="466" width="1200" height="234" fill="url(#gNground)"/>
+      <ellipse cx="600" cy="500" rx="420" ry="120" fill="url(#gNglow)"/>
+
+      <!-- Scheinwerferkegel der Einsatzfahrzeuge -->
+      <path d="M120 372 L560 466 L120 466 Z" fill="url(#gNbeam)"/>
+      <path d="M1090 388 L700 466 L1120 466 Z" fill="url(#gNbeam)"/>
+
+      <!-- ===== Die Brandruine ===== -->
+      <g>
+        <!-- Grundmauern -->
+        <rect x="366" y="448" width="470" height="26" fill="#0b0908"/>
+        <!-- stehengebliebene Wand links, oben ausgefressen -->
+        <path d="M392 466 L392 306 L420 296 L438 326 L464 302 L490 340 L518 314 L544 356 L570 332 L570 466 Z" fill="url(#gNwreck)"/>
+        <!-- Bretterfugen -->
+        <g stroke="#050403" stroke-width="2" opacity=".55">
+          <path d="M392 352 L568 352 M392 384 L570 384 M392 416 L570 416 M392 448 L570 448"/>
+          <path d="M436 330 L436 466 M482 344 L482 466 M528 322 L528 466"/>
+        </g>
+        <!-- Wandrest rechts -->
+        <path d="M676 466 L676 366 L702 348 L724 380 L752 354 L778 392 L800 372 L818 402 L818 466 Z" fill="url(#gNwreck)"/>
+        <g stroke="#050403" stroke-width="2" opacity=".5">
+          <path d="M676 402 L818 402 M676 434 L818 434"/>
+          <path d="M722 380 L722 466 M772 392 L772 466"/>
+        </g>
+        <!-- Schornstein: das Einzige, was ganz stehen blieb -->
+        <rect x="740" y="238" width="46" height="230" fill="#151009"/>
+        <rect x="732" y="230" width="62" height="14" fill="#0b0806"/>
+        <g stroke="#070504" stroke-width="2" opacity=".6">
+          <path d="M740 276 L786 276 M740 316 L786 316 M740 356 L786 356 M740 396 L786 396"/>
+        </g>
+        <!-- ausgebrannte Fensteroeffnungen, dahinter Glut -->
+        <g>
+          <rect x="414" y="368" width="52" height="56" fill="#050303"/>
+          <rect x="420" y="374" width="40" height="44" class="news-ember" fill="#c4501a"/>
+          <rect x="496" y="376" width="52" height="56" fill="#050303"/>
+          <rect x="502" y="382" width="40" height="44" class="news-ember e2" fill="#93380f"/>
+          <rect x="700" y="410" width="46" height="56" fill="#050303"/>
+          <rect x="706" y="416" width="34" height="50" class="news-ember e3" fill="#a8410f"/>
+        </g>
+        <!-- verkohlte Dachbalken, kreuz und quer in die Ruine gestuerzt -->
+        <g stroke="#100b08" stroke-width="13" stroke-linecap="square">
+          <path d="M404 322 L648 452"/>
+          <path d="M812 372 L590 462"/>
+          <path d="M556 330 L618 466"/>
+          <path d="M672 350 L512 464"/>
+        </g>
+        <g stroke="#241a12" stroke-width="4" opacity=".7">
+          <path d="M404 322 L648 452 M812 372 L590 462"/>
+        </g>
+        <!-- ein Balken ragt schraeg aus dem Schutt -->
+        <path d="M596 262 L610 258 L666 448 L648 452 Z" fill="#140e0a"/>
+        <!-- Truemmerhaufen -->
+        <g fill="#0c0908">
+          <path d="M368 466 Q440 424 512 448 Q580 418 646 452 Q712 424 780 452 Q820 440 836 466 Z"/>
+        </g>
+        <g fill="#1a130e" opacity=".9">
+          <path d="M470 452 L494 430 L520 452 Z"/><path d="M596 456 L618 436 L642 456 Z"/>
+          <path d="M700 458 L722 440 L744 458 Z"/><path d="M418 458 L436 442 L456 458 Z"/>
+        </g>
+        <!-- Glutnester im Schutt -->
+        <g class="news-embers" fill="#ff6a17">
+          <circle class="e1" cx="472" cy="452" r="5"/><circle class="e2" cx="556" cy="458" r="4"/>
+          <circle class="e3" cx="640" cy="450" r="6"/><circle class="e1" cx="722" cy="456" r="4"/>
+          <circle class="e2" cx="800" cy="458" r="5"/><circle class="e3" cx="404" cy="456" r="4"/>
+        </g>
+        <!-- Warme Kante auf den ausgefressenen Mauerkronen: die Glut von
+             unten zeichnet die Silhouette gegen den dunklen Himmel. -->
+        <g fill="none" stroke="#c4682a" stroke-width="2.5" opacity=".3">
+          <path d="M392 306 L420 296 L438 326 L464 302 L490 340 L518 314 L544 356 L570 332"/>
+          <path d="M676 366 L702 348 L724 380 L752 354 L778 392 L800 372 L818 402"/>
+        </g>
+        <path d="M368 466 Q440 424 512 448 Q580 418 646 452 Q712 424 780 452 Q820 440 836 466"
+              fill="none" stroke="#b0601f" stroke-width="2" opacity=".16"/>
+      </g>
+
+      <!-- Rauch, der aus der Ruine steigt -->
+      <g class="news-smoke" fill="#7d746a" filter="url(#fNsmoke)">
+        <ellipse cx="470" cy="440" rx="26" ry="18" style="--d:0s;   --dx:-40px; --dur:7.5s"/>
+        <ellipse cx="580" cy="448" rx="32" ry="21" style="--d:1.6s; --dx:26px;  --dur:8.5s"/>
+        <ellipse cx="700" cy="436" rx="24" ry="17" style="--d:3.1s; --dx:-18px; --dur:7s"/>
+        <ellipse cx="763" cy="250" rx="18" ry="13" style="--d:.8s;  --dx:34px;  --dur:9s"/>
+        <ellipse cx="520" cy="452" rx="21" ry="15" style="--d:4.4s; --dx:48px;  --dur:8s"/>
+      </g>
+
+      <!-- Einsatzfahrzeug am linken Bildrand -->
+      <g>
+        <rect x="-20" y="378" width="300" height="88" rx="6" fill="#12100e"/>
+        <rect x="176" y="352" width="104" height="46" rx="6" fill="#171310"/>
+        <rect x="192" y="362" width="72" height="28" rx="3" fill="#2b3a44"/>
+        <g fill="#0a0908">
+          <circle cx="60" cy="470" r="26"/><circle cx="232" cy="470" r="26"/>
+        </g>
+        <rect x="-20" y="392" width="300" height="10" fill="#8e1f16"/>
+        <!-- Blaulicht -->
+        <g class="news-beacons">
+          <rect class="b1" x="24" y="360" width="42" height="16" rx="6" fill="#5fb4ff"/>
+          <rect class="b2" x="96" y="360" width="42" height="16" rx="6" fill="#5fb4ff"/>
+        </g>
+      </g>
+
+      <!-- Einsatzkraefte vor der Ruine -->
+      <g fill="#070605">
+        <g transform="translate(322 466) scale(1.15)">
+          <path d="M-12 0 L-12 -46 Q-12 -58 0 -58 Q12 -58 12 -46 L12 0 Z"/>
+          <path d="M-13 -60 Q-16 -78 0 -78 Q16 -78 13 -60 Z"/>
+          <path d="M10 -50 L34 -38 L30 -32 L8 -42 Z"/>
+        </g>
+        <g transform="translate(902 466) scale(1.05)">
+          <path d="M-12 0 L-12 -46 Q-12 -58 0 -58 Q12 -58 12 -46 L12 0 Z"/>
+          <path d="M-13 -60 Q-16 -78 0 -78 Q16 -78 13 -60 Z"/>
+          <path d="M-10 -50 L-36 -40 L-32 -34 L-8 -42 Z"/>
+        </g>
+      </g>
+      <!-- duenner Wasserstrahl auf die Glut -->
+      <path d="M356 424 Q470 388 566 432" fill="none" stroke="#bcd6e8" stroke-width="4" opacity=".35" stroke-linecap="round"/>
+
+      <!-- Loeschwasser auf dem Boden: dunkle Lachen mit einem Schimmer
+           vom Blaulicht darin -->
+      <g>
+        <g fill="#0d1319" opacity=".85">
+          <ellipse cx="300" cy="536" rx="96" ry="14"/><ellipse cx="640" cy="558" rx="130" ry="16"/>
+          <ellipse cx="980" cy="530" rx="84" ry="12"/>
+        </g>
+        <g fill="#4d7ea8" opacity=".2">
+          <ellipse cx="292" cy="533" rx="68" ry="6"/><ellipse cx="628" cy="554" rx="92" ry="7"/>
+          <ellipse cx="972" cy="527" rx="58" ry="5"/>
+        </g>
+      </g>
+
+      <!-- Das Gleis vor dem Haus. Die Lok, die hier stand, ist weg. -->
+      <g>
+        <g fill="#241d16">
+          <rect x="20" y="600" width="46" height="14"/><rect x="130" y="600" width="46" height="14"/>
+          <rect x="240" y="600" width="46" height="14"/><rect x="350" y="600" width="46" height="14"/>
+          <rect x="460" y="600" width="46" height="14"/><rect x="570" y="600" width="46" height="14"/>
+          <rect x="680" y="600" width="46" height="14"/><rect x="790" y="600" width="46" height="14"/>
+          <rect x="900" y="600" width="46" height="14"/><rect x="1010" y="600" width="46" height="14"/>
+          <rect x="1120" y="600" width="46" height="14"/>
+        </g>
+        <rect y="596" width="1200" height="8" fill="#3b3a38"/>
+        <rect y="596" width="1200" height="3" fill="#7d8a92" opacity=".65"/>
+        <rect y="616" width="1200" height="7" fill="#33322f"/>
+        <rect y="616" width="1200" height="3" fill="#6d7981" opacity=".55"/>
+      </g>
+
+      <!-- Blaulicht wischt ueber die ganze Szene -->
+      <rect class="news-bluewash" width="1200" height="700" fill="#3d8fd6"/>
+    </svg>
+
+
+    <!-- ---------- Grafikpaket ---------- -->
+    <div class="news-gfx">
+      <!-- Senderkennung: drei Farbfelder, wie es Nachrichtensender fuehren -->
+      <div class="news-logo" aria-hidden="true"><i class="r">R</i><i class="t">T</i><i class="l">L</i></div>
+
+      <div class="news-live"><i></i>Live</div>
+
+      <div class="news-band one">
+        <b class="kicker">Eilmeldung</b>
+        <h2>Wohnhaus brennt vollständig nieder</h2>
+        <p>Feuerwehr im Großeinsatz an der alten Bahnstrecke</p>
+      </div>
+
+      <div class="news-band two">
+        <b class="kicker">Aktuell</b>
+        <h2>Elfjähriger stirbt im Feuer</h2>
+        <p>Fabian (11) konnte nicht mehr gerettet werden</p>
+      </div>
+
+      <div class="news-ticker">
+        <b class="tag">Eilmeldung</b>
+        <div class="crawl-win">
+          <div class="crawl">
+            <span>+++ Wohnhaus an der alten Bahnstrecke bis auf die Grundmauern niedergebrannt +++ Ein Todesopfer: der elfjährige Fabian +++ Die Feuerwehr war mit 60 Einsatzkräften vor Ort +++ Brandursache noch unklar, die Kriminalpolizei ermittelt +++ Anwohner berichten von einer lauten Detonation kurz vor dem Feuer +++&nbsp;</span>
+            <span>+++ Wohnhaus an der alten Bahnstrecke bis auf die Grundmauern niedergebrannt +++ Ein Todesopfer: der elfjährige Fabian +++ Die Feuerwehr war mit 60 Einsatzkräften vor Ort +++ Brandursache noch unklar, die Kriminalpolizei ermittelt +++ Anwohner berichten von einer lauten Detonation kurz vor dem Feuer +++&nbsp;</span>
+          </div>
+        </div>
+        <b class="clock">23:47</b>
+      </div>
+    </div>
+
+    <div class="news-vig"></div>
+  </div>
+
   <!-- Kinobalken der Cutscene -->
   <div id="bars" aria-hidden="true"><i class="top"></i><i class="bottom"></i></div>
   <p id="skip" hidden>Leertaste oder Esc zum Überspringen</p>

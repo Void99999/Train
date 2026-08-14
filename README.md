@@ -9,7 +9,10 @@ stürzt brennend ab. Nach der nächsten Schwarzblende sieht man den Soldaten aus
 Egoperspektive: er kriecht über das brennende Schlachtfeld, während Geschosse über ihn
 hinwegfliegen. Das Gefecht ebbt langsam ab, er kriecht auf ein Haus zu, an dem eine
 kleine Lok wartet, richtet sich zitternd auf, steigt ein und drückt am Pult auf 100 %.
-Die Lok fährt an — und dann steht wieder der Startbildschirm da.
+Die Lok fährt an — und danach läuft ein Nachrichtenbericht: das Haus, an dem sie stand,
+ist abgebrannt. Dann steht wieder der Startbildschirm da.
+
+Der Bericht ist Teil der Spielhandlung. Sender, Meldung und Personen sind erfunden.
 
 ## Starten
 
@@ -56,7 +59,7 @@ python3 build-einzeldatei.py
 - Die Optionen wirken wirklich: Lautstärke, Bildschirmwackeln, Effektstärke.
   Sie werden im Browser gespeichert und beim nächsten Start wieder geladen.
 
-**Ablauf beim Start** — vier Akte, zusammen etwa dreiviertel Minute.
+**Ablauf beim Start** — fünf Akte, zusammen etwa eine Minute.
 Leertaste oder Esc springt jederzeit zurück zum Startbildschirm.
 
 *1. Akt — der Zug* (`startSequence()`)
@@ -104,6 +107,28 @@ Die Hand ist aufrecht gezeichnet, mit der Zeigefingerspitze im Ursprung.
 genau die Stelle ist, an der der Finger auftrifft; die Drehung legt den
 Handrücken nach links unten, damit die Beschriftung frei bleibt.
 
+*5. Akt — der Nachrichtenbericht* (`runNewsScene()`)
+1. Signation, dann das Studio: ein Moderator spricht, hinter ihm zeigt die
+   Bildwand das brennende Haus
+2. Die Bauchbinde fährt ein: „Wohnhaus brennt vollständig nieder"
+3. Umschnitt an den Brandort — die Ruine raucht noch, Glut liegt im
+   Schutt, Blaulicht wischt über die Szene, in der Ferne ein Martinshorn
+4. Zweite Bauchbinde: „Elfjähriger stirbt im Feuer — Fabian (11) konnte
+   nicht mehr gerettet werden"
+5. Blende auf Schwarz — und der Startbildschirm steht wieder da
+
+Vor dem Gleis liegt dasselbe Haus wie im dritten Akt, nur ausgebrannt; das
+Gleis davor ist leer, denn die Lok ist weggefahren. Zum Beitrag fahren die
+Kinobalken aus: ohne sie füllt das Bild den Rahmen wie eine echte Sendung,
+und Senderlogo, Live-Ecke und Laufband stehen nicht hinter den Balken.
+
+Studio und Brandort sind zwei SVGs, die übereinanderliegen; die Klasse
+`site` an `#news` schaltet zwischen ihnen um — kurz und linear, damit es
+ein Schnitt bleibt und keine Blende wird. Das Grafikpaket darüber ist
+gewöhnliches HTML. Der Text im Laufband steht zweimal hintereinander, das
+Band wandert um genau die halbe Breite und fängt dadurch nahtlos wieder
+von vorn an.
+
 **Zugexplosion**
 1. Dampfpfeife, die Lok fängt an zu beben
 2. Vorknall am Kessel mit kleinem Lichtblitz
@@ -119,7 +144,9 @@ Handrücken nach links unten, damit die Beschriftung frei bleibt.
 
 Alles wird zur Laufzeit per Web Audio API erzeugt, es gibt keine Audiodateien:
 Rauschschichten mit wanderndem Filter, Sub-Bass, berstendes Metall, Trümmerregen,
-Dampfpfeife mit Vibrato und ein synthetischer Nachhall. Browser starten Audio erst
+Dampfpfeife mit Vibrato und ein synthetischer Nachhall. Für den Bericht kommen
+eine Signation aus vier Tönen mit Paukenschlag (`newsJingle()`) und ein
+tiefpassgefiltertes Martinshorn aus der Ferne (`distantSiren()`) dazu. Browser starten Audio erst
 nach einer Nutzerinteraktion — da der Ton am Klick hängt, passt das. Fehlt die
 Web Audio API, läuft die Animation trotzdem.
 
@@ -135,9 +162,14 @@ Web Audio API, läuft die Animation trotzdem.
 - **Flugbahn des Helis**: `updateHeli()` — die Phasen `enter`, `hover`,
   `hit` und `fall`
 - **Länge der Akte**: die `later(...)`-Aufrufe in `startSequence()`,
-  `heliImpact()`, `runFieldScene()` und `runCabScene()`
+  `heliImpact()`, `runFieldScene()`, `runCabScene()` und `runNewsScene()`
 - **Leistungsstufen im Führerstand**: die `.step`-Gruppen in `index.html`,
   die Position der Hand in `css/style.css` unter `.cab-hand`
+- **Meldung im Nachrichtenbericht**: die beiden `.news-band` und das
+  Laufband `.crawl` in `index.html` — der Text im Laufband muss in beiden
+  `<span>` gleich stehen, sonst springt das Band beim Umlauf
+- **Sendername und Senderfarben**: `.news-logo` in `index.html`, die drei
+  Farbfelder in `css/style.css` unter `.news-logo .r/.t/.l`
 
 Auf schmalen Bildschirmen rückt das Menü unter den Zug, das Gleis wandert nach
 oben und Zug wie Explosion werden kleiner. Die Schienen laufen immer über die

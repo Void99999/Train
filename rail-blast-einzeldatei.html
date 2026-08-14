@@ -691,6 +691,332 @@ body {
   .cab-band { animation: none; }
 }
 
+
+/* ================== Nachrichtenbericht ==================
+   Fuenfter Akt. Beide Einstellungen - Studio und Brandort - liegen
+   uebereinander; sichtbar ist immer genau eine. Das Skript schneidet mit
+   der Klasse .site um. Darueber liegt das Grafikpaket aus HTML: Logo,
+   Live-Ecke, Bauchbinde und Laufband.
+   Gleiche Ebene wie der Fuehrerstand: beide laufen nie gleichzeitig, und
+   die Schwarzblende (z-index 15) muss ueber beiden liegen. */
+
+#news {
+  position: absolute;
+  inset: 0;
+  z-index: 14;
+  overflow: hidden;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  background: #06090f;
+  transition: opacity .7s ease;
+}
+#news.on { opacity: 1; visibility: visible; }
+
+.news-shot {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  opacity: 0;
+  /* kurz und linear: das soll ein Schnitt sein, keine Blende */
+  transition: opacity .12s linear;
+}
+#news .news-studio { opacity: 1; }
+#news.site .news-studio { opacity: 0; }
+#news.site .news-site { opacity: 1; }
+
+/* Die Aussenaufnahme ist aus der Hand gefilmt und steht nie ganz still */
+#news.site .news-site { animation: newsHand 9s ease-in-out infinite; }
+@keyframes newsHand {
+  0%, 100% { transform: translate(0, 0)      scale(1.02) rotate(0deg); }
+  25%      { transform: translate(-6px, 3px) scale(1.03) rotate(.18deg); }
+  55%      { transform: translate(4px, -4px) scale(1.03) rotate(-.14deg); }
+  80%      { transform: translate(3px, 4px)  scale(1.02) rotate(.1deg); }
+}
+
+/* Der Moderator: leichtes Nicken, dazu ein Mund, der sich beim Sprechen
+   oeffnet und schliesst. steps(2) haelt ihn in zwei Stellungen, statt
+   ihn weich zu interpolieren - das wirkt eher nach Sprache. */
+.news-anchor {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: newsNod 5.5s ease-in-out infinite;
+}
+@keyframes newsNod {
+  0%, 100% { transform: translateY(0)    rotate(0deg); }
+  40%      { transform: translateY(3px)  rotate(.5deg); }
+  70%      { transform: translateY(-2px) rotate(-.4deg); }
+}
+
+.news-mouth {
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+  animation: newsTalk .26s steps(2) infinite;
+}
+@keyframes newsTalk {
+  from { transform: scaleY(.3); }
+  to   { transform: scaleY(1.2); }
+}
+/* Im Aussenbild ist der Moderator nicht zu sehen - Animation aus */
+#news.site .news-anchor,
+#news.site .news-mouth { animation: none; }
+
+/* Flammen auf der Bildwand hinter ihm */
+.news-flames path {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: newsFlame .5s ease-in-out infinite alternate;
+}
+.news-flames .f2 { animation-duration: .62s; animation-delay: .1s; }
+.news-flames .f3 { animation-duration: .43s; animation-delay: .22s; }
+@keyframes newsFlame {
+  from { transform: scale(.9, .82)  translateX(-2px); opacity: .78; }
+  to   { transform: scale(1.06, 1.18) translateX(3px); opacity: 1; }
+}
+
+/* Glut in den Fensteroeffnungen und im Schutt */
+.news-ember,
+.news-embers circle { animation: newsGlow 1.6s ease-in-out infinite alternate; }
+.news-ember.e2, .news-embers .e2 { animation-duration: 2.3s; animation-delay: .4s; }
+.news-ember.e3, .news-embers .e3 { animation-duration: 1.1s; animation-delay: .8s; }
+@keyframes newsGlow {
+  from { opacity: .3; }
+  to   { opacity: .95; }
+}
+
+/* Rauchschwaden. --d verteilt die Schwaden zeitlich, --dx laesst sie
+   unterschiedlich weit zur Seite ziehen. transform-box haengt den
+   Ursprung an die Form selbst, sonst skaliert sie um den SVG-Nullpunkt. */
+.news-smoke ellipse {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  opacity: 0;
+  animation: newsSmoke var(--dur, 8s) linear infinite;
+  animation-delay: var(--d, 0s);
+}
+@keyframes newsSmoke {
+  0%   { transform: translate(0, 0) scale(.5); opacity: 0; }
+  15%  { opacity: .34; }
+  70%  { opacity: .16; }
+  100% { transform: translate(var(--dx, 30px), -300px) scale(2.6); opacity: 0; }
+}
+
+/* Blaulicht: die Balken blinken versetzt, dazu wischt ein blauer
+   Schimmer im selben Takt ueber die ganze Szene. */
+.news-beacons rect { animation: newsBeacon 1.05s steps(1, end) infinite; }
+.news-beacons .b2 { animation-delay: .52s; }
+@keyframes newsBeacon {
+  0%, 34%   { opacity: 1; }
+  35%, 100% { opacity: .1; }
+}
+
+.news-bluewash {
+  opacity: 0;
+  mix-blend-mode: screen;
+  animation: newsWash 1.05s ease-out infinite;
+}
+@keyframes newsWash {
+  0%       { opacity: .13; }
+  22%      { opacity: .02; }
+  50%      { opacity: .1; }
+  75%, 100% { opacity: 0; }
+}
+
+/* ---------- Grafikpaket ---------- */
+
+.news-gfx {
+  position: absolute;
+  inset: 0;
+  font-family: var(--ui-font);
+  pointer-events: none;
+}
+
+/* Senderkennung: drei Farbfelder nebeneinander */
+.news-logo {
+  position: absolute;
+  top: 5%;
+  right: 4%;
+  display: flex;
+  gap: 4px;
+  filter: drop-shadow(0 2px 7px rgba(0, 0, 0, .65));
+}
+.news-logo i {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  font: 800 17px/1 var(--ui-font);
+  font-style: normal;
+  color: #fff;
+  border-radius: 4px;
+}
+.news-logo .r { background: #d4192b; }
+.news-logo .t { background: #1c6fc4; }
+.news-logo .l { background: #e8b214; color: #241f0d; }
+
+/* Live-Ecke, nur im Aussenbild */
+.news-live {
+  position: absolute;
+  top: 5%;
+  left: 4%;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 14px;
+  border-radius: 3px;
+  background: rgba(190, 20, 28, .92);
+  color: #fff;
+  font: 800 14px/1 var(--ui-font);
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  opacity: 0;
+  transition: opacity .3s ease;
+}
+#news.site .news-live { opacity: 1; }
+.news-live i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #fff;
+  animation: newsPulse 1.4s ease-in-out infinite;
+}
+@keyframes newsPulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: .25; }
+}
+
+/* Bauchbinde. Zwei Stueck: erst die Meldung, dann der Junge. */
+.news-band {
+  position: absolute;
+  left: 4%;
+  right: 4%;
+  bottom: 96px;
+  max-width: 780px;
+  opacity: 0;
+  transform: translateY(26px);
+  transition: opacity .45s ease, transform .45s cubic-bezier(.2, .7, .3, 1);
+}
+#news.band1 .news-band.one,
+#news.band2 .news-band.two { opacity: 1; transform: none; }
+
+.news-band .kicker {
+  display: inline-block;
+  padding: 7px 12px;
+  background: #c8102e;
+  color: #fff;
+  font: 800 13px/1 var(--ui-font);
+  letter-spacing: .2em;
+  text-transform: uppercase;
+}
+.news-band h2 {
+  margin: 0;
+  padding: 10px 18px;
+  background: rgba(9, 16, 28, .9);
+  border-left: 6px solid #c8102e;
+  color: #fff;
+  font: 800 clamp(20px, 3.2vw, 38px)/1.15 var(--ui-font);
+  text-transform: uppercase;
+}
+.news-band p {
+  margin: 0;
+  padding: 8px 18px 10px;
+  background: rgba(9, 16, 28, .78);
+  border-left: 6px solid #c8102e;
+  color: #dbe6f2;
+  font: 600 clamp(13px, 1.7vw, 19px)/1.3 var(--ui-font);
+}
+
+/* Laufband. Der Text steht zweimal hintereinander; das Band wandert um
+   genau die halbe Breite und faengt dadurch nahtlos wieder von vorn an. */
+.news-ticker {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 62px;
+  display: flex;
+  background: rgba(7, 13, 22, .94);
+  border-top: 3px solid #c8102e;
+  opacity: 0;
+  transform: translateY(100%);
+  transition: opacity .4s ease, transform .5s cubic-bezier(.2, .7, .3, 1);
+}
+#news.ticker .news-ticker { opacity: 1; transform: none; }
+
+.news-ticker .tag {
+  flex: none;
+  display: grid;
+  place-items: center;
+  padding: 0 18px;
+  background: #c8102e;
+  color: #fff;
+  font: 800 14px/1 var(--ui-font);
+  letter-spacing: .18em;
+  text-transform: uppercase;
+}
+.news-ticker .clock {
+  flex: none;
+  display: grid;
+  place-items: center;
+  padding: 0 18px;
+  border-left: 1px solid rgba(255, 255, 255, .14);
+  color: #cfe0f0;
+  font: 700 15px/1 var(--ui-font);
+  letter-spacing: .1em;
+}
+.crawl-win {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+}
+.crawl {
+  display: flex;
+  width: max-content;
+  animation: newsCrawl 38s linear infinite;
+}
+.crawl span {
+  padding-left: 28px;
+  white-space: nowrap;
+  color: #eaf1f8;
+  font: 600 clamp(13px, 1.5vw, 17px)/1 var(--ui-font);
+}
+@keyframes newsCrawl {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+.news-vig {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(124% 98% at 50% 50%, rgba(0,0,0,0) 52%, rgba(0,0,0,.7) 100%);
+}
+
+/* Waehrend des Berichts sind die Kinobalken draussen - der Hinweis zum
+   Ueberspringen wuerde sonst im Laufband stehen. */
+#news.on ~ #skip { bottom: 78px; }
+
+@media (max-width: 760px) {
+  .news-ticker { height: 48px; }
+  .news-band { bottom: 74px; }
+  .news-logo i { width: 24px; height: 24px; font-size: 14px; }
+  .news-live { font-size: 12px; padding: 6px 11px; }
+  #news.on ~ #skip { bottom: 62px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #news.site .news-site,
+  .news-anchor, .news-mouth, .news-flames path,
+  .news-ember, .news-embers circle,
+  .news-beacons rect, .news-bluewash,
+  .news-smoke ellipse, .news-live i, .crawl { animation: none; }
+  .news-smoke ellipse { opacity: .22; }
+  .news-bluewash { opacity: .07; }
+}
+
 /* ========================== Bildlook ============================ */
 
 /* canvas ist ein ersetztes Element: ohne explizite Groesse gewinnt die
@@ -2457,6 +2783,388 @@ kbd {
     <div class="cab-vig"></div>
   </div>
 
+
+  <!-- ============== Nachrichtenbericht ==============
+       Fuenfter Akt. Ein erfundener Beitrag im Stil einer Nachrichtensendung:
+       erst das Studio, dann der Umschnitt auf den Brandort - das Haus, an dem
+       die Lok stand, ist niedergebrannt. Sender, Meldung und Personen sind
+       ausgedacht; das ist Teil der Spielhandlung, kein echter Bericht.
+
+       Zwei Einstellungen liegen uebereinander; das Skript schaltet mit der
+       Klasse .site von der einen auf die andere. Darueber liegt das
+       Grafikpaket aus HTML: Logo, Live-Ecke, Bauchbinde, Laufband. -->
+  <div id="news" aria-hidden="true">
+
+    <!-- ---------- Einstellung 1: Studio ---------- -->
+    <svg class="news-shot news-studio" viewBox="0 0 1200 700" preserveAspectRatio="xMidYMid slice">
+      <defs>
+        <linearGradient id="gNwall" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%"   stop-color="#1b2a44"/>
+          <stop offset="54%"  stop-color="#0e1728"/>
+          <stop offset="100%" stop-color="#070b14"/>
+        </linearGradient>
+        <radialGradient id="gNspot" cx="50%" cy="50%" r="50%">
+          <stop offset="0%"   stop-color="#3c7cb8" stop-opacity=".5"/>
+          <stop offset="100%" stop-color="#3c7cb8" stop-opacity="0"/>
+        </radialGradient>
+        <linearGradient id="gNdesk" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%"   stop-color="#31465f"/>
+          <stop offset="9%"   stop-color="#111c2d"/>
+          <stop offset="100%" stop-color="#060a11"/>
+        </linearGradient>
+        <linearGradient id="gNsuit" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%"   stop-color="#26344a"/>
+          <stop offset="100%" stop-color="#0d141f"/>
+        </linearGradient>
+        <linearGradient id="gNskin" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%"   stop-color="#e3b491"/>
+          <stop offset="100%" stop-color="#ab7955"/>
+        </linearGradient>
+        <linearGradient id="gNfeed" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%"   stop-color="#160b06"/>
+          <stop offset="62%"  stop-color="#3f180a"/>
+          <stop offset="100%" stop-color="#0f0705"/>
+        </linearGradient>
+      </defs>
+
+      <rect width="1200" height="700" fill="url(#gNwall)"/>
+
+      <!-- Lichtstreifen in der Studiowand -->
+      <g fill="#4f9ad6" opacity=".14">
+        <rect x="36" y="-20" width="26" height="560" rx="13"/>
+        <rect x="98" y="-20" width="12" height="560" rx="6"/>
+        <rect x="1096" y="-20" width="12" height="560" rx="6"/>
+        <rect x="1132" y="-20" width="26" height="560" rx="13"/>
+      </g>
+      <ellipse cx="370" cy="330" rx="340" ry="300" fill="url(#gNspot)"/>
+
+      <!-- Bildwand hinter dem Moderator: die Aufnahme vom Brandort.
+           Ein eigenes SVG - so beschneidet der Rahmen den Inhalt von selbst. -->
+      <g>
+        <rect x="626" y="102" width="496" height="326" rx="10" fill="#04070d"/>
+        <svg x="636" y="112" width="476" height="306" viewBox="0 0 476 306" preserveAspectRatio="xMidYMid slice">
+          <rect width="476" height="306" fill="url(#gNfeed)"/>
+          <ellipse cx="238" cy="258" rx="230" ry="96" fill="#ff7a1e" opacity=".3"/>
+          <!-- Baumreihe hinter dem Brandort -->
+          <g fill="#0a0705" opacity=".95">
+            <path d="M18 258 L34 214 L50 258 Z"/><path d="M64 258 L76 226 L88 258 Z"/>
+            <path d="M382 258 L398 218 L414 258 Z"/><path d="M424 258 L438 228 L452 258 Z"/>
+          </g>
+          <!-- brennendes Haus -->
+          <g>
+            <path d="M152 258 L152 152 L238 108 L324 152 L324 258 Z" fill="#0d0908"/>
+            <path d="M142 158 L238 100 L334 158 L328 168 L238 112 L148 168 Z" fill="#070505"/>
+            <rect x="176" y="182" width="36" height="36" fill="#ff9a2e"/>
+            <rect x="264" y="182" width="36" height="36" fill="#ffb552"/>
+            <rect x="214" y="210" width="30" height="48" fill="#ffd88a"/>
+          </g>
+          <!-- Flammen schlagen aus dem Dach -->
+          <g class="news-flames" fill="#ff8b23">
+            <path class="f1" d="M196 150 Q182 116 202 88 Q206 116 224 96 Q236 128 214 152 Z"/>
+            <path class="f2" d="M244 152 Q230 110 254 78 Q258 112 280 92 Q294 130 268 154 Z"/>
+            <path class="f3" d="M290 158 Q280 128 298 104 Q302 130 318 114 Q328 142 310 160 Z"/>
+          </g>
+          <g class="news-flames" fill="#ffd06a" opacity=".85">
+            <path class="f2" d="M214 152 Q206 124 220 104 Q224 126 236 112 Q244 136 230 154 Z"/>
+            <path class="f1" d="M262 154 Q254 126 268 106 Q272 128 284 114 Q292 138 278 156 Z"/>
+          </g>
+          <rect y="256" width="476" height="50" fill="#0a0806"/>
+          <!-- Einsatzkraefte im Gegenlicht -->
+          <g fill="#080605">
+            <path d="M96 256 L96 232 Q96 222 106 222 Q116 222 116 232 L116 256 Z"/>
+            <path d="M100 224 Q96 210 106 210 Q116 210 112 224 Z"/>
+            <path d="M352 256 L352 234 Q352 224 362 224 Q372 224 372 234 L372 256 Z"/>
+            <path d="M356 226 Q352 212 362 212 Q372 212 368 226 Z"/>
+          </g>
+        </svg>
+        <rect x="626" y="102" width="496" height="326" rx="10" fill="none" stroke="#2a3d55" stroke-width="6"/>
+        <rect x="634" y="110" width="480" height="310" rx="6" fill="none" stroke="#63a8dd" stroke-width="2" opacity=".5"/>
+      </g>
+
+      <!-- Moderator. Der Kopf nickt leicht, der Mund bewegt sich beim Sprechen. -->
+      <g class="news-anchor">
+        <!-- Jackett und Schultern -->
+        <path d="M196 700 L214 566 Q234 470 322 440 L440 440 Q528 470 548 566 L566 700 Z" fill="url(#gNsuit)"/>
+        <!-- Hemd und Krawatte -->
+        <path d="M330 442 L381 500 L432 442 L410 434 L381 470 L352 434 Z" fill="#e8eef5"/>
+        <path d="M381 476 L396 496 L389 566 L373 566 L366 496 Z" fill="#a8241d"/>
+        <!-- Revers -->
+        <path d="M330 442 L381 500 L344 520 L318 460 Z" fill="#1a2534"/>
+        <path d="M432 442 L381 500 L418 520 L444 460 Z" fill="#1a2534"/>
+        <!-- Hals -->
+        <path d="M352 396 L410 396 L414 448 L381 468 L348 448 Z" fill="#a3714f"/>
+        <!-- Kopf -->
+        <ellipse cx="381" cy="330" rx="62" ry="74" fill="url(#gNskin)"/>
+        <!-- Ohren -->
+        <ellipse cx="320" cy="336" rx="10" ry="15" fill="#c08e68"/>
+        <ellipse cx="442" cy="336" rx="10" ry="15" fill="#c08e68"/>
+        <!-- Haar -->
+        <path d="M319 320 Q316 250 381 250 Q446 250 443 320 Q436 286 408 278 Q381 292 352 280 Q328 288 319 320 Z" fill="#2b1f18"/>
+        <!-- Brauen und Augen -->
+        <g fill="#2b1f18">
+          <rect x="341" y="312" width="30" height="6" rx="3"/>
+          <rect x="391" y="312" width="30" height="6" rx="3"/>
+        </g>
+        <ellipse cx="356" cy="333" rx="9" ry="5.5" fill="#f4f7fa"/>
+        <ellipse cx="406" cy="333" rx="9" ry="5.5" fill="#f4f7fa"/>
+        <circle cx="357" cy="334" r="4" fill="#2a1c14"/>
+        <circle cx="407" cy="334" r="4" fill="#2a1c14"/>
+        <!-- Oberlider: nehmen dem Blick das Starre -->
+        <g fill="none" stroke="#a8785a" stroke-width="3" stroke-linecap="round">
+          <path d="M347 330 Q356 324 365 330"/>
+          <path d="M397 330 Q406 324 415 330"/>
+        </g>
+        <!-- Nase -->
+        <path d="M381 336 L389 364 L374 366" fill="none" stroke="#9a6a4a" stroke-width="3" stroke-linecap="round"/>
+        <!-- Mund: das Skript laesst ihn ueber die CSS-Animation sprechen -->
+        <ellipse class="news-mouth" cx="381" cy="382" rx="17" ry="7" fill="#5e2b22"/>
+      </g>
+
+      <!-- Pult -->
+      <path d="M100 700 L100 540 Q600 502 1100 540 L1100 700 Z" fill="url(#gNdesk)"/>
+      <path d="M100 540 Q600 502 1100 540 L1100 552 Q600 514 100 552 Z" fill="#5b7ea3" opacity=".5"/>
+      <rect x="470" y="580" width="240" height="66" rx="6" fill="#0b1421" opacity=".8"/>
+      <g class="news-deskmark">
+        <rect x="500" y="596" width="34" height="34" rx="4" fill="#d4192b"/>
+        <rect x="540" y="596" width="34" height="34" rx="4" fill="#1c6fc4"/>
+        <rect x="580" y="596" width="34" height="34" rx="4" fill="#e8b214"/>
+      </g>
+    </svg>
+
+
+    <!-- ---------- Einstellung 2: der Brandort ---------- -->
+    <svg class="news-shot news-site" viewBox="0 0 1200 700" preserveAspectRatio="xMidYMid slice">
+      <defs>
+        <linearGradient id="gNsky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%"   stop-color="#04070c"/>
+          <stop offset="58%"  stop-color="#101922"/>
+          <stop offset="100%" stop-color="#2a2a26"/>
+        </linearGradient>
+        <linearGradient id="gNground" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%"   stop-color="#241f18"/>
+          <stop offset="40%"  stop-color="#14110d"/>
+          <stop offset="100%" stop-color="#080706"/>
+        </linearGradient>
+        <linearGradient id="gNwreck" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%"   stop-color="#43332a"/>
+          <stop offset="55%"  stop-color="#241a14"/>
+          <stop offset="100%" stop-color="#0d0a08"/>
+        </linearGradient>
+        <radialGradient id="gNglow" cx="50%" cy="100%" r="70%">
+          <stop offset="0%"   stop-color="#ff7a1e" stop-opacity=".45"/>
+          <stop offset="100%" stop-color="#ff7a1e" stop-opacity="0"/>
+        </radialGradient>
+        <linearGradient id="gNbeam" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%"   stop-color="#cfe6ff" stop-opacity=".22"/>
+          <stop offset="100%" stop-color="#cfe6ff" stop-opacity="0"/>
+        </linearGradient>
+        <radialGradient id="gNhaze" cx="50%" cy="62%" r="52%">
+          <stop offset="0%"   stop-color="#6b6155" stop-opacity=".3"/>
+          <stop offset="60%"  stop-color="#6b6155" stop-opacity=".12"/>
+          <stop offset="100%" stop-color="#6b6155" stop-opacity="0"/>
+        </radialGradient>
+        <!-- Weiche Kanten fuer die Rauchschwaden: ohne das bleiben es
+             sichtbare Ellipsen statt Rauch. -->
+        <filter id="fNsmoke" x="-60%" y="-60%" width="220%" height="220%">
+          <feGaussianBlur stdDeviation="17"/>
+        </filter>
+      </defs>
+
+      <rect width="1200" height="700" fill="url(#gNsky)"/>
+      <!-- Rauchdunst ueber der Brandstelle -->
+      <rect width="1200" height="700" fill="url(#gNhaze)"/>
+      <!-- Baumsilhouetten am Horizont -->
+      <g fill="#070a09">
+        <path d="M40 470 L64 402 L88 470 Z"/><path d="M104 470 L120 424 L136 470 Z"/>
+        <path d="M170 470 L192 396 L214 470 Z"/><path d="M244 470 L258 430 L272 470 Z"/>
+        <path d="M930 470 L952 400 L974 470 Z"/><path d="M1000 470 L1016 428 L1032 470 Z"/>
+        <path d="M1064 470 L1088 394 L1112 470 Z"/><path d="M1136 470 L1152 432 L1168 470 Z"/>
+      </g>
+
+      <rect y="466" width="1200" height="234" fill="url(#gNground)"/>
+      <ellipse cx="600" cy="500" rx="420" ry="120" fill="url(#gNglow)"/>
+
+      <!-- Scheinwerferkegel der Einsatzfahrzeuge -->
+      <path d="M120 372 L560 466 L120 466 Z" fill="url(#gNbeam)"/>
+      <path d="M1090 388 L700 466 L1120 466 Z" fill="url(#gNbeam)"/>
+
+      <!-- ===== Die Brandruine ===== -->
+      <g>
+        <!-- Grundmauern -->
+        <rect x="366" y="448" width="470" height="26" fill="#0b0908"/>
+        <!-- stehengebliebene Wand links, oben ausgefressen -->
+        <path d="M392 466 L392 306 L420 296 L438 326 L464 302 L490 340 L518 314 L544 356 L570 332 L570 466 Z" fill="url(#gNwreck)"/>
+        <!-- Bretterfugen -->
+        <g stroke="#050403" stroke-width="2" opacity=".55">
+          <path d="M392 352 L568 352 M392 384 L570 384 M392 416 L570 416 M392 448 L570 448"/>
+          <path d="M436 330 L436 466 M482 344 L482 466 M528 322 L528 466"/>
+        </g>
+        <!-- Wandrest rechts -->
+        <path d="M676 466 L676 366 L702 348 L724 380 L752 354 L778 392 L800 372 L818 402 L818 466 Z" fill="url(#gNwreck)"/>
+        <g stroke="#050403" stroke-width="2" opacity=".5">
+          <path d="M676 402 L818 402 M676 434 L818 434"/>
+          <path d="M722 380 L722 466 M772 392 L772 466"/>
+        </g>
+        <!-- Schornstein: das Einzige, was ganz stehen blieb -->
+        <rect x="740" y="238" width="46" height="230" fill="#151009"/>
+        <rect x="732" y="230" width="62" height="14" fill="#0b0806"/>
+        <g stroke="#070504" stroke-width="2" opacity=".6">
+          <path d="M740 276 L786 276 M740 316 L786 316 M740 356 L786 356 M740 396 L786 396"/>
+        </g>
+        <!-- ausgebrannte Fensteroeffnungen, dahinter Glut -->
+        <g>
+          <rect x="414" y="368" width="52" height="56" fill="#050303"/>
+          <rect x="420" y="374" width="40" height="44" class="news-ember" fill="#c4501a"/>
+          <rect x="496" y="376" width="52" height="56" fill="#050303"/>
+          <rect x="502" y="382" width="40" height="44" class="news-ember e2" fill="#93380f"/>
+          <rect x="700" y="410" width="46" height="56" fill="#050303"/>
+          <rect x="706" y="416" width="34" height="50" class="news-ember e3" fill="#a8410f"/>
+        </g>
+        <!-- verkohlte Dachbalken, kreuz und quer in die Ruine gestuerzt -->
+        <g stroke="#100b08" stroke-width="13" stroke-linecap="square">
+          <path d="M404 322 L648 452"/>
+          <path d="M812 372 L590 462"/>
+          <path d="M556 330 L618 466"/>
+          <path d="M672 350 L512 464"/>
+        </g>
+        <g stroke="#241a12" stroke-width="4" opacity=".7">
+          <path d="M404 322 L648 452 M812 372 L590 462"/>
+        </g>
+        <!-- ein Balken ragt schraeg aus dem Schutt -->
+        <path d="M596 262 L610 258 L666 448 L648 452 Z" fill="#140e0a"/>
+        <!-- Truemmerhaufen -->
+        <g fill="#0c0908">
+          <path d="M368 466 Q440 424 512 448 Q580 418 646 452 Q712 424 780 452 Q820 440 836 466 Z"/>
+        </g>
+        <g fill="#1a130e" opacity=".9">
+          <path d="M470 452 L494 430 L520 452 Z"/><path d="M596 456 L618 436 L642 456 Z"/>
+          <path d="M700 458 L722 440 L744 458 Z"/><path d="M418 458 L436 442 L456 458 Z"/>
+        </g>
+        <!-- Glutnester im Schutt -->
+        <g class="news-embers" fill="#ff6a17">
+          <circle class="e1" cx="472" cy="452" r="5"/><circle class="e2" cx="556" cy="458" r="4"/>
+          <circle class="e3" cx="640" cy="450" r="6"/><circle class="e1" cx="722" cy="456" r="4"/>
+          <circle class="e2" cx="800" cy="458" r="5"/><circle class="e3" cx="404" cy="456" r="4"/>
+        </g>
+        <!-- Warme Kante auf den ausgefressenen Mauerkronen: die Glut von
+             unten zeichnet die Silhouette gegen den dunklen Himmel. -->
+        <g fill="none" stroke="#c4682a" stroke-width="2.5" opacity=".3">
+          <path d="M392 306 L420 296 L438 326 L464 302 L490 340 L518 314 L544 356 L570 332"/>
+          <path d="M676 366 L702 348 L724 380 L752 354 L778 392 L800 372 L818 402"/>
+        </g>
+        <path d="M368 466 Q440 424 512 448 Q580 418 646 452 Q712 424 780 452 Q820 440 836 466"
+              fill="none" stroke="#b0601f" stroke-width="2" opacity=".16"/>
+      </g>
+
+      <!-- Rauch, der aus der Ruine steigt -->
+      <g class="news-smoke" fill="#7d746a" filter="url(#fNsmoke)">
+        <ellipse cx="470" cy="440" rx="26" ry="18" style="--d:0s;   --dx:-40px; --dur:7.5s"/>
+        <ellipse cx="580" cy="448" rx="32" ry="21" style="--d:1.6s; --dx:26px;  --dur:8.5s"/>
+        <ellipse cx="700" cy="436" rx="24" ry="17" style="--d:3.1s; --dx:-18px; --dur:7s"/>
+        <ellipse cx="763" cy="250" rx="18" ry="13" style="--d:.8s;  --dx:34px;  --dur:9s"/>
+        <ellipse cx="520" cy="452" rx="21" ry="15" style="--d:4.4s; --dx:48px;  --dur:8s"/>
+      </g>
+
+      <!-- Einsatzfahrzeug am linken Bildrand -->
+      <g>
+        <rect x="-20" y="378" width="300" height="88" rx="6" fill="#12100e"/>
+        <rect x="176" y="352" width="104" height="46" rx="6" fill="#171310"/>
+        <rect x="192" y="362" width="72" height="28" rx="3" fill="#2b3a44"/>
+        <g fill="#0a0908">
+          <circle cx="60" cy="470" r="26"/><circle cx="232" cy="470" r="26"/>
+        </g>
+        <rect x="-20" y="392" width="300" height="10" fill="#8e1f16"/>
+        <!-- Blaulicht -->
+        <g class="news-beacons">
+          <rect class="b1" x="24" y="360" width="42" height="16" rx="6" fill="#5fb4ff"/>
+          <rect class="b2" x="96" y="360" width="42" height="16" rx="6" fill="#5fb4ff"/>
+        </g>
+      </g>
+
+      <!-- Einsatzkraefte vor der Ruine -->
+      <g fill="#070605">
+        <g transform="translate(322 466) scale(1.15)">
+          <path d="M-12 0 L-12 -46 Q-12 -58 0 -58 Q12 -58 12 -46 L12 0 Z"/>
+          <path d="M-13 -60 Q-16 -78 0 -78 Q16 -78 13 -60 Z"/>
+          <path d="M10 -50 L34 -38 L30 -32 L8 -42 Z"/>
+        </g>
+        <g transform="translate(902 466) scale(1.05)">
+          <path d="M-12 0 L-12 -46 Q-12 -58 0 -58 Q12 -58 12 -46 L12 0 Z"/>
+          <path d="M-13 -60 Q-16 -78 0 -78 Q16 -78 13 -60 Z"/>
+          <path d="M-10 -50 L-36 -40 L-32 -34 L-8 -42 Z"/>
+        </g>
+      </g>
+      <!-- duenner Wasserstrahl auf die Glut -->
+      <path d="M356 424 Q470 388 566 432" fill="none" stroke="#bcd6e8" stroke-width="4" opacity=".35" stroke-linecap="round"/>
+
+      <!-- Loeschwasser auf dem Boden: dunkle Lachen mit einem Schimmer
+           vom Blaulicht darin -->
+      <g>
+        <g fill="#0d1319" opacity=".85">
+          <ellipse cx="300" cy="536" rx="96" ry="14"/><ellipse cx="640" cy="558" rx="130" ry="16"/>
+          <ellipse cx="980" cy="530" rx="84" ry="12"/>
+        </g>
+        <g fill="#4d7ea8" opacity=".2">
+          <ellipse cx="292" cy="533" rx="68" ry="6"/><ellipse cx="628" cy="554" rx="92" ry="7"/>
+          <ellipse cx="972" cy="527" rx="58" ry="5"/>
+        </g>
+      </g>
+
+      <!-- Das Gleis vor dem Haus. Die Lok, die hier stand, ist weg. -->
+      <g>
+        <g fill="#241d16">
+          <rect x="20" y="600" width="46" height="14"/><rect x="130" y="600" width="46" height="14"/>
+          <rect x="240" y="600" width="46" height="14"/><rect x="350" y="600" width="46" height="14"/>
+          <rect x="460" y="600" width="46" height="14"/><rect x="570" y="600" width="46" height="14"/>
+          <rect x="680" y="600" width="46" height="14"/><rect x="790" y="600" width="46" height="14"/>
+          <rect x="900" y="600" width="46" height="14"/><rect x="1010" y="600" width="46" height="14"/>
+          <rect x="1120" y="600" width="46" height="14"/>
+        </g>
+        <rect y="596" width="1200" height="8" fill="#3b3a38"/>
+        <rect y="596" width="1200" height="3" fill="#7d8a92" opacity=".65"/>
+        <rect y="616" width="1200" height="7" fill="#33322f"/>
+        <rect y="616" width="1200" height="3" fill="#6d7981" opacity=".55"/>
+      </g>
+
+      <!-- Blaulicht wischt ueber die ganze Szene -->
+      <rect class="news-bluewash" width="1200" height="700" fill="#3d8fd6"/>
+    </svg>
+
+
+    <!-- ---------- Grafikpaket ---------- -->
+    <div class="news-gfx">
+      <!-- Senderkennung: drei Farbfelder, wie es Nachrichtensender fuehren -->
+      <div class="news-logo" aria-hidden="true"><i class="r">R</i><i class="t">T</i><i class="l">L</i></div>
+
+      <div class="news-live"><i></i>Live</div>
+
+      <div class="news-band one">
+        <b class="kicker">Eilmeldung</b>
+        <h2>Wohnhaus brennt vollständig nieder</h2>
+        <p>Feuerwehr im Großeinsatz an der alten Bahnstrecke</p>
+      </div>
+
+      <div class="news-band two">
+        <b class="kicker">Aktuell</b>
+        <h2>Elfjähriger stirbt im Feuer</h2>
+        <p>Fabian (11) konnte nicht mehr gerettet werden</p>
+      </div>
+
+      <div class="news-ticker">
+        <b class="tag">Eilmeldung</b>
+        <div class="crawl-win">
+          <div class="crawl">
+            <span>+++ Wohnhaus an der alten Bahnstrecke bis auf die Grundmauern niedergebrannt +++ Ein Todesopfer: der elfjährige Fabian +++ Die Feuerwehr war mit 60 Einsatzkräften vor Ort +++ Brandursache noch unklar, die Kriminalpolizei ermittelt +++ Anwohner berichten von einer lauten Detonation kurz vor dem Feuer +++&nbsp;</span>
+            <span>+++ Wohnhaus an der alten Bahnstrecke bis auf die Grundmauern niedergebrannt +++ Ein Todesopfer: der elfjährige Fabian +++ Die Feuerwehr war mit 60 Einsatzkräften vor Ort +++ Brandursache noch unklar, die Kriminalpolizei ermittelt +++ Anwohner berichten von einer lauten Detonation kurz vor dem Feuer +++&nbsp;</span>
+          </div>
+        </div>
+        <b class="clock">23:47</b>
+      </div>
+    </div>
+
+    <div class="news-vig"></div>
+  </div>
+
   <!-- Kinobalken der Cutscene -->
   <div id="bars" aria-hidden="true"><i class="top"></i><i class="bottom"></i></div>
   <p id="skip" hidden>Leertaste oder Esc zum Überspringen</p>
@@ -2578,6 +3286,7 @@ kbd {
   const fpsGoal   = $(".fps-goal");
   const fpsLegs   = $(".fps-legs");
   const cab       = $("#cab");
+  const news      = $("#news");
 
   const ctx   = fx.getContext("2d");
   const sctx  = skyfx.getContext("2d");
@@ -2874,6 +3583,85 @@ kbd {
     g.gain.setTargetAtTime(0.0001, ac.currentTime, 0.3);
     setTimeout(function () { try { src.stop(); } catch (e) {} }, 1200);
     fireNode = null;
+  }
+
+  /* Nachrichtensignation: vier Toene, der letzte eine Oktave hoeher, dazu
+     ein Paukenschlag darunter. Jede Note sind zwei leicht verstimmte
+     Saegezaehne - das gibt den breiten Blaeserklang. */
+  function newsJingle() {
+    const a = resume(); if (!a) return;
+    const t0 = a.currentTime;
+    const notes = [
+      { f: 261.6, at: 0.00, dur: 0.30 },
+      { f: 349.2, at: 0.19, dur: 0.30 },
+      { f: 392.0, at: 0.38, dur: 0.30 },
+      { f: 523.3, at: 0.57, dur: 1.10 }
+    ];
+
+    notes.forEach(function (n) {
+      const t = t0 + n.at;
+      const g = a.createGain();
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.11, t + 0.03);
+      g.gain.setValueAtTime(0.11, t + n.dur * 0.6);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + n.dur);
+      const lp = a.createBiquadFilter();
+      lp.type = "lowpass";
+      lp.frequency.setValueAtTime(2600, t);
+      lp.frequency.exponentialRampToValueAtTime(1200, t + n.dur);
+      g.connect(lp);
+      lp.connect(master);
+      lp.connect(reverb);
+
+      [-4, 4].forEach(function (detune) {
+        const o = a.createOscillator();
+        o.type = "sawtooth";
+        o.frequency.value = n.f;
+        o.detune.value = detune;
+        o.connect(g);
+        o.start(t); o.stop(t + n.dur + 0.05);
+      });
+    });
+
+    /* Paukenschlag auf der letzten Note */
+    const t = t0 + 0.57;
+    const sub = a.createOscillator();
+    const sg = a.createGain();
+    sub.type = "sine";
+    sub.frequency.setValueAtTime(96, t);
+    sub.frequency.exponentialRampToValueAtTime(44, t + 0.5);
+    sg.gain.setValueAtTime(0.0001, t);
+    sg.gain.exponentialRampToValueAtTime(0.5, t + 0.02);
+    sg.gain.exponentialRampToValueAtTime(0.0001, t + 0.9);
+    sub.connect(sg); sg.connect(master); sg.connect(reverb);
+    sub.start(t); sub.stop(t + 0.95);
+  }
+
+  /* Martinshorn aus der Ferne: zwei Toene im Wechsel, tiefpassgefiltert
+     und leise - so klingt es nach ein paar Strassen Entfernung. */
+  function distantSiren(reps) {
+    const a = resume(); if (!a) return;
+    const t0 = a.currentTime;
+
+    const lp = a.createBiquadFilter();
+    lp.type = "lowpass";
+    lp.frequency.value = 900;
+    lp.connect(master);
+    lp.connect(reverb);
+
+    for (let i = 0; i < reps; i++) {
+      const t = t0 + i * 0.62;
+      const o = a.createOscillator();
+      const g = a.createGain();
+      o.type = "triangle";
+      o.frequency.value = i % 2 ? 349.2 : 440;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.05, t + 0.05);
+      g.gain.setValueAtTime(0.05, t + 0.45);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.58);
+      o.connect(g).connect(lp);
+      o.start(t); o.stop(t + 0.6);
+    }
   }
 
 
@@ -3699,6 +4487,7 @@ kbd {
   /* Zurueck auf Anfang: Szene aufraeumen und aufblenden */
   function finishSequence() {
     stopFieldScene();
+    stopNewsScene();
     cab.classList.remove("on", "reach", "press");
     world.style.visibility = "";
     parts.length = 0;
@@ -3855,6 +4644,7 @@ kbd {
     timers.length = 0;
     stopRotor();
     stopFieldScene();
+    stopNewsScene();
     cab.classList.remove("on", "reach", "press");
     heli.classList.remove("on");
     heliState.on = false;
@@ -4214,14 +5004,61 @@ kbd {
       later(function () { out.style.setProperty("--speed", ".6s"); }, 3400);
     }, 2900);
 
-    /* Schwarzblende, dann steht wieder das Startmenue */
+    /* Schwarzblende, dahinter wird auf den Nachrichtenbericht umgestellt */
     later(function () { fade.classList.add("on"); }, 7600);
     later(function () {
       cab.classList.remove("on", "reach", "press");
       const out = $(".cab-band");
       if (out) out.style.setProperty("--speed", "0s");
-      finishSequence();
+      news.classList.add("on");
+      runNewsScene();
     }, 9400);
+    later(function () { fade.classList.remove("on"); }, 9900);
+  }
+
+
+  /* ============ 6d. Nachrichtenbericht ============
+     Fuenfter Akt. Der Sender berichtet, was aus dem Haus geworden ist, an
+     dem die Lok stand: erst das Studio, dann der Umschnitt an den
+     Brandort. Meldung, Sender und Personen sind frei erfunden.
+     Das Ende der Sequenz liegt hier - danach steht wieder das Menue. */
+  function runNewsScene() {
+    /* Der Film gibt das Bild frei: ohne Kinobalken fuellt der Beitrag den
+       Rahmen wie eine echte Sendung - und Logo, Live-Ecke und Laufband
+       stehen nicht mehr hinter den schwarzen Balken. */
+    bars.classList.remove("on");
+    newsJingle();
+    later(function () { news.classList.add("ticker"); }, 900);
+    later(function () { news.classList.add("band1"); }, 1400);
+
+    /* Die Bauchbinde geht raus, bevor geschnitten wird */
+    later(function () { news.classList.remove("band1"); }, 5300);
+
+    /* Umschnitt auf die Aufnahme vom Brandort: Glut knistert, in der
+       Ferne faehrt noch ein Wagen an */
+    later(function () {
+      news.classList.add("site");
+      startFireLoop();
+      distantSiren(4);
+    }, 5900);
+    later(function () { news.classList.add("band2"); }, 7000);
+    later(function () { distantSiren(3); }, 11200);
+
+    /* Abblende - danach steht wieder der Startbildschirm */
+    later(function () {
+      news.classList.remove("band2");
+      fadeFireLoop();
+    }, 12700);
+    later(function () { fade.classList.add("on"); }, 13300);
+    later(function () {
+      stopNewsScene();
+      finishSequence();
+    }, 15000);
+  }
+
+  function stopNewsScene() {
+    news.classList.remove("on", "site", "band1", "band2", "ticker");
+    stopFireLoop();
   }
 
 
